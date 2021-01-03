@@ -1,35 +1,35 @@
 #include <Arduino.h>
 #include <avr/io.h>
 
+// both assumed to be in PCI2
+#define PIN_ENCODER_A1 PCINT19
+#define PIN_ENCODER_A2 PCINT21
+
+// both assumed to be in PCI0
+#define PIN_ENCODER_B1 PCINT3
+#define PIN_ENCODER_B2 PCINT5
+
 volatile uint16_t count_left = 0;
 volatile uint16_t count_right = 0;
 
-ISR(INT1_vect) {
+ISR(PCINT2_vect) {
   count_left ++;
 }
 
 ISR(PCINT0_vect) {
-  // this ISR does not check for which pin triggered the ISR
-  // as only PCINT3 is activated
-
-  // if pin is currently high, this is a rising edge
-  if (PINB & _BV(PCINT3)) {
-    count_right ++;
-  }
+  count_right ++;
 }
 
 void setup() {
-  // ISR init for encoder:
+  // PCI2 (Motor A encoder):
+  PCMSK2 |=  _BV(PIN_ENCODER_A1) | _BV(PIN_ENCODER_A2); // enable interrupt sources
+  PCIFR  &= ~_BV(PCIF2);                                // clear interrupt flag of PCI2
+  PCICR  |=  _BV(PCIE2);                                // enable PCI2
 
-  // INT1 (Motor A encoder):
-  EICRA |= _BV(ISC11) | _BV(ISC10); // INT1 trigger on rising edge
-  EIFR &= ~_BV(INTF1);              // clear interrupt flag of INT1
-  EIMSK |= _BV(INT1);               // enable INT1
-
-  // PCINT3 (Motor B encoder):
-  PCMSK0 |= _BV(PCINT3);            // enable PCINT3 
-  PCIFR &= ~_BV(PCIF0);             // clear interrupt flag of PCI0
-  PCICR |= _BV(PCIE0);              // enable PCI0
+  // PCI0 (Motor B encoder):
+  PCMSK0 |=  _BV(PIN_ENCODER_B1) | _BV(PIN_ENCODER_B2); // enable interrupt sources
+  PCIFR  &= ~_BV(PCIF0);                                // clear interrupt flag of PCI0
+  PCICR  |=  _BV(PCIE0);                                // enable PCI0
 
   Serial.begin(115200);
 }
