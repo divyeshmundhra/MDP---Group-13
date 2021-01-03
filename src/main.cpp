@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <avr/io.h>
+#include "DualVNH5019MotorShield.h"
 
 // both assumed to be in PCI2
 #define PIN_ENCODER_A1 PCINT19
@@ -8,6 +8,10 @@
 // both assumed to be in PCI0
 #define PIN_ENCODER_B1 PCINT3
 #define PIN_ENCODER_B2 PCINT5
+
+#define PIN_MD_EN 6
+
+DualVNH5019MotorShield md;
 
 volatile uint16_t count_left = 0;
 volatile uint16_t count_right = 0;
@@ -30,6 +34,9 @@ void setup() {
   PCMSK0 |=  _BV(PIN_ENCODER_B1) | _BV(PIN_ENCODER_B2); // enable interrupt sources
   PCIFR  &= ~_BV(PCIF0);                                // clear interrupt flag of PCI0
   PCICR  |=  _BV(PCIE0);                                // enable PCI0
+
+  md.init();
+  pinMode(PIN_MD_EN, INPUT_PULLUP);
 
   Serial.begin(115200);
 }
