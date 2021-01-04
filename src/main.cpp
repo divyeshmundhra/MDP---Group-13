@@ -52,15 +52,25 @@ void loop() {
   } else {
     pinMode(PIN_MD_EN, INPUT);
   }
-    cli();
-    Serial.print(count_left);
-    Serial.print(", ");
-    Serial.println(count_right);
 
+  if ((cur_time - last_print) > 10) {
+    cli();
+    uint16_t _count_left = count_left;
     count_left = 0;
     count_right = 0;
-
     sei();
+
+    int16_t error_left = (int16_t) 30 - _count_left;
+    int16_t speed_left = error_left * 30;
+
+    md.setM1Speed(speed_left);
+
+    Serial.print("START");
+    Serial.write((char *) &speed_left, 2);
+    Serial.write((char *) &error_left, 2);
+    Serial.write((char *) &_count_left, 2);
+    Serial.println();
+
     last_print = cur_time;
   }
 }
