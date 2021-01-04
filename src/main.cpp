@@ -10,6 +10,7 @@
 #define PIN_ENCODER_B2 PCINT5
 
 #define PIN_MD_EN 6
+#define PIN_SW 14
 
 DualVNH5019MotorShield md;
 
@@ -36,7 +37,8 @@ void setup() {
   PCICR  |=  _BV(PCIE0);                                // enable PCI0
 
   md.init();
-  pinMode(PIN_MD_EN, INPUT_PULLUP);
+
+  pinMode(PIN_SW, INPUT_PULLUP);
 
   Serial.begin(115200);
 }
@@ -45,7 +47,11 @@ void loop() {
   static uint32_t last_print = millis();
   uint32_t cur_time = millis();
 
-  if ((cur_time - last_print) > 100) {
+  if (!digitalRead(PIN_SW)) {
+    pinMode(PIN_MD_EN, INPUT_PULLUP);
+  } else {
+    pinMode(PIN_MD_EN, INPUT);
+  }
     cli();
     Serial.print(count_left);
     Serial.print(", ");
