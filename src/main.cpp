@@ -60,6 +60,7 @@ void setup() {
 
 void loop() {
   static uint32_t last_print = millis();
+  static int16_t integral_left = 0;
   uint32_t cur_time = millis();
 
   if (!digitalRead(PIN_SW)) {
@@ -81,9 +82,14 @@ void loop() {
 
     if ((micros() - _last_pulse_time_left) > kEncoder_timeout) {
       speed_left = 400;
+      integral_left = 0;
     } else {
       error_left = _width_left - 1000;
-      speed_left = error_left * 1;
+
+      integral_left += error_left;
+      integral_left = constrain(integral_left, -2000, 2000);
+
+      speed_left = error_left * 1.2 + integral_left * 0.1;
     }
 
     md.setM1Speed(speed_left);
