@@ -17,8 +17,18 @@ DualVNH5019MotorShield md;
 volatile uint16_t count_left = 0;
 volatile uint16_t count_right = 0;
 
+volatile uint16_t width_left = 0;
+
+const uint8_t kEncoder_alpha = 230;
+
 ISR(PCINT2_vect) {
   count_left ++;
+
+  static uint32_t last_time = 0;
+  uint32_t time = micros();
+
+  width_left = ((uint32_t) kEncoder_alpha * width_left + (uint32_t) (255 - kEncoder_alpha) * (time - last_time)) >> 8;
+  last_time = time;
 }
 
 ISR(PCINT0_vect) {
@@ -27,7 +37,7 @@ ISR(PCINT0_vect) {
 
 void setup() {
   // PCI2 (Motor A encoder):
-  PCMSK2 |=  _BV(PIN_ENCODER_A1) | _BV(PIN_ENCODER_A2); // enable interrupt sources
+  PCMSK2 |=  _BV(PIN_ENCODER_A1); // | _BV(PIN_ENCODER_A2); // enable interrupt sources
   PCIFR  &= ~_BV(PCIF2);                                // clear interrupt flag of PCI2
   PCICR  |=  _BV(PCIE2);                                // enable PCI2
 
@@ -56,6 +66,7 @@ void loop() {
   if ((cur_time - last_print) > 10) {
     cli();
     uint16_t _count_left = count_left;
+    uint16_t _width_left = width_left;
     count_left = 0;
     count_right = 0;
     sei();
