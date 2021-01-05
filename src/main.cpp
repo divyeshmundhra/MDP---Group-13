@@ -14,9 +14,12 @@
 
 DualVNH5019MotorShield md;
 
+const uint16_t kEncoder_timeout = 10000;
+
 volatile uint16_t count_left = 0;
 volatile uint16_t count_right = 0;
 
+volatile uint32_t last_pulse_time_left = 0;
 volatile uint16_t width_left = 0;
 
 // alpha for encoder filtering
@@ -26,11 +29,10 @@ const uint8_t kEncoder_alpha = 25;
 ISR(PCINT2_vect) {
   count_left ++;
 
-  static uint32_t last_time = 0;
   uint32_t time = micros();
 
-  width_left = ((uint32_t) (255 - kEncoder_alpha) * width_left + (uint32_t) kEncoder_alpha * (time - last_time)) >> 8;
-  last_time = time;
+  width_left = ((uint32_t) (255 - kEncoder_alpha) * width_left + (uint32_t) kEncoder_alpha * (time - last_pulse_time_left)) >> 8;
+  last_pulse_time_left = time;
 }
 
 ISR(PCINT0_vect) {
@@ -51,6 +53,7 @@ void setup() {
   md.init();
 
   pinMode(PIN_SW, INPUT_PULLUP);
+  // md.setM1Speed(200);
 
   Serial.begin(115200);
 }
@@ -65,16 +68,23 @@ void loop() {
     pinMode(PIN_MD_EN, INPUT);
   }
 
+  int16_t error_left, speed_left;
+
   if ((cur_time - last_print) > 10) {
     cli();
     uint16_t _count_left = count_left;
     uint16_t _width_left = width_left;
+    uint32_t _last_pulse_time_left = last_pulse_time_left;
     count_left = 0;
     count_right = 0;
     sei();
 
-    int16_t error_left = (int16_t) 30 - _count_left;
-    int16_t speed_left = error_left * 30;
+    if ((micros() - _last_pulse_time_left) > kEncoder_timeout) {
+      speed_left = 400;
+    } else {
+      error_left = _width_left - 1000;
+      speed_left = error_left * 1;
+    }
 
     md.setM1Speed(speed_left);
 
