@@ -61,6 +61,8 @@ void setup() {
 void loop() {
   static uint32_t last_print = millis();
   static int16_t integral_left = 0;
+  static int16_t last_error_left = 0;
+
   uint32_t cur_time = millis();
 
   if (!digitalRead(PIN_SW)) {
@@ -89,7 +91,7 @@ void loop() {
       integral_left += error_left;
       integral_left = constrain(integral_left, -2000, 2000);
 
-      speed_left = error_left * 1.2 + integral_left * 0.1;
+      speed_left = error_left * 2.1 + integral_left * 0.11 + (last_error_left - error_left) * 1.5;
     }
 
     md.setM1Speed(speed_left);
