@@ -19,7 +19,9 @@ volatile uint16_t count_right = 0;
 
 volatile uint16_t width_left = 0;
 
-const uint8_t kEncoder_alpha = 230;
+// alpha for encoder filtering
+// smaller for more aggressive filtering
+const uint8_t kEncoder_alpha = 25;
 
 ISR(PCINT2_vect) {
   count_left ++;
@@ -27,7 +29,7 @@ ISR(PCINT2_vect) {
   static uint32_t last_time = 0;
   uint32_t time = micros();
 
-  width_left = ((uint32_t) kEncoder_alpha * width_left + (uint32_t) (255 - kEncoder_alpha) * (time - last_time)) >> 8;
+  width_left = ((uint32_t) (255 - kEncoder_alpha) * width_left + (uint32_t) kEncoder_alpha * (time - last_time)) >> 8;
   last_time = time;
 }
 
