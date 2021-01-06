@@ -49,6 +49,40 @@ ISR(PCINT0_vect) {
   count_right ++;
 }
 
+int16_t integral_left = 0;
+int16_t last_error_left = 0;
+
+int16_t error_left, speed_left;
+
+ISR(TIMER2_COMPA_vect) {
+  // reset timer counter
+  TCNT2 = 0;
+
+  cli();
+  uint16_t _width_left = width_left;
+  uint32_t _last_pulse_time_left = last_pulse_time_left;
+  count_left = 0;
+  count_right = 0;
+  sei();
+
+  if ((micros() - _last_pulse_time_left) > kEncoder_timeout) {
+    // if last encoder pulse is too old, treat the motor as not spinning
+    // blip speed to max and reset integral state
+    speed_left = 400;
+    integral_left = 0;
+  } else {
+    // actual PID controller
+    error_left = _width_left - 1000;
+
+    integral_left += error_left;
+    integral_left = constrain(integral_left, kPID_integral_min, kPID_integral_max);
+
+    speed_left = (kP_left * error_left + kI_left * integral_left + kD_left * (last_error_left - error_left)) >> 8;
+  }
+
+  md.setM1Speed(speed_left);
+}
+
 void setup() {
   // PCI2 (Motor A encoder):
   PCMSK2 |=  _BV(PIN_ENCODER_A1); // | _BV(PIN_ENCODER_A2); // enable interrupt sources
@@ -60,18 +94,24 @@ void setup() {
   PCIFR  &= ~_BV(PCIF0);                                // clear interrupt flag of PCI0
   PCICR  |=  _BV(PCIE0);                                // enable PCI0
 
+  // Configure timer 2 for 100Hz
+  TCCR2A |= _BV(WGM21);                        // mode 2, CTC, top is OCRA
+  TCCR2B |= _BV(CS22) | _BV(CS21) | _BV(CS20); // clock/1024
+  OCR2A = 155;                                 // 16000000/1024/155 = 100Hz
+  TIFR2 &= ~_BV(OCF2A);                        // clear interrupt flag
+  TIMSK2 |= _BV(OCIE2A);                       // enable interrupt on compare match A
+
   md.init();
 
   pinMode(PIN_SW, INPUT_PULLUP);
   // md.setM1Speed(200);
 
   Serial.begin(115200);
+  sei();
 }
 
 void loop() {
   static uint32_t last_print = millis();
-  static int16_t integral_left = 0;
-  static int16_t last_error_left = 0;
 
   uint32_t cur_time = millis();
 
@@ -81,35 +121,17 @@ void loop() {
     pinMode(PIN_MD_EN, INPUT);
   }
 
-  int16_t error_left, speed_left;
-
   if ((cur_time - last_print) > 10) {
     cli();
-    uint16_t _count_left = count_left;
-    uint16_t _width_left = width_left;
-    uint32_t _last_pulse_time_left = last_pulse_time_left;
-    count_left = 0;
-    count_right = 0;
+    int16_t _speed_left = speed_left;
+    int16_t _error_left = error_left;
+    int16_t _width_left = width_left;
     sei();
 
-    if ((micros() - _last_pulse_time_left) > kEncoder_timeout) {
-      speed_left = 400;
-      integral_left = 0;
-    } else {
-      error_left = _width_left - 1000;
-
-      integral_left += error_left;
-      integral_left = constrain(integral_left, kPID_integral_min, kPID_integral_max);
-
-      speed_left = (kP_left * error_left + kI_left * integral_left + kD_left * (last_error_left - error_left)) >> 8;
-    }
-
-    md.setM1Speed(speed_left);
-
     Serial.print("START");
-    Serial.write((char *) &speed_left, 2);
-    Serial.write((char *) &error_left, 2);
-    Serial.write((char *) &_count_left, 2);
+    Serial.write((char *) &_speed_left, 2);
+    Serial.write((char *) &_error_left, 2);
+    Serial.write((char *) &_width_left, 2);
     Serial.println();
 
     last_print = cur_time;
