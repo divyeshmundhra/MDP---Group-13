@@ -12,9 +12,9 @@
 #define PIN_MD_EN 6
 #define PIN_SW 14
 
-const float kP_left = 2.1;
-const float kI_left = 0.11;
-const float kD_left = 1.5;
+const int32_t kP_left = 535;
+const int32_t kI_left = 28;
+const int32_t kD_left = 383;
 
 // min/max of integral state
 const int16_t kPID_integral_min = -2000;
@@ -101,7 +101,7 @@ void loop() {
       integral_left += error_left;
       integral_left = constrain(integral_left, kPID_integral_min, kPID_integral_max);
 
-      speed_left = kP_left * error_left + kI_left * integral_left + kD_left * (last_error_left - error_left);
+      speed_left = (kP_left * error_left + kI_left * integral_left + kD_left * (last_error_left - error_left)) >> 8;
     }
 
     md.setM1Speed(speed_left);
