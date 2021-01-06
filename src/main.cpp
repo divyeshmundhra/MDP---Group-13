@@ -12,19 +12,29 @@
 #define PIN_MD_EN 6
 #define PIN_SW 14
 
-DualVNH5019MotorShield md;
+const float kP_left = 2.1;
+const float kI_left = 0.11;
+const float kD_left = 1.5;
 
+// min/max of integral state
+const int16_t kPID_integral_min = -2000;
+const int16_t kPID_integral_max = 2000;
+
+// alpha for encoder filtering
+// smaller for more aggressive filtering
+const uint8_t kEncoder_alpha = 25;
+
+// timeout (us) for time since encoder pulse received
+// after which a motor is treated as stationary
 const uint16_t kEncoder_timeout = 10000;
+
+DualVNH5019MotorShield md;
 
 volatile uint16_t count_left = 0;
 volatile uint16_t count_right = 0;
 
 volatile uint32_t last_pulse_time_left = 0;
 volatile uint16_t width_left = 0;
-
-// alpha for encoder filtering
-// smaller for more aggressive filtering
-const uint8_t kEncoder_alpha = 25;
 
 ISR(PCINT2_vect) {
   count_left ++;
@@ -89,9 +99,9 @@ void loop() {
       error_left = _width_left - 1000;
 
       integral_left += error_left;
-      integral_left = constrain(integral_left, -2000, 2000);
+      integral_left = constrain(integral_left, kPID_integral_min, kPID_integral_max);
 
-      speed_left = error_left * 2.1 + integral_left * 0.11 + (last_error_left - error_left) * 1.5;
+      speed_left = kP_left * error_left + kI_left * integral_left + kD_left * (last_error_left - error_left);
     }
 
     md.setM1Speed(speed_left);
