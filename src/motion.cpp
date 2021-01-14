@@ -7,9 +7,12 @@
 #include "board.h"
 #include "Axis.h"
 
+void setSpeedLeft(uint16_t speed, uint8_t fwd);
+void setSpeedRight(uint16_t speed, uint8_t fwd);
+
 DualVNH5019MotorShield md;
-Axis axis_left;
-Axis axis_right;
+Axis axis_left(setSpeedLeft);
+Axis axis_right(setSpeedRight);
 
 ISR(PCINT2_vect) {
   axis_left.encoderEdge();
@@ -17,6 +20,36 @@ ISR(PCINT2_vect) {
 
 ISR(PCINT0_vect) {
   axis_right.encoderEdge();
+}
+
+void setSpeedLeft(uint16_t speed, uint8_t fwd) {
+  OCR1A = speed;
+
+  if (speed < kMin_motor_threshold) {
+    M1_INA_PORT &= ~_BV(M1_INA_BIT);
+    M1_INB_PORT &= ~_BV(M1_INB_BIT);
+  } else if (fwd) {
+    M1_INA_PORT |= _BV(M1_INA_BIT);
+    M1_INB_PORT &= ~_BV(M1_INB_BIT);
+  } else {
+    M1_INA_PORT &= ~_BV(M1_INA_BIT);
+    M1_INB_PORT |= _BV(M1_INB_BIT);
+  }
+}
+
+void setSpeedRight(uint16_t speed, uint8_t fwd) {
+  OCR1B = speed;
+
+  if (speed < kMin_motor_threshold) {
+    M2_INA_PORT &= ~_BV(M2_INA_BIT);
+    M2_INB_PORT &= ~_BV(M2_INB_BIT);
+  } else if (fwd) {
+    M2_INA_PORT |= _BV(M2_INA_BIT);
+    M2_INB_PORT &= ~_BV(M2_INB_BIT);
+  } else {
+    M2_INA_PORT &= ~_BV(M2_INA_BIT);
+    M2_INB_PORT |= _BV(M2_INB_BIT);
+  }
 }
 
 const uint16_t kP_offset = 500;
@@ -36,7 +69,7 @@ int16_t controllerTrackLeft(uint32_t encoder_left, uint32_t encoder_right) {
   return power;
 }
 
-const uint16_t kP_straight = 255;
+const uint16_t kP_straight = 20;
 
 uint16_t controllerStraight(uint32_t encoder_left, uint32_t target) {
   // P controller aiming to make encoder_left track target
@@ -61,8 +94,8 @@ ISR(TIMER2_COMPA_vect) {
   uint16_t base_power = controllerStraight(encoder_left, 5000);
   int16_t correction = controllerTrackLeft(encoder_left, encoder_right);
 
-  md.setM1Speed(base_power - correction);
-  md.setM2Speed(-(base_power + correction));
+  axis_left.setTargetSpeed(base_power - correction);
+  axis_right.setTargetSpeed(-(base_power + correction));
 
   Serial.print("SYNC");
   Serial.write((char *) &encoder_left, 4);

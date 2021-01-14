@@ -16,4 +16,14 @@
 #define TIME_PORT PORTC
 #define TIME_BIT 1
 
+#define M1_INA_PORT PORTD
+#define M1_INB_PORT PORTD
+#define M1_INA_BIT 2
+#define M1_INB_BIT 4
+
+#define M2_INA_PORT PORTD
+#define M2_INB_PORT PORTB
+#define M2_INA_BIT 7
+#define M2_INB_BIT 0
+
 #endif
