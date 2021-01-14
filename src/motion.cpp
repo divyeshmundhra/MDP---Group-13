@@ -35,11 +35,10 @@ ISR(TIMER2_COMPA_vect) {
   int16_t _width_right = axis_right.getPulseWidth();
   sei();
 
-  Serial.print("START");
+  Serial.print("SYNC");
   Serial.write((char *) &_power_left, 2);
   Serial.write((char *) &_width_left, 2);
   Serial.write((char *) &_width_right, 2);
-  Serial.println();
 }
 
 void setup_motion() {
