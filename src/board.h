@@ -9,12 +9,7 @@
 #define PIN_ENCODER_RIGHT1 PCINT3
 #define PIN_ENCODER_RIGHT2 PCINT5
 
-#define PIN_MD_EN 6
-#define PIN_SW 14
-
-#define TIME_DDR DDRC
-#define TIME_PORT PORTC
-#define TIME_BIT 1
+#define PIN_SW 19
 
 #define M1_INA_PORT PORTD
 #define M1_INB_PORT PORTD

@@ -4,7 +4,6 @@
 #include "motion.h"
 
 void setup() {
-  TIME_DDR |= _BV(TIME_BIT);
   setup_motion();
 
   sei();

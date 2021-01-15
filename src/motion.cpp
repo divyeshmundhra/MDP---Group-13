@@ -81,6 +81,8 @@ uint16_t controllerStraight(uint32_t encoder_left, uint32_t target) {
   return (kP_straight * error) >> 8;
 }
 
+uint16_t target = 0;
+
 // triggers at 100Hz
 ISR(TIMER2_COMPA_vect) {
   // reset timer counter
@@ -91,7 +93,7 @@ ISR(TIMER2_COMPA_vect) {
   uint32_t encoder_right = axis_right.getEncoderCount();
   sei();
 
-  uint16_t base_power = controllerStraight(encoder_left, 5000);
+  uint16_t base_power = controllerStraight(encoder_left, target);
   int16_t correction = controllerTrackLeft(encoder_left, encoder_right);
 
   axis_left.setTargetSpeed(base_power - correction);
@@ -129,8 +131,6 @@ void setup_motion() {
 void loop_motion() {
   if (!digitalRead(PIN_SW)) {
     delay(1000);
-    pinMode(PIN_MD_EN, INPUT_PULLUP);
-  } else {
-    // pinMode(PIN_MD_EN, INPUT);
+    target = 5000;
   }
 }
