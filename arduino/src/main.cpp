@@ -2,9 +2,11 @@
 
 #include "board.h"
 #include "motion.h"
+#include "sensors.h"
 
 void setup() {
-  setup_motion();
+  // setup_motion();
+  setup_sensors();
 
   sei();
 
@@ -12,5 +14,6 @@ void setup() {
 }
 
 void loop() {
-  loop_motion();
+  // loop_motion();
+  loop_sensors();
 }
