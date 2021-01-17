@@ -62,10 +62,11 @@ int16_t controllerTrackLeft(uint32_t encoder_left, uint32_t encoder_right) {
   static int16_t integral = 0;
   static int16_t last_error = 0;
   int32_t error = encoder_left - encoder_right;
-  int16_t power = (kP_offset * error + kI_offset * integral + kD_offset * (last_error - error)) >> 8;
-  integral = constrain(integral + error, kPID_integral_min, kPID_integral_max);
-  last_error = error;
 
+  integral = constrain(integral + error, kPID_integral_min, kPID_integral_max);
+  int16_t power = (kP_offset * error + kI_offset * integral + kD_offset * (last_error - error)) >> 8;
+
+  last_error = error;
   return power;
 }
 
