@@ -85,6 +85,9 @@ static state_t state = IDLE;
 static motion_direction_t direction;
 static uint32_t target_ticks = 0;
 
+volatile uint16_t base_power = 0;
+volatile int16_t correction = 0;
+
 // triggers at 100Hz
 ISR(TIMER2_COMPA_vect) {
   // reset timer counter
@@ -100,8 +103,8 @@ ISR(TIMER2_COMPA_vect) {
   sei();
 
   if (direction == FORWARD) {
-    uint16_t base_power = controllerStraight(encoder_left, target_ticks);
-    int16_t correction = controllerTrackLeft(encoder_left, encoder_right);
+    base_power = controllerStraight(encoder_left, target_ticks);
+    correction = controllerTrackLeft(encoder_left, encoder_right);
 
     if (base_power == 0 && correction > -10 && correction < 10) {
       Serial.println("done");
@@ -113,15 +116,7 @@ ISR(TIMER2_COMPA_vect) {
 
     axis_left.setTargetSpeed(power_left);
     axis_right.setTargetSpeed(power_right);
-    Serial.print(encoder_left);
-    Serial.print(", ");
-    Serial.println(target_ticks);
   }
-
-  // Serial.print("SYNC");
-  // Serial.write((char *) &encoder_left, 4);
-  // Serial.write((char *) &encoder_right, 4);
-  // Serial.write((char *) &base_power, 2);
 }
 
 void setup_motion() {
@@ -173,5 +168,29 @@ void loop_motion() {
     if (state == IDLE) {
       Serial.println("done");
     }
+  }
+
+  static uint32_t last_print = 0;
+  uint32_t cur_time = millis();
+
+  if ((cur_time - last_print) > 10) {
+    cli();
+    uint32_t encoder_left = axis_left.getEncoderCount();
+    uint32_t encoder_right = axis_right.getEncoderCount();
+    int16_t speed_left = axis_left.getCurSpeed();
+    int16_t speed_right = axis_right.getCurSpeed();
+    int16_t _base_power = base_power;
+    int16_t _correction = correction;
+    sei();
+    Serial.print("SYNC");
+    Serial.write((char *) &encoder_left, 4);
+    Serial.write((char *) &encoder_right, 4);
+    Serial.write((char *) &speed_left, 2);
+    Serial.write((char *) &speed_right, 2);
+    Serial.write((char *) &_base_power, 2);
+    Serial.write((char *) &_correction, 2);
+    Serial.println();
+
+    last_print = cur_time;
   }
 }
