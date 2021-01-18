@@ -10,9 +10,14 @@
 void setSpeedLeft(uint16_t speed, uint8_t fwd);
 void setSpeedRight(uint16_t speed, uint8_t fwd);
 
-DualVNH5019MotorShield md;
-Axis axis_left(setSpeedLeft);
-Axis axis_right(setSpeedRight);
+static DualVNH5019MotorShield md;
+static Axis axis_left(setSpeedLeft);
+static Axis axis_right(setSpeedRight);
+
+typedef enum {
+  IDLE,
+  MOVING
+} state_t;
 
 ISR(PCINT2_vect) {
   axis_left.encoderEdge();
@@ -82,28 +87,47 @@ uint16_t controllerStraight(uint32_t encoder_left, uint32_t target) {
   return (kP_straight * error) >> 8;
 }
 
-uint16_t target = 0;
+static state_t state = IDLE;
+static motion_direction_t direction;
+static uint32_t target_ticks = 0;
 
 // triggers at 100Hz
 ISR(TIMER2_COMPA_vect) {
   // reset timer counter
   TCNT2 = 0;
 
+  if (state == IDLE) {
+    return;
+  }
+
   cli();
   uint32_t encoder_left = axis_left.getEncoderCount();
   uint32_t encoder_right = axis_right.getEncoderCount();
   sei();
 
-  uint16_t base_power = controllerStraight(encoder_left, target);
-  int16_t correction = controllerTrackLeft(encoder_left, encoder_right);
+  if (direction == FORWARD) {
+    uint16_t base_power = controllerStraight(encoder_left, target_ticks);
+    int16_t correction = controllerTrackLeft(encoder_left, encoder_right);
 
-  axis_left.setTargetSpeed(base_power - correction);
-  axis_right.setTargetSpeed(-(base_power + correction));
+    if (base_power == 0 && correction > -10 && correction < 10) {
+      Serial.println("done");
+      state = IDLE;
+    }
 
-  Serial.print("SYNC");
-  Serial.write((char *) &encoder_left, 4);
-  Serial.write((char *) &encoder_right, 4);
-  Serial.write((char *) &base_power, 2);
+    int16_t power_left = base_power - correction;
+    int16_t power_right = -(base_power + correction);
+
+    axis_left.setTargetSpeed(power_left);
+    axis_right.setTargetSpeed(power_right);
+    Serial.print(encoder_left);
+    Serial.print(", ");
+    Serial.println(target_ticks);
+  }
+
+  // Serial.print("SYNC");
+  // Serial.write((char *) &encoder_left, 4);
+  // Serial.write((char *) &encoder_right, 4);
+  // Serial.write((char *) &base_power, 2);
 }
 
 void setup_motion() {
@@ -127,5 +151,33 @@ void setup_motion() {
   md.init();
 }
 
+void start_motion(motion_direction_t _direction, uint32_t distance) {
+  if (state != IDLE) {
+    Serial.println("Cannot start motion, movement in progress");
+    return;
+  }
+
+  if (_direction == FORWARD) {
+    cli();
+    state = MOVING;
+    direction = _direction;
+    target_ticks = axis_left.getEncoderCount() + distance;
+    Serial.print(target_ticks);
+    Serial.print(", ");
+    Serial.print(distance);
+    Serial.println("start forward");
+    sei();
+  } else {
+    Serial.println("Not implemented");
+  }
+}
+
 void loop_motion() {
+  static state_t pState = IDLE;
+
+  if (pState != state) {
+    if (state == IDLE) {
+      Serial.println("done");
+    }
+  }
 }

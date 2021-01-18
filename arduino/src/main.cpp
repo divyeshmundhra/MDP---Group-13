@@ -3,9 +3,10 @@
 #include "board.h"
 #include "motion.h"
 #include "sensors.h"
+#include "parser.h"
 
 void setup() {
-  // setup_motion();
+  setup_motion();
   setup_sensors();
 
   sei();
@@ -14,6 +15,7 @@ void setup() {
 }
 
 void loop() {
-  // loop_motion();
-  loop_sensors();
+  loop_motion();
+  // loop_sensors();
+  loop_parser();
 }

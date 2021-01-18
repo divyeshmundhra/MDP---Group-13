@@ -16,4 +16,8 @@ const uint8_t kMax_axis_decel = 64;
 // [0-255], lower for more filtering
 const uint8_t kSensor_filter_alpha = 4;
 
+// parser buffer size
+// determines max length of command that can be sent
+const uint8_t kParser_buf_size = 16;
+
 #endif
