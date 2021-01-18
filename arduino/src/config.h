@@ -1,6 +1,8 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#include <stdint.h>
+
 // min/max of integral state
 const int16_t kPID_integral_min = -2000;
 const int16_t kPID_integral_max = 2000;
@@ -19,5 +21,13 @@ const uint8_t kSensor_filter_alpha = 4;
 // parser buffer size
 // determines max length of command that can be sent
 const uint8_t kParser_buf_size = 16;
+
+// controller parameters for offset (minimise error between encoder readings) controller
+extern uint16_t kP_offset;
+extern uint16_t kI_offset;
+extern uint16_t kD_offset;
+
+// controller parameters for move-straight controller
+extern uint16_t kP_straight;
 
 #endif

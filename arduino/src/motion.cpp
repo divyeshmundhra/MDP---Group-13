@@ -57,10 +57,6 @@ void setSpeedRight(uint16_t speed, uint8_t fwd) {
   }
 }
 
-const uint16_t kP_offset = 500;
-const uint16_t kI_offset = 0;
-const uint16_t kD_offset = 0;
-
 int16_t controllerTrackLeft(uint32_t encoder_left, uint32_t encoder_right) {
   // PID controller aiming to make encoder_right track encoder_left
   // returns int16_t: positive - turn left, negative - turn right
@@ -74,8 +70,6 @@ int16_t controllerTrackLeft(uint32_t encoder_left, uint32_t encoder_right) {
   last_error = error;
   return power;
 }
-
-const uint16_t kP_straight = 20;
 
 uint16_t controllerStraight(uint32_t encoder_left, uint32_t target) {
   // P controller aiming to make encoder_left track target

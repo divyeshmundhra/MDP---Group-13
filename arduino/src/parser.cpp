@@ -18,6 +18,14 @@ static bool parse_buf() {
 
   if (cmd == 'F') {
     start_motion(FORWARD, val);
+  } else if (cmd == 'a') {
+    kP_offset = val;
+  } else if (cmd == 'b') {
+    kI_offset = val;
+  } else if (cmd == 'c') {
+    kD_offset = val;
+  } else if (cmd == 'd') {
+    kP_straight = val;
   } else {
     Serial.println("Unknown cmd");
   }
