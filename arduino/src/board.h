@@ -9,8 +9,6 @@
 #define PIN_ENCODER_RIGHT1 PCINT3
 #define PIN_ENCODER_RIGHT2 PCINT5
 
-#define PIN_SW 19
-
 #define M1_INA_PORT PORTD
 #define M1_INB_PORT PORTD
 #define M1_INA_BIT 2

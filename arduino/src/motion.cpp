@@ -125,13 +125,7 @@ void setup_motion() {
   TIMSK2 |= _BV(OCIE2A);                       // enable interrupt on compare match A
 
   md.init();
-
-  pinMode(PIN_SW, INPUT_PULLUP);
 }
 
 void loop_motion() {
-  if (!digitalRead(PIN_SW)) {
-    delay(1000);
-    target = 5000;
-  }
 }
