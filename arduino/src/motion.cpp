@@ -12,7 +12,7 @@ void setSpeedRight(uint16_t speed, uint8_t fwd);
 
 static DualVNH5019MotorShield md;
 static Axis axis_left(setSpeedLeft);
-static Axis axis_right(setSpeedRight);
+static Axis axis_right(setSpeedRight, true);
 
 typedef enum {
   IDLE,
@@ -112,7 +112,7 @@ ISR(TIMER2_COMPA_vect) {
     }
 
     int16_t power_left = base_power - correction;
-    int16_t power_right = -(base_power + correction);
+    int16_t power_right = base_power + correction;
 
     axis_left.setTargetSpeed(power_left);
     axis_right.setTargetSpeed(power_right);

@@ -17,8 +17,8 @@ void Axis::updateSpeed() {
   }
 
   if (_cur_speed > 0) {
-    _setSpeed(_cur_speed, true);
+    _setSpeed(_cur_speed, !_reverse);
   } else {
-    _setSpeed(-_cur_speed, false);
+    _setSpeed(-_cur_speed, _reverse);
   }
 }
