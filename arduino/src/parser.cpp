@@ -26,6 +26,8 @@ static bool parse_buf() {
     kD_offset = val;
   } else if (cmd == 'd') {
     kP_straight = val;
+  } else if (cmd == 'e') {
+    kI_straight = val;
   } else {
     Serial.println("Unknown cmd");
   }

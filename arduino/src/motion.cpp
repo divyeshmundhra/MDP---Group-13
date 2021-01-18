@@ -58,13 +58,13 @@ void setSpeedRight(uint16_t speed, uint8_t fwd) {
 }
 
 int16_t controllerTrackLeft(uint32_t encoder_left, uint32_t encoder_right) {
-  // PID controller aiming to make encoder_right track encoder_left
+  // controller aiming to make encoder_right track encoder_left
   // returns int16_t: positive - turn left, negative - turn right
   static int16_t integral = 0;
   static int16_t last_error = 0;
   int32_t error = encoder_left - encoder_right;
 
-  integral = constrain(integral + error, kPID_integral_min, kPID_integral_max);
+  integral = constrain(integral + error, kTL_integral_min, kTL_integral_max);
   int16_t power = (kP_offset * error + kI_offset * integral + kD_offset * (last_error - error)) >> 8;
 
   last_error = error;
@@ -72,13 +72,16 @@ int16_t controllerTrackLeft(uint32_t encoder_left, uint32_t encoder_right) {
 }
 
 uint16_t controllerStraight(uint32_t encoder_left, uint32_t target) {
-  // P controller aiming to make encoder_left track target
+  // controller aiming to make encoder_left track target
+  static int16_t integral = 0;
+
   if (encoder_left >= target) {
     return 0;
   }
 
   uint32_t error = target - encoder_left;
-  return (kP_straight * error) >> 8;
+  integral = constrain(integral + error, kTL_integral_min, kTL_integral_max);
+  return (kP_straight * error + kI_straight * integral) >> 8;
 }
 
 static state_t state = IDLE;
@@ -94,6 +97,8 @@ ISR(TIMER2_COMPA_vect) {
   TCNT2 = 0;
 
   if (state == IDLE) {
+    axis_left.setTargetSpeed(0);
+    axis_right.setTargetSpeed(0);
     return;
   }
 
