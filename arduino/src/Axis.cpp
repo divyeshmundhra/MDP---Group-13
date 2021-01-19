@@ -3,10 +3,6 @@
 #include "Axis.h"
 #include "config.h"
 
-void Axis::encoderEdge() {
-  _encoder_count ++;
-}
-
 void Axis::updateSpeed() {
   if (_target_speed > (_cur_speed + kMax_axis_accel)) {
     _cur_speed += kMax_axis_accel;

@@ -20,11 +20,11 @@ typedef enum {
 } state_t;
 
 ISR(PCINT2_vect) {
-  axis_left.encoderEdge();
+  axis_left.encoderEdge(E1_FLUSH_RIGHT);
 }
 
 ISR(PCINT0_vect) {
-  axis_right.encoderEdge();
+  axis_right.encoderEdge(E2_FLUSH_RIGHT);
 }
 
 void setSpeedLeft(uint16_t speed, uint8_t fwd) {
@@ -132,12 +132,12 @@ ISR(TIMER2_COMPA_vect) {
 
 void setup_motion() {
   // PCI2 (left encoder):
-  PCMSK2 |=  _BV(PIN_ENCODER_LEFT1) | _BV(PIN_ENCODER_LEFT2); // enable interrupt sources
+  PCMSK2 |=  _BV(E1A_PCINT) | _BV(E1B_PCINT); // enable interrupt sources
   PCIFR  &= ~_BV(PCIF2);                                       // clear interrupt flag of PCI2
   PCICR  |=  _BV(PCIE2);                                       // enable PCI2
 
   // PCI0 (right encoder):
-  PCMSK0 |=  _BV(PIN_ENCODER_RIGHT1) | _BV(PIN_ENCODER_RIGHT2); // enable interrupt sources
+  PCMSK0 |=  _BV(E2A_PCINT) | _BV(E2B_PCINT); // enable interrupt sources
   PCIFR  &= ~_BV(PCIF0);                                         // clear interrupt flag of PCI0
   PCICR  |=  _BV(PCIE0);                                         // enable PCI0
 
@@ -186,8 +186,8 @@ void loop_motion() {
 
   if ((cur_time - last_print) > 10) {
     cli();
-    uint32_t encoder_left = axis_left.getEncoderCount();
-    uint32_t encoder_right = axis_right.getEncoderCount();
+    int32_t encoder_left = axis_left.getEncoderCount();
+    int32_t encoder_right = axis_right.getEncoderCount();
     int16_t speed_left = axis_left.getCurSpeed();
     int16_t speed_right = axis_right.getCurSpeed();
     int16_t _base_power = base_power;
