@@ -81,7 +81,13 @@ uint16_t controllerStraight(uint32_t encoder_left, uint32_t target) {
 
   uint32_t error = target - encoder_left;
   integral = constrain(integral + error, kTL_integral_min, kTL_integral_max);
-  return (kP_straight * error + kI_straight * integral) >> 8;
+  uint16_t power = ((uint32_t) kP_straight * error + kI_straight * integral) >> 8;
+
+  if (power > kMS_max_output) {
+    return kMS_max_output;
+  }
+
+  return power;
 }
 
 static state_t state = IDLE;

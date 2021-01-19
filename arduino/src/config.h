@@ -33,4 +33,6 @@ extern uint16_t kI_straight;
 const int16_t kMS_integral_min = -2000;
 const int16_t kMS_integral_max = 2000;
 
+const int16_t kMS_max_output = 400;
+
 #endif
