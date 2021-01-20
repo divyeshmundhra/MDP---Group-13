@@ -161,8 +161,8 @@ int16_t controllerStraight(uint32_t encoder_left, uint32_t target) {
   static int16_t last_error = 0;
 
   int32_t error = target - encoder_left;
-  integral = constrain(integral + error, kMS_integral_min, kMS_integral_max);
-  int16_t power = ((int32_t) kP_straight * error + kI_straight * integral + kD_straight * (last_error - error)) >> 8;
+  integral = constrain((int32_t) integral + error, kMS_integral_min, kMS_integral_max);
+  int16_t power = ((int32_t) kP_straight * error + (int32_t) kI_straight * integral + (int32_t) kD_straight * (last_error - error)) >> 8;
 
   last_error = error;
 
@@ -179,7 +179,7 @@ static state_t state = IDLE;
 static motion_direction_t direction;
 static uint32_t target_ticks = 0;
 
-volatile uint16_t base_power = 0;
+volatile int16_t base_power = 0;
 volatile int16_t correction = 0;
 
 // triggers at 100Hz
@@ -293,6 +293,8 @@ void loop_motion() {
     int32_t _encoder_right = encoder_right;
     int16_t speed_left = axis_left.getSpeed();
     int16_t speed_right = axis_right.getSpeed();
+    int16_t _base_power = base_power;
+    int16_t _correction = correction;
     sei();
     Serial.print("SYNC");
     Serial.write((char *) &_encoder_left, 4);
