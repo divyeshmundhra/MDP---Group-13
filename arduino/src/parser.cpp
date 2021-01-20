@@ -24,11 +24,11 @@ static bool parse_buf() {
     kI_offset = val;
   } else if (cmd == 'c') {
     kD_offset = val;
-  } else if (cmd == 'd') {
+  } else if (cmd == 'p') {
     kP_straight = val;
-  } else if (cmd == 'e') {
+  } else if (cmd == 'i') {
     kI_straight = val;
-  } else if (cmd == 'f') {
+  } else if (cmd == 'd') {
     kD_straight = val;
   } else {
     Serial.println("Unknown cmd");

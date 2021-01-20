@@ -21,17 +21,17 @@ const int8_t kMax_encoder_error = 50;
 const uint8_t kParser_buf_size = 16;
 
 // controller parameters for offset (minimise error between encoder readings) controller
-extern uint16_t kP_offset;
-extern uint16_t kI_offset;
-extern uint16_t kD_offset;
+extern int16_t kP_offset;
+extern int16_t kI_offset;
+extern int16_t kD_offset;
 
 const int16_t kTL_integral_min = -2000;
 const int16_t kTL_integral_max = 2000;
 
 // controller parameters for move-straight controller
-extern uint16_t kP_straight;
-extern uint16_t kI_straight;
-extern uint16_t kD_straight;
+extern int16_t kP_straight;
+extern int16_t kI_straight;
+extern int16_t kD_straight;
 
 const int16_t kMS_integral_min = -400;
 const int16_t kMS_integral_max = 400;
