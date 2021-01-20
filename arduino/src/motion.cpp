@@ -31,9 +31,9 @@ ISR(PCINT2_vect) {
     "lsl %[state]                    \n\t" // state << 2
     "lsl %[state]                    \n\t"
     "andi %[state], 0x0C             \n\t"
-    "sbic %[in], %[encA]                   \n\t" // if encoder A is set,
+    "sbic %[in], %[encA]             \n\t" // if encoder A is set,
     "sbr %[state], (1<<0)            \n\t" //   set bit 0 of state
-    "sbic %[in], %[encB]                   \n\t" // if encoder B is set, 
+    "sbic %[in], %[encB]             \n\t" // if encoder B is set, 
     "sbr %[state], (1<<1)            \n\t" //   set bit 1 of state
     // use state to retrieve from LUT
     "add %A[lut], %[state]           \n\t" // increment lut by state ie retrieve lut[state]
@@ -75,9 +75,9 @@ ISR(PCINT0_vect) {
     "lsl %[state]                    \n\t" // state << 2
     "lsl %[state]                    \n\t"
     "andi %[state], 0x0C             \n\t"
-    "sbic %[in], %[encA]                   \n\t" // if encoder A is set,
+    "sbic %[in], %[encA]             \n\t" // if encoder A is set,
     "sbr %[state], (1<<0)            \n\t" //   set bit 0 of state
-    "sbic %[in], %[encB]                   \n\t" // if encoder B is set, 
+    "sbic %[in], %[encB]             \n\t" // if encoder B is set, 
     "sbr %[state], (1<<1)            \n\t" //   set bit 1 of state
     // use state to retrieve from LUT
     "add %A[lut], %[state]           \n\t" // increment lut by state ie retrieve lut[state]
