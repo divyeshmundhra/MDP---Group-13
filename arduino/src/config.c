@@ -6,3 +6,4 @@ uint16_t kD_offset = 0;
 
 uint16_t kP_straight = 150;
 uint16_t kI_straight = 5;
+uint16_t kD_straight = 200;

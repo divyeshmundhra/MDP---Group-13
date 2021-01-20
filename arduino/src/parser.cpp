@@ -28,6 +28,8 @@ static bool parse_buf() {
     kP_straight = val;
   } else if (cmd == 'e') {
     kI_straight = val;
+  } else if (cmd == 'f') {
+    kD_straight = val;
   } else {
     Serial.println("Unknown cmd");
   }

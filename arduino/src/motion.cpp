@@ -158,10 +158,13 @@ int16_t controllerTrackLeft(uint32_t encoder_left, uint32_t encoder_right) {
 int16_t controllerStraight(uint32_t encoder_left, uint32_t target) {
   // controller aiming to make encoder_left track target
   static int16_t integral = 0;
+  static int16_t last_error = 0;
 
   int32_t error = target - encoder_left;
   integral = constrain(integral + error, kMS_integral_min, kMS_integral_max);
-  int16_t power = ((int32_t) kP_straight * error + kI_straight * integral) >> 8;
+  int16_t power = ((int32_t) kP_straight * error + kI_straight * integral + kD_straight * (last_error - error)) >> 8;
+
+  last_error = error;
 
   if (power > kMS_max_output) {
     return kMS_max_output;

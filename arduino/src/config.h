@@ -29,6 +29,7 @@ const int16_t kTL_integral_max = 2000;
 // controller parameters for move-straight controller
 extern uint16_t kP_straight;
 extern uint16_t kI_straight;
+extern uint16_t kD_straight;
 
 const int16_t kMS_integral_min = -2000;
 const int16_t kMS_integral_max = 2000;
