@@ -2,13 +2,27 @@
 #include "sensors.h"
 #include "config.h"
 
-volatile uint16_t adc_val = 0;
+volatile uint16_t adc_val[6] = {0};
 
 ISR(ADC_vect) {
-  uint16_t val = ADCL;
-  val |= ADCH << 8;
+  // channel represents the channel of this conversion (the trigger for this ISR)
+  static uint8_t channel = 0;
+  // represents the channel of the next conversion
+  static uint8_t next_channel = 0;
 
-  adc_val = ((uint32_t) kSensor_filter_alpha * val + (uint32_t) (255 - kSensor_filter_alpha) * adc_val) >> 8;
+  uint16_t new_val = ADCL;
+  new_val |= ADCH << 8;
+
+  adc_val[channel] = ((uint32_t) kSensor_filter_alpha * new_val + (uint32_t) (255 - kSensor_filter_alpha) * adc_val[channel]) >> 8;
+
+  channel = next_channel;
+  next_channel ++;
+  if (next_channel >= 6) {
+    next_channel = 0;
+  }
+
+  ADMUX = (ADMUX & 0xF0) | next_channel; // select next channel
+  ADCSRA |= _BV(ADSC);              // start conversion
 }
 
 void setup_sensors() {
@@ -24,11 +38,13 @@ void setup_sensors() {
 }
 
 void loop_sensors() {
-  cli();
-  uint16_t _adc_val = adc_val;
-  sei();
+  // Serial.print("SYNC");
+  // cli();
+  // for(uint8_t i = 0; i < 6; i++) {
+  //   Serial.write((char *) &adc_val[i], 2);
+  // }
+  // sei();
+  // Serial.println();
 
-  Serial.print("SYNC");
-  Serial.write((char *) &_adc_val, 2);
-  delay(10);
+  // delay(10);
 }
