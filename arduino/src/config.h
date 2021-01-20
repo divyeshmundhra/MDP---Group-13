@@ -34,5 +34,6 @@ const int16_t kMS_integral_min = -2000;
 const int16_t kMS_integral_max = 2000;
 
 const int16_t kMS_max_output = 400;
+const int16_t kMS_min_output = -400;
 
 #endif

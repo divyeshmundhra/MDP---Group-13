@@ -11,20 +11,104 @@ void setSpeedLeft(uint16_t speed, uint8_t fwd);
 void setSpeedRight(uint16_t speed, uint8_t fwd);
 
 static DualVNH5019MotorShield md;
-static Axis axis_left(setSpeedLeft);
-static Axis axis_right(setSpeedRight, true);
+static Axis axis_left(setSpeedLeft, true);
+static Axis axis_right(setSpeedRight);
 
 typedef enum {
   IDLE,
   MOVING
 } state_t;
 
+volatile int32_t encoder_left = 0;
+volatile int32_t encoder_right = 0;
+
 ISR(PCINT2_vect) {
-  axis_left.encoderEdge(E1_FLUSH_RIGHT);
+  // http://makeatronics.blogspot.com/2013/02/efficiently-reading-quadrature-with.html
+  const int8_t _kEncoder_LUT[16] = {0, -1, 1, 0, 1, 0, 0, -1, -1, 0, 0, 1, 0, 1, -1, 0};
+  static uint8_t state = 0;
+  asm volatile(
+    // update encoder state
+    "lsl %[state]                    \n\t" // state << 2
+    "lsl %[state]                    \n\t"
+    "andi %[state], 0x0C             \n\t"
+    "sbic %[in], %[encA]                   \n\t" // if encoder A is set,
+    "sbr %[state], (1<<0)            \n\t" //   set bit 0 of state
+    "sbic %[in], %[encB]                   \n\t" // if encoder B is set, 
+    "sbr %[state], (1<<1)            \n\t" //   set bit 1 of state
+    // use state to retrieve from LUT
+    "add %A[lut], %[state]           \n\t" // increment lut by state ie retrieve lut[state]
+    "adc %B[lut], __zero_reg__       \n\t"
+    "ld __tmp_reg__, Z               \n\t"
+    /*
+      add lut[state] to count
+      - at this stage, __tmp_reg__ will contain either 0, 1, or -1 (0xFF)
+      - adding 0 or 1 is straight forward, but to add 0xFF to int32_t, need to sign extend
+        (ie add 0xFFFFFFFF)
+      - as a cheap hack, we're going to clear __tmp_reg__ if the highest bit of it is clear (ie non negative),
+        then add it to all the bytes of count. this allows us to continuously add __tmp_reg__ to all bytes to
+        handle both 0, 1 and -1 without using 3 more registers
+    */
+    "add %A[count], __tmp_reg__      \n\t"
+    "sbrs __tmp_reg__, 7             \n\t" // if highest bit is clear,
+    "eor __tmp_reg__, __tmp_reg__    \n\t" //   clear __tmp_reg__ so adding it later dosent do anything
+    "adc %B[count], __tmp_reg__      \n\t"
+    "adc %C[count], __tmp_reg__      \n\t"
+    "adc %D[count], __tmp_reg__      \n\t"
+    :
+      [state] "=d" (state), // has to go into upper register because ANDI and SBR only operate on upper
+      [count] "=w" (encoder_left)
+    :
+      "0" (state),
+      "1" (encoder_left),
+      [in] "I" (_SFR_IO_ADDR(E1_PIN)),
+      [encA] "I" (E1A_BIT),
+      [encB] "I" (E1B_BIT),
+      [lut] "z" (_kEncoder_LUT)
+  );
 }
 
 ISR(PCINT0_vect) {
-  axis_right.encoderEdge(E2_FLUSH_RIGHT);
+  const int8_t _kEncoder_LUT[16] = {0, 1, -1, 0, -1, 0, 0, 1, 1, 0, 0, -1, 0, -1, 1, 0};
+  static uint8_t state = 0;
+  asm volatile(
+    // update encoder state
+    "lsl %[state]                    \n\t" // state << 2
+    "lsl %[state]                    \n\t"
+    "andi %[state], 0x0C             \n\t"
+    "sbic %[in], %[encA]                   \n\t" // if encoder A is set,
+    "sbr %[state], (1<<0)            \n\t" //   set bit 0 of state
+    "sbic %[in], %[encB]                   \n\t" // if encoder B is set, 
+    "sbr %[state], (1<<1)            \n\t" //   set bit 1 of state
+    // use state to retrieve from LUT
+    "add %A[lut], %[state]           \n\t" // increment lut by state ie retrieve lut[state]
+    "adc %B[lut], __zero_reg__       \n\t"
+    "ld __tmp_reg__, Z               \n\t"
+    /*
+      add lut[state] to count
+      - at this stage, __tmp_reg__ will contain either 0, 1, or -1 (0xFF)
+      - adding 0 or 1 is straight forward, but to add 0xFF to int32_t, need to sign extend
+        (ie add 0xFFFFFFFF)
+      - as a cheap hack, we're going to clear __tmp_reg__ if the highest bit of it is clear (ie non negative),
+        then add it to all the bytes of count. this allows us to continuously add __tmp_reg__ to all bytes to
+        handle both 0, 1 and -1 without using 3 more registers
+    */
+    "add %A[count], __tmp_reg__      \n\t"
+    "sbrs __tmp_reg__, 7             \n\t" // if highest bit is clear,
+    "eor __tmp_reg__, __tmp_reg__    \n\t" //   clear __tmp_reg__ so adding it later dosent do anything
+    "adc %B[count], __tmp_reg__      \n\t"
+    "adc %C[count], __tmp_reg__      \n\t"
+    "adc %D[count], __tmp_reg__      \n\t"
+    :
+      [state] "=d" (state), // has to go into upper register because ANDI and SBR only operate on upper
+      [count] "=w" (encoder_right)
+    :
+      "0" (state),
+      "1" (encoder_right),
+      [in] "I" (_SFR_IO_ADDR(E2_PIN)),
+      [encA] "I" (E2A_BIT),
+      [encB] "I" (E2B_BIT),
+      [lut] "z" (_kEncoder_LUT)
+  );
 }
 
 void setSpeedLeft(uint16_t speed, uint8_t fwd) {
@@ -71,20 +155,18 @@ int16_t controllerTrackLeft(uint32_t encoder_left, uint32_t encoder_right) {
   return power;
 }
 
-uint16_t controllerStraight(uint32_t encoder_left, uint32_t target) {
+int16_t controllerStraight(uint32_t encoder_left, uint32_t target) {
   // controller aiming to make encoder_left track target
   static int16_t integral = 0;
 
-  if (encoder_left >= target) {
-    return 0;
-  }
-
-  uint32_t error = target - encoder_left;
-  integral = constrain(integral + error, kTL_integral_min, kTL_integral_max);
-  uint16_t power = ((uint32_t) kP_straight * error + kI_straight * integral) >> 8;
+  int32_t error = target - encoder_left;
+  integral = constrain(integral + error, kMS_integral_min, kMS_integral_max);
+  int16_t power = ((int32_t) kP_straight * error + kI_straight * integral) >> 8;
 
   if (power > kMS_max_output) {
     return kMS_max_output;
+  } else if (power < kMS_min_output) {
+    return kMS_min_output;
   }
 
   return power;
@@ -108,17 +190,11 @@ ISR(TIMER2_COMPA_vect) {
     return;
   }
 
-  cli();
-  uint32_t encoder_left = axis_left.getEncoderCount();
-  uint32_t encoder_right = axis_right.getEncoderCount();
-  sei();
-
   if (direction == FORWARD) {
     base_power = controllerStraight(encoder_left, target_ticks);
     correction = controllerTrackLeft(encoder_left, encoder_right);
 
     if (base_power == 0 && correction > -10 && correction < 10) {
-      Serial.println("done");
       state = IDLE;
     }
 
@@ -161,7 +237,7 @@ void start_motion(motion_direction_t _direction, uint32_t distance) {
     cli();
     state = MOVING;
     direction = _direction;
-    target_ticks = axis_left.getEncoderCount() + distance;
+    target_ticks = encoder_left + distance;
     Serial.print(target_ticks);
     Serial.print(", ");
     Serial.print(distance);
@@ -186,16 +262,16 @@ void loop_motion() {
 
   if ((cur_time - last_print) > 10) {
     cli();
-    int32_t encoder_left = axis_left.getEncoderCount();
-    int32_t encoder_right = axis_right.getEncoderCount();
+    int32_t _encoder_left = encoder_left;
+    int32_t _encoder_right = encoder_right;
     int16_t speed_left = axis_left.getCurSpeed();
     int16_t speed_right = axis_right.getCurSpeed();
     int16_t _base_power = base_power;
     int16_t _correction = correction;
     sei();
     Serial.print("SYNC");
-    Serial.write((char *) &encoder_left, 4);
-    Serial.write((char *) &encoder_right, 4);
+    Serial.write((char *) &_encoder_left, 4);
+    Serial.write((char *) &_encoder_right, 4);
     Serial.write((char *) &speed_left, 2);
     Serial.write((char *) &speed_right, 2);
     Serial.write((char *) &_base_power, 2);
