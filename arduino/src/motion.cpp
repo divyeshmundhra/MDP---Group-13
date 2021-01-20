@@ -187,19 +187,43 @@ ISR(TIMER2_COMPA_vect) {
   // reset timer counter
   TCNT2 = 0;
 
+  static int32_t pEncoder_left = 0;
+  static int32_t pEncoder_right = 0;
+  static bool moved = false;
+
   if (state == IDLE) {
     axis_left.setTargetSpeed(0);
     axis_right.setTargetSpeed(0);
     return;
   }
 
+  int32_t delta_left = encoder_left - pEncoder_left;
+  int32_t delta_right = encoder_right - pEncoder_right;
+
+  // whether the encoder has changed from the last update
+  bool has_delta = (delta_left < -kEncoder_move_threshold) || (delta_left > kEncoder_move_threshold) ||
+                  (delta_right < -kEncoder_move_threshold) || (delta_right > kEncoder_move_threshold);
+  if (moved && !has_delta) {
+    int32_t diff_left = encoder_left - target_ticks;
+    if (
+      diff_left > -kMax_encoder_error && diff_left < kMax_encoder_error
+    ) {
+      Serial.println("move done");
+      state = IDLE;
+      moved = false;
+      return;
+    }
+  } else if (!moved && has_delta) {
+    Serial.println("move start");
+    moved = true;
+  }
+
+  pEncoder_left = encoder_left;
+  pEncoder_right = encoder_right;
+
   if (direction == FORWARD) {
     base_power = controllerStraight(encoder_left, target_ticks);
     correction = controllerTrackLeft(encoder_left, encoder_right);
-
-    if (base_power == 0 && correction > -10 && correction < 10) {
-      state = IDLE;
-    }
 
     int16_t power_left = base_power - correction;
     int16_t power_right = base_power + correction;

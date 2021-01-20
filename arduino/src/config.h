@@ -4,15 +4,21 @@
 #include <stdint.h>
 
 // minimum power to command motor, anything lower will have the motor braked
-const uint8_t kMin_motor_threshold = 32;
+const uint8_t kMin_motor_threshold = 16;
 
 // max accel/decel
 const uint8_t kMax_axis_accel = 32;
-const uint8_t kMax_axis_decel = 64;
+const uint8_t kMax_axis_decel = 128;
 
 // alpha for exponential filter used to smooth sensor data
 // [0-255], lower for more filtering
 const uint8_t kSensor_filter_alpha = 4;
+
+// minimum encoder delta for the robot to be considered moving
+const int32_t kEncoder_move_threshold = 10;
+
+// maximum error for move to be completed
+const int8_t kMax_encoder_error = 50;
 
 // parser buffer size
 // determines max length of command that can be sent
@@ -31,8 +37,8 @@ extern uint16_t kP_straight;
 extern uint16_t kI_straight;
 extern uint16_t kD_straight;
 
-const int16_t kMS_integral_min = -2000;
-const int16_t kMS_integral_max = 2000;
+const int16_t kMS_integral_min = -5000;
+const int16_t kMS_integral_max = 5000;
 
 const int16_t kMS_max_output = 400;
 const int16_t kMS_min_output = -400;
