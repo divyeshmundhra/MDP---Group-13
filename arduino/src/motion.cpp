@@ -192,8 +192,8 @@ ISR(TIMER2_COMPA_vect) {
   static bool moved = false;
 
   if (state == IDLE) {
-    axis_left.setTargetSpeed(0);
-    axis_right.setTargetSpeed(0);
+    axis_left.setSpeed(0);
+    axis_right.setSpeed(0);
     return;
   }
 
@@ -228,8 +228,8 @@ ISR(TIMER2_COMPA_vect) {
     int16_t power_left = base_power - correction;
     int16_t power_right = base_power + correction;
 
-    axis_left.setTargetSpeed(power_left);
-    axis_right.setTargetSpeed(power_right);
+    axis_left.setSpeed(power_left);
+    axis_right.setSpeed(power_right);
   }
 }
 
@@ -291,10 +291,8 @@ void loop_motion() {
     cli();
     int32_t _encoder_left = encoder_left;
     int32_t _encoder_right = encoder_right;
-    int16_t speed_left = axis_left.getCurSpeed();
-    int16_t speed_right = axis_right.getCurSpeed();
-    int16_t _base_power = base_power;
-    int16_t _correction = correction;
+    int16_t speed_left = axis_left.getSpeed();
+    int16_t speed_right = axis_right.getSpeed();
     sei();
     Serial.print("SYNC");
     Serial.write((char *) &_encoder_left, 4);
