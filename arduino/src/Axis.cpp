@@ -7,8 +7,8 @@ void Axis::setSpeed(int16_t speed) {
   _speed = speed;
 
   if (_speed > 0) {
-    _setSpeed(_speed, !_reverse);
+    _setSpeed(_speed, _invert ^ _reverse);
   } else {
-    _setSpeed(-_speed, _reverse);
+    _setSpeed(-_speed, !(_invert ^ _reverse));
   }
 }

@@ -7,8 +7,8 @@
 #include "board.h"
 #include "Axis.h"
 
-void setSpeedLeft(uint16_t speed, uint8_t fwd);
-void setSpeedRight(uint16_t speed, uint8_t fwd);
+void setSpeedLeft(uint16_t speed, bool reverse);
+void setSpeedRight(uint16_t speed, bool reverse);
 
 static DualVNH5019MotorShield md;
 static Axis axis_left(setSpeedLeft, true);
@@ -19,8 +19,8 @@ typedef enum {
   MOVING
 } state_t;
 
-volatile int32_t encoder_left = 0;
-volatile int32_t encoder_right = 0;
+volatile int32_t _encoder_left = 0;
+volatile int32_t _encoder_right = 0;
 
 ISR(PCINT2_vect) {
   // http://makeatronics.blogspot.com/2013/02/efficiently-reading-quadrature-with.html
@@ -56,10 +56,10 @@ ISR(PCINT2_vect) {
     "adc %D[count], __tmp_reg__      \n\t"
     :
       [state] "=d" (state), // has to go into upper register because ANDI and SBR only operate on upper
-      [count] "=w" (encoder_left)
+      [count] "=w" (_encoder_left)
     :
       "0" (state),
-      "1" (encoder_left),
+      "1" (_encoder_left),
       [in] "I" (_SFR_IO_ADDR(E1_PIN)),
       [encA] "I" (E1A_BIT),
       [encB] "I" (E1B_BIT),
@@ -100,10 +100,10 @@ ISR(PCINT0_vect) {
     "adc %D[count], __tmp_reg__      \n\t"
     :
       [state] "=d" (state), // has to go into upper register because ANDI and SBR only operate on upper
-      [count] "=w" (encoder_right)
+      [count] "=w" (_encoder_right)
     :
       "0" (state),
-      "1" (encoder_right),
+      "1" (_encoder_right),
       [in] "I" (_SFR_IO_ADDR(E2_PIN)),
       [encA] "I" (E2A_BIT),
       [encB] "I" (E2B_BIT),
@@ -111,33 +111,33 @@ ISR(PCINT0_vect) {
   );
 }
 
-void setSpeedLeft(uint16_t speed, uint8_t fwd) {
+void setSpeedLeft(uint16_t speed, bool reverse) {
   OCR1A = speed;
 
   if (speed < kMin_motor_threshold) {
     M1_INA_PORT &= ~_BV(M1_INA_BIT);
     M1_INB_PORT &= ~_BV(M1_INB_BIT);
-  } else if (fwd) {
-    M1_INA_PORT |= _BV(M1_INA_BIT);
-    M1_INB_PORT &= ~_BV(M1_INB_BIT);
-  } else {
+  } else if (reverse) {
     M1_INA_PORT &= ~_BV(M1_INA_BIT);
     M1_INB_PORT |= _BV(M1_INB_BIT);
+  } else {
+    M1_INA_PORT |= _BV(M1_INA_BIT);
+    M1_INB_PORT &= ~_BV(M1_INB_BIT);
   }
 }
 
-void setSpeedRight(uint16_t speed, uint8_t fwd) {
+void setSpeedRight(uint16_t speed, bool reverse) {
   OCR1B = speed;
 
   if (speed < kMin_motor_threshold) {
     M2_INA_PORT &= ~_BV(M2_INA_BIT);
     M2_INB_PORT &= ~_BV(M2_INB_BIT);
-  } else if (fwd) {
-    M2_INA_PORT |= _BV(M2_INA_BIT);
-    M2_INB_PORT &= ~_BV(M2_INB_BIT);
-  } else {
+  } else if (reverse) {
     M2_INA_PORT &= ~_BV(M2_INA_BIT);
     M2_INB_PORT |= _BV(M2_INB_BIT);
+  } else {
+    M2_INA_PORT |= _BV(M2_INA_BIT);
+    M2_INB_PORT &= ~_BV(M2_INB_BIT);
   }
 }
 
@@ -177,7 +177,7 @@ int16_t controllerStraight(uint32_t encoder_left, uint32_t target) {
 
 static state_t state = IDLE;
 static motion_direction_t direction;
-static uint32_t target_ticks = 0;
+static int32_t target_ticks = 0;
 
 volatile int16_t base_power = 0;
 volatile int16_t correction = 0;
@@ -197,14 +197,17 @@ ISR(TIMER2_COMPA_vect) {
     return;
   }
 
-  int32_t delta_left = encoder_left - pEncoder_left;
-  int32_t delta_right = encoder_right - pEncoder_right;
+  int32_t encoder_cor_left = axis_left.readEncoder(_encoder_left);
+  int32_t encoder_cor_right = axis_right.readEncoder(_encoder_right);
+
+  int32_t delta_left = encoder_cor_left - pEncoder_left;
+  int32_t delta_right = encoder_cor_right - pEncoder_right;
 
   // whether the encoder has changed from the last update
   bool has_delta = (delta_left < -kEncoder_move_threshold) || (delta_left > kEncoder_move_threshold) ||
                   (delta_right < -kEncoder_move_threshold) || (delta_right > kEncoder_move_threshold);
   if (moved && !has_delta) {
-    int32_t diff_left = encoder_left - target_ticks;
+    int32_t diff_left = encoder_cor_left - target_ticks;
     if (
       diff_left > -kMax_encoder_error && diff_left < kMax_encoder_error
     ) {
@@ -218,12 +221,12 @@ ISR(TIMER2_COMPA_vect) {
     moved = true;
   }
 
-  pEncoder_left = encoder_left;
-  pEncoder_right = encoder_right;
+  pEncoder_left = encoder_cor_left;
+  pEncoder_right = encoder_cor_right;
 
   if (direction == FORWARD) {
-    base_power = controllerStraight(encoder_left, target_ticks);
-    correction = controllerTrackLeft(encoder_left, encoder_right);
+    base_power = controllerStraight(encoder_cor_left, target_ticks);
+    correction = controllerTrackLeft(encoder_cor_left, encoder_cor_right);
 
     int16_t power_left = base_power - correction;
     int16_t power_right = base_power + correction;
@@ -264,11 +267,13 @@ void start_motion(motion_direction_t _direction, uint32_t distance) {
     cli();
     state = MOVING;
     direction = _direction;
-    target_ticks = encoder_left + distance;
+    axis_left.setReverse(false);
+    axis_right.setReverse(false);
+    target_ticks = axis_left.readEncoder(_encoder_left) + distance;
     Serial.print(target_ticks);
     Serial.print(", ");
     Serial.print(distance);
-    Serial.println("start forward");
+    Serial.println(" start forward");
     sei();
   } else {
     Serial.println("Not implemented");
@@ -289,16 +294,16 @@ void loop_motion() {
 
   if ((cur_time - last_print) > 10) {
     cli();
-    int32_t _encoder_left = encoder_left;
-    int32_t _encoder_right = encoder_right;
+    int32_t __encoder_left = _encoder_left;
+    int32_t __encoder_right = _encoder_right;
     int16_t speed_left = axis_left.getSpeed();
     int16_t speed_right = axis_right.getSpeed();
     int16_t _base_power = base_power;
     int16_t _correction = correction;
     sei();
     Serial.print("SYNC");
-    Serial.write((char *) &_encoder_left, 4);
-    Serial.write((char *) &_encoder_right, 4);
+    Serial.write((char *) &__encoder_left, 4);
+    Serial.write((char *) &__encoder_right, 4);
     Serial.write((char *) &speed_left, 2);
     Serial.write((char *) &speed_right, 2);
     Serial.write((char *) &_base_power, 2);
