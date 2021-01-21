@@ -18,6 +18,12 @@ static bool parse_buf() {
 
   if (cmd == 'F') {
     start_motion(FORWARD, val);
+  } else if (cmd == 'B') {
+    start_motion(REVERSE, val);
+  } else if (cmd == 'L') {
+    start_motion(LEFT, val);
+  } else if (cmd == 'R') {
+    start_motion(RIGHT, val);
   } else if (cmd == 'a') {
     kP_offset = val;
   } else if (cmd == 'b') {
