@@ -19,6 +19,11 @@ typedef enum {
   MOVING
 } state_t;
 
+typedef struct {
+  int16_t integral = 0;
+  int32_t last_input = 0;
+} pid_state_t;
+
 volatile int32_t _encoder_left = 0;
 volatile int32_t _encoder_right = 0;
 
@@ -141,30 +146,30 @@ void setSpeedRight(uint16_t speed, bool reverse) {
   }
 }
 
-int16_t controllerTrackLeft(uint32_t encoder_left, uint32_t encoder_right) {
+int32_t error = 0;
+
+pid_state_t state_tl;
+int16_t controllerTrackLeft(int32_t encoder_left, int32_t encoder_right) {
   // controller aiming to make encoder_right track encoder_left
   // returns int16_t: positive - turn left, negative - turn right
-  static int16_t integral = 0;
-  static int16_t last_error = 0;
-  int32_t error = encoder_left - encoder_right;
+  error = encoder_left - encoder_right;
 
-  integral = constrain(integral + error, kTL_integral_min, kTL_integral_max);
-  int16_t power = (kP_offset * error + kI_offset * integral + kD_offset * (last_error - error)) >> 8;
+  state_tl.integral = constrain(state_tl.integral + error, kTL_integral_min, kTL_integral_max);
+  int16_t power = ((int32_t) kP_offset * error + (int32_t) kI_offset * state_tl.integral + (int32_t) kD_offset * (state_tl.last_input - encoder_right)) >> 8;
 
-  last_error = error;
+  state_tl.last_input = encoder_right;
   return power;
 }
 
-int16_t controllerStraight(uint32_t encoder_left, uint32_t target) {
+pid_state_t state_straight;
+int16_t controllerStraight(int32_t encoder_left, int32_t target) {
   // controller aiming to make encoder_left track target
-  static int16_t integral = 0;
-  static int32_t last_ticks = 0;
-
   int32_t error = target - encoder_left;
-  integral = constrain((int32_t) integral + error, kMS_integral_min, kMS_integral_max);
-  int16_t power = ((int32_t) kP_straight * error + (int32_t) kI_straight * integral + (int32_t) kD_straight * (last_ticks - encoder_left)) >> 8;
 
-  last_ticks = encoder_left;
+  state_straight.integral = constrain((int32_t) state_straight.integral + error, kMS_integral_min, kMS_integral_max);
+  int16_t power = ((int32_t) kP_straight * error + (int32_t) kI_straight * state_straight.integral + (int32_t) kD_straight * (state_straight.last_input - encoder_left)) >> 8;
+
+  state_straight.last_input = encoder_left;
 
   if (power > kMS_max_output) {
     return kMS_max_output;
@@ -318,13 +323,14 @@ void loop_motion() {
     int16_t speed_right = axis_right.getSpeed();
     int16_t _base_power = base_power;
     int16_t _correction = correction;
+    int16_t _error = error;
     sei();
     Serial.print("SYNC");
     Serial.write((char *) &__encoder_left, 4);
     Serial.write((char *) &__encoder_right, 4);
     Serial.write((char *) &speed_left, 2);
     Serial.write((char *) &speed_right, 2);
-    Serial.write((char *) &_base_power, 2);
+    Serial.write((char *) &_error, 2);
     Serial.write((char *) &_correction, 2);
     Serial.println();
 
