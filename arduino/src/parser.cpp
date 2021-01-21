@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "parser.h"
 #include "motion.h"
+#include "physical.h"
 #include "config.h"
 
 static char buf[kParser_buf_size + 1]; // + 1 for NULL character
@@ -17,13 +18,13 @@ static bool parse_buf() {
   }
 
   if (cmd == 'F') {
-    start_motion(FORWARD, val);
+    start_motion(FORWARD, distanceToTicks(val));
   } else if (cmd == 'B') {
-    start_motion(REVERSE, val);
+    start_motion(REVERSE, distanceToTicks(val));
   } else if (cmd == 'L') {
-    start_motion(LEFT, val);
+    start_motion(LEFT, distanceToTicks(angleToDistance(val)));
   } else if (cmd == 'R') {
-    start_motion(RIGHT, val);
+    start_motion(RIGHT, distanceToTicks(angleToDistance(val)));
   } else if (cmd == 'a') {
     kP_offset = val;
   } else if (cmd == 'b') {
