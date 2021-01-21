@@ -16,6 +16,7 @@ static Axis axis_right(setSpeedRight);
 
 typedef enum {
   IDLE,
+  MOVE_COMMANDED,
   MOVING
 } state_t;
 
@@ -149,6 +150,11 @@ void setSpeedRight(uint16_t speed, bool reverse) {
 int32_t error = 0;
 
 pid_state_t state_tl;
+void resetControllerState(pid_state_t *state, int32_t input) {
+  state->integral = 0;
+  state->last_input = input;
+}
+
 int16_t controllerTrackLeft(int32_t encoder_left, int32_t encoder_right) {
   // controller aiming to make encoder_right track encoder_left
   // returns int16_t: positive - turn left, negative - turn right
@@ -193,7 +199,6 @@ ISR(TIMER2_COMPA_vect) {
 
   static int32_t pEncoder_left = 0;
   static int32_t pEncoder_right = 0;
-  static bool moved = false;
 
   if (state == IDLE) {
     axis_left.setSpeed(0);
@@ -210,19 +215,19 @@ ISR(TIMER2_COMPA_vect) {
   // whether the encoder has changed from the last update
   bool has_delta = (delta_left < -kEncoder_move_threshold) || (delta_left > kEncoder_move_threshold) ||
                   (delta_right < -kEncoder_move_threshold) || (delta_right > kEncoder_move_threshold);
-  if (moved && !has_delta) {
+  if (state == MOVING && !has_delta) {
     int32_t diff_left = encoder_cor_left - target_ticks;
     if (
       diff_left > -kMax_encoder_error && diff_left < kMax_encoder_error
     ) {
       Serial.println("move done");
       state = IDLE;
-      moved = false;
       return;
     }
-  } else if (!moved && has_delta) {
-    Serial.println("move start");
-    moved = true;
+  } else if (state == MOVE_COMMANDED) {
+    resetControllerState(&state_tl, encoder_cor_right);
+    resetControllerState(&state_straight, encoder_cor_left);
+    state = MOVING;
   }
 
   pEncoder_left = encoder_cor_left;
@@ -270,28 +275,28 @@ void start_motion(motion_direction_t _direction, uint32_t distance) {
   _encoder_right = 0;
 
   if (_direction == FORWARD) {
-    state = MOVING;
+    state = MOVE_COMMANDED;
     axis_left.setReverse(false);
     axis_right.setReverse(false);
     target_ticks = distance;
     Serial.print("start forward - target=");
     Serial.println(target_ticks);
   } else if (_direction == REVERSE) {
-    state = MOVING;
+    state = MOVE_COMMANDED;
     axis_left.setReverse(true);
     axis_right.setReverse(true);
     target_ticks = distance;
     Serial.print("start reverse - target=");
     Serial.println(target_ticks);
   } else if (_direction == LEFT) {
-    state = MOVING;
+    state = MOVE_COMMANDED;
     axis_left.setReverse(true);
     axis_right.setReverse(false);
     target_ticks = distance;
     Serial.print("start left turn - target=");
     Serial.println(target_ticks);
   } else if (_direction == RIGHT) {
-    state = MOVING;
+    state = MOVE_COMMANDED;
     axis_left.setReverse(false);
     axis_right.setReverse(true);
     target_ticks = distance;
