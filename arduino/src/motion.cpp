@@ -147,8 +147,6 @@ void setSpeedRight(uint16_t speed, bool reverse) {
   }
 }
 
-int32_t error = 0;
-
 pid_state_t state_tl;
 void resetControllerState(pid_state_t *state, int32_t input) {
   state->integral = 0;
@@ -158,7 +156,7 @@ void resetControllerState(pid_state_t *state, int32_t input) {
 int16_t controllerTrackLeft(int32_t encoder_left, int32_t encoder_right) {
   // controller aiming to make encoder_right track encoder_left
   // returns int16_t: positive - turn left, negative - turn right
-  error = encoder_left - encoder_right;
+  int32_t error = encoder_left - encoder_right;
 
   state_tl.integral = constrain(state_tl.integral + error, kTL_integral_min, kTL_integral_max);
   int16_t power = ((int32_t) kP_offset * error + (int32_t) kI_offset * state_tl.integral + (int32_t) kD_offset * (state_tl.last_input - encoder_right)) >> 8;
@@ -220,9 +218,12 @@ ISR(TIMER2_COMPA_vect) {
     if (
       diff_left > -kMax_encoder_error && diff_left < kMax_encoder_error
     ) {
-      Serial.println("move done");
-      state = IDLE;
-      return;
+      int32_t diff_err = encoder_cor_left - encoder_cor_right;
+      if (diff_err > -kMax_encoder_diff_error && diff_err < kMax_encoder_diff_error) {
+        Serial.println("move done");
+        state = IDLE;
+        return;
+      }
     }
   } else if (state == MOVE_COMMANDED) {
     resetControllerState(&state_tl, encoder_cor_right);
@@ -328,7 +329,7 @@ void loop_motion() {
     int16_t speed_right = axis_right.getSpeed();
     int16_t _base_power = base_power;
     int16_t _correction = correction;
-    int16_t _error = error;
+    int16_t _error = __encoder_left - __encoder_right;
     sei();
     Serial.print("SYNC");
     Serial.write((char *) &__encoder_left, 4);

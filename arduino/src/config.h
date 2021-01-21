@@ -14,7 +14,9 @@ const uint8_t kSensor_filter_alpha = 4;
 const int32_t kEncoder_move_threshold = 10;
 
 // maximum error for move to be completed
-const int8_t kMax_encoder_error = 50;
+const int8_t kMax_encoder_error = 5;
+// max difference between both axis for move to be completed
+const int8_t kMax_encoder_diff_error = 5;
 
 // parser buffer size
 // determines max length of command that can be sent
@@ -25,8 +27,8 @@ extern int16_t kP_offset;
 extern int16_t kI_offset;
 extern int16_t kD_offset;
 
-const int16_t kTL_integral_min = -2000;
-const int16_t kTL_integral_max = 2000;
+const int16_t kTL_integral_min = -400;
+const int16_t kTL_integral_max = 400;
 
 // controller parameters for move-straight controller
 extern int16_t kP_straight;
