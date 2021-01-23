@@ -13,7 +13,7 @@ class Axis {
      * @param invert whether this axis is inverted
      */
     Axis(void (*setSpeed)(uint16_t speed, bool reverse), bool invert): _setSpeed(setSpeed), _invert(invert) {};
-    void setSpeed(int16_t speed);
+    void setSpeed(int16_t target_speed);
     /**
      * @brief Invert the axis temporarily
      * 
@@ -43,6 +43,7 @@ class Axis {
   private:
     void (*_setSpeed)(uint16_t speed, bool reverse);
     int16_t _speed = 0;
+    int16_t _target_speed = 0;
 
     bool _invert = false;
     bool _reverse = false;

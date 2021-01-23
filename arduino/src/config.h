@@ -10,6 +10,10 @@ const uint8_t kMin_motor_threshold = 16;
 // [0-255], lower for more filtering
 const uint8_t kSensor_filter_alpha = 4;
 
+// max axis acceleration/deceleration
+const int16_t kMax_axis_accel = 64;
+const int16_t kMax_axis_decel = -128;
+
 // minimum encoder delta for the robot to be considered moving
 const int32_t kEncoder_move_threshold = 10;
 
