@@ -165,15 +165,16 @@ int16_t controllerTrackLeft(int32_t encoder_left, int32_t encoder_right) {
   return power;
 }
 
-pid_state_t state_straight;
-int16_t controllerStraight(int32_t encoder_left, int32_t target) {
+pid_state_t state_straight_left;
+pid_state_t state_straight_right;
+int16_t controllerStraight(pid_state_t *state, int32_t encoder_left, int32_t target) {
   // controller aiming to make encoder_left track target
   int32_t error = target - encoder_left;
 
-  state_straight.integral = constrain((int32_t) state_straight.integral + error, kMS_integral_min, kMS_integral_max);
-  int16_t power = ((int32_t) kP_straight * error + (int32_t) kI_straight * state_straight.integral + (int32_t) kD_straight * (state_straight.last_input - encoder_left)) >> 8;
+  state->integral = constrain((int32_t) state->integral + error, kMS_integral_min, kMS_integral_max);
+  int16_t power = ((int32_t) kP_straight * error + (int32_t) kI_straight * state->integral + (int32_t) kD_straight * (state->last_input - encoder_left)) >> 8;
 
-  state_straight.last_input = encoder_left;
+  state->last_input = encoder_left;
 
   if (power > kMS_max_output) {
     return kMS_max_output;
@@ -187,7 +188,8 @@ int16_t controllerStraight(int32_t encoder_left, int32_t target) {
 static state_t state = IDLE;
 static int32_t target_ticks = 0;
 
-volatile int16_t base_power = 0;
+volatile int16_t base_left = 0;
+volatile int16_t base_right = 0;
 volatile int16_t correction = 0;
 
 // triggers at 100Hz
@@ -227,18 +229,20 @@ ISR(TIMER2_COMPA_vect) {
     }
   } else if (state == MOVE_COMMANDED) {
     resetControllerState(&state_tl, encoder_cor_right);
-    resetControllerState(&state_straight, encoder_cor_left);
+    resetControllerState(&state_straight_left, encoder_cor_left);
+    resetControllerState(&state_straight_right, encoder_cor_right);
     state = MOVING;
   }
 
   pEncoder_left = encoder_cor_left;
   pEncoder_right = encoder_cor_right;
 
-  base_power = controllerStraight(encoder_cor_left, target_ticks);
+  base_left = controllerStraight(&state_straight_left, encoder_cor_left, target_ticks);
+  base_right = controllerStraight(&state_straight_right, encoder_cor_right, target_ticks);
   correction = controllerTrackLeft(encoder_cor_left, encoder_cor_right);
 
-  int16_t power_left = base_power - correction;
-  int16_t power_right = base_power + correction;
+  int16_t power_left = base_left - correction;
+  int16_t power_right = base_right + correction;
 
   axis_left.setSpeed(power_left);
   axis_right.setSpeed(power_right);
@@ -327,7 +331,7 @@ void loop_motion() {
     int32_t __encoder_right = _encoder_right;
     int16_t speed_left = axis_left.getSpeed();
     int16_t speed_right = axis_right.getSpeed();
-    int16_t _base_power = base_power;
+    // int16_t _base_power = base_power;
     int16_t _correction = correction;
     int16_t _error = __encoder_left - __encoder_right;
     sei();
