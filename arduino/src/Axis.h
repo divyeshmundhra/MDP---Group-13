@@ -13,6 +13,12 @@ class Axis {
      * @param invert whether this axis is inverted
      */
     Axis(void (*setSpeed)(uint16_t speed, bool reverse), bool invert): _setSpeed(setSpeed), _invert(invert) {};
+    /**
+     * @brief Updates target PWM duty cycle, then updates actual duty cycle after
+     *  limiting maximum change with kMax_axis_accel/kMax_axis_decel
+     * 
+     * @param target_speed New target speed
+     */
     void setSpeed(int16_t target_speed);
     /**
      * @brief Invert the axis temporarily
@@ -41,11 +47,28 @@ class Axis {
       return _speed;
     }
   private:
+    /**
+     * @brief Function pointer to be called to set motor PWM duty cycle
+     */
     void (*_setSpeed)(uint16_t speed, bool reverse);
+    /**
+     * @brief Actual duty cycle written to the motor
+     */
     int16_t _speed = 0;
+    /**
+     * @brief Target duty cycle
+     */
     int16_t _target_speed = 0;
 
+    /**
+     * @brief Whether this axis should be inverted
+     * 
+     */
     bool _invert = false;
+    /**
+     * @brief Whether this axis is temporarily inverted for moving in reverse
+     * 
+     */
     bool _reverse = false;
 };
 
