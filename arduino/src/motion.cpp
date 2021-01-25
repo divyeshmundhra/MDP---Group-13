@@ -7,12 +7,12 @@
 #include "board.h"
 #include "Axis.h"
 
-void setSpeedLeft(uint16_t speed, bool reverse);
-void setSpeedRight(uint16_t speed, bool reverse);
+void setPowerLeft(uint16_t power, bool reverse);
+void setPowerRight(uint16_t power, bool reverse);
 
 static DualVNH5019MotorShield md;
-static Axis axis_left(setSpeedLeft, true);
-static Axis axis_right(setSpeedRight);
+static Axis axis_left(setPowerLeft, true);
+static Axis axis_right(setPowerRight);
 
 typedef enum {
   IDLE,
@@ -117,10 +117,10 @@ ISR(PCINT0_vect) {
   );
 }
 
-void setSpeedLeft(uint16_t speed, bool reverse) {
-  OCR1A = speed;
+void setPowerLeft(uint16_t power, bool reverse) {
+  OCR1A = power;
 
-  if (speed < kMin_motor_threshold) {
+  if (power < kMin_motor_threshold) {
     M1_INA_PORT &= ~_BV(M1_INA_BIT);
     M1_INB_PORT &= ~_BV(M1_INB_BIT);
   } else if (reverse) {
@@ -132,10 +132,10 @@ void setSpeedLeft(uint16_t speed, bool reverse) {
   }
 }
 
-void setSpeedRight(uint16_t speed, bool reverse) {
-  OCR1B = speed;
+void setPowerRight(uint16_t power, bool reverse) {
+  OCR1B = power;
 
-  if (speed < kMin_motor_threshold) {
+  if (power < kMin_motor_threshold) {
     M2_INA_PORT &= ~_BV(M2_INA_BIT);
     M2_INB_PORT &= ~_BV(M2_INB_BIT);
   } else if (reverse) {
@@ -201,8 +201,8 @@ ISR(TIMER2_COMPA_vect) {
   static int32_t pEncoder_right = 0;
 
   if (state == IDLE) {
-    axis_left.setSpeed(0);
-    axis_right.setSpeed(0);
+    axis_left.setPower(0);
+    axis_right.setPower(0);
     return;
   }
 
@@ -244,8 +244,8 @@ ISR(TIMER2_COMPA_vect) {
   int16_t power_left = base_left - correction;
   int16_t power_right = base_right + correction;
 
-  axis_left.setSpeed(power_left);
-  axis_right.setSpeed(power_right);
+  axis_left.setPower(power_left);
+  axis_right.setPower(power_right);
 }
 
 void setup_motion() {
@@ -329,8 +329,8 @@ void loop_motion() {
     cli();
     int32_t __encoder_left = _encoder_left;
     int32_t __encoder_right = _encoder_right;
-    int16_t speed_left = axis_left.getSpeed();
-    int16_t speed_right = axis_right.getSpeed();
+    int16_t power_left = axis_left.getPower();
+    int16_t power_right = axis_right.getPower();
     // int16_t _base_power = base_power;
     int16_t _correction = correction;
     int16_t _error = __encoder_left - __encoder_right;
@@ -338,8 +338,8 @@ void loop_motion() {
     Serial.print("SYNC");
     Serial.write((char *) &__encoder_left, 4);
     Serial.write((char *) &__encoder_right, 4);
-    Serial.write((char *) &speed_left, 2);
-    Serial.write((char *) &speed_right, 2);
+    Serial.write((char *) &power_left, 2);
+    Serial.write((char *) &power_right, 2);
     Serial.write((char *) &_error, 2);
     Serial.write((char *) &_correction, 2);
     Serial.println();

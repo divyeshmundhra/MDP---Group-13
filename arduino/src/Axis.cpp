@@ -3,21 +3,21 @@
 #include "Axis.h"
 #include "config.h"
 
-void Axis::setSpeed(int16_t target_speed) {
-  _target_speed = target_speed;
+void Axis::setPower(int16_t target_power) {
+  _target_power = target_power;
 
-  int16_t delta = _target_speed - _speed;
+  int16_t delta = _target_power - _power;
   if (delta > kMax_axis_accel) {
-    _speed += kMax_axis_accel;
+    _power += kMax_axis_accel;
   } else if (delta < kMax_axis_decel) {
-    _speed += kMax_axis_decel;
+    _power += kMax_axis_decel;
   } else {
-    _speed = _target_speed;
+    _power = _target_power;
   }
 
-  if (_speed > 0) {
-    _setSpeed(_speed, _invert ^ _reverse);
+  if (_power > 0) {
+    _setPower(_power, _invert ^ _reverse);
   } else {
-    _setSpeed(-_speed, !(_invert ^ _reverse));
+    _setPower(-_power, !(_invert ^ _reverse));
   }
 }
