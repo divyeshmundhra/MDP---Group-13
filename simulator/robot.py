@@ -1,6 +1,5 @@
 import pygame
-
-yellow = [255,255,0]
+from constants import *
 
 class Robot:
     def __init__(self, game, x, y):
@@ -17,8 +16,8 @@ class Robot:
         self.y += dy
 
     def update(self):
-        self.rect.x = self.x * 20
-        self.rect.y = self.y * 20
+        self.rect.x = self.x * tile_size
+        self.rect.y = self.y * tile_size
 
     def draw(self, dis):
         pygame.draw.circle(dis, yellow, (self.x,self.y), 30)
