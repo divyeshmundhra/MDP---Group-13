@@ -1,8 +1,5 @@
 from cell import Cell
-
-# TODO standardise this across all files
-map_row = 20 
-map_col = 15
+from constants import *
 
 # Read the arena text file and store it as a list ==========================================
 f = open("sample_arena.txt", "r") #import the arena file
