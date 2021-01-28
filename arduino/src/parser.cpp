@@ -9,8 +9,15 @@ static uint8_t buf_count = 0;
 
 static bool parse_buf() {
   char cmd = buf[0];
+  char cmd1 = buf[1];
   char *next;
-  uint32_t val = strtoul(&buf[1], &next, 10);
+  uint32_t val;
+
+  if (cmd1 >= '0' && cmd1 <= '9') {
+    val = strtoul(&buf[1], &next, 10);
+  } else {
+    val = strtoul(&buf[2], &next, 10);
+  }
 
   // *next should be pointing to the NULL terminator if the string was parsed successfully
   if (*next != '\0') {
@@ -25,18 +32,22 @@ static bool parse_buf() {
     start_motion(LEFT, distanceToTicks(angleToDistance(val)));
   } else if (cmd == 'R') {
     start_motion(RIGHT, distanceToTicks(angleToDistance(val)));
-  } else if (cmd == 'a') {
-    kP_offset = val;
-  } else if (cmd == 'b') {
-    kI_offset = val;
-  } else if (cmd == 'c') {
-    kD_offset = val;
-  } else if (cmd == 'p') {
-    kP_straight = val;
-  } else if (cmd == 'i') {
-    kI_straight = val;
-  } else if (cmd == 'd') {
-    kD_straight = val;
+  } else if (cmd == 'o') {
+    if (cmd1 == 'p') {
+      kP_offset = val;
+    } else if (cmd1 == 'i') {
+      kI_offset = val;
+    } else if (cmd1 == 'd') {
+      kD_offset = val;
+    }
+  } else if (cmd == 's') {
+    if (cmd1 == 'p') {
+      kP_straight = val;
+    } else if (cmd1 == 'i') {
+      kI_straight = val;
+    } else if (cmd1 == 'd') {
+      kD_straight = val;
+    }
   } else {
     Serial.println("Unknown cmd");
   }
