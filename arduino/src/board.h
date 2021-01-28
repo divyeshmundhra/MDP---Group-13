@@ -25,4 +25,14 @@
 #define M2_INA_BIT 7
 #define M2_INB_BIT 0
 
+// map of sensor position to analog input
+typedef enum {
+  LEFT_FRONT = 0,
+  FRONT_LEFT = 1,
+  FRONT_MID = 2,
+  CHANGEME = 3,
+  RIGHT_FRONT = 4,
+  FRONT_RIGHT = 5,
+} sensor_position_t;
+
 #endif

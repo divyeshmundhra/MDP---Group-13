@@ -1,8 +1,10 @@
 #include <Arduino.h>
 #include "sensors.h"
+#include "board.h"
 #include "config.h"
 
 volatile uint16_t adc_val[6] = {0};
+volatile uint16_t sensor_distances[6] = {0};
 
 ISR(ADC_vect) {
   // channel represents the channel of this conversion (the trigger for this ISR)
@@ -37,14 +39,20 @@ void setup_sensors() {
   ADCSRA |= _BV(ADSC); // start conversion
 }
 
-void loop_sensors() {
-  // Serial.print("SYNC");
-  // cli();
-  // for(uint8_t i = 0; i < 6; i++) {
-  //   Serial.write((char *) &adc_val[i], 2);
-  // }
-  // sei();
-  // Serial.println();
+void convert_sensor_data() {
+  sensor_distances[FRONT_MID] = (kSensor_constants[FRONT_MID][0] * adc_val[FRONT_MID] + kSensor_constants[FRONT_MID][1]) / (adc_val[FRONT_MID] + kSensor_constants[FRONT_MID][2]);
+}
 
-  // delay(10);
+void loop_sensors() {
+  #if 0
+    Serial.print("SYNC");
+    cli();
+    for(uint8_t i = 0; i < 6; i++) {
+      Serial.write((char *) &sensor_distances[i], 2);
+    }
+    sei();
+    Serial.println();
+
+    delay(10);
+  #endif
 }

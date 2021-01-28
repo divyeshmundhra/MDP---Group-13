@@ -25,13 +25,15 @@ static bool parse_buf() {
   }
 
   if (cmd == 'F') {
-    start_motion(FORWARD, distanceToTicks(val));
+    start_motion_distance(FORWARD, distanceToTicks(val));
   } else if (cmd == 'B') {
-    start_motion(REVERSE, distanceToTicks(val));
+    start_motion_distance(REVERSE, distanceToTicks(val));
   } else if (cmd == 'L') {
-    start_motion(LEFT, distanceToTicks(angleToDistance(val)));
+    start_motion_distance(LEFT, distanceToTicks(angleToDistance(val)));
   } else if (cmd == 'R') {
-    start_motion(RIGHT, distanceToTicks(angleToDistance(val)));
+    start_motion_distance(RIGHT, distanceToTicks(angleToDistance(val)));
+  } else if (cmd == 'O') {
+    start_motion_obstacle(val);
   } else if (cmd == 'o') {
     if (cmd1 == 'p') {
       kP_offset = val;
@@ -47,6 +49,14 @@ static bool parse_buf() {
       kI_straight = val;
     } else if (cmd1 == 'd') {
       kD_straight = val;
+    }
+  } else if (cmd == 'b') {
+    if (cmd1 == 'p') {
+      kP_obstacle = val;
+    } else if (cmd1 == 'i') {
+      kI_obstacle = val;
+    } else if (cmd1 == 'd') {
+      kD_obstacle = val;
     }
   } else {
     Serial.println("Unknown cmd");

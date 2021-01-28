@@ -16,6 +16,6 @@ void setup() {
 
 void loop() {
   loop_motion();
-  // loop_sensors();
+  loop_sensors();
   loop_parser();
 }

@@ -7,3 +7,7 @@ int16_t kD_offset = 0;
 int16_t kP_straight = 200;
 int16_t kI_straight = 50;
 int16_t kD_straight = 2000;
+
+int16_t kP_obstacle = 1500;
+int16_t kI_obstacle = 50;
+int16_t kD_obstacle = 200;

@@ -11,6 +11,18 @@ typedef enum {
 void setup_motion();
 void loop_motion();
 
-void start_motion(motion_direction_t direction, uint32_t distance);
+/**
+ * @brief Start travel in \p direction for \p distance
+ * 
+ * @param direction Direction to move in
+ * @param distance Distance to move for
+ */
+void start_motion_distance(motion_direction_t direction, uint32_t distance);
+/**
+ * @brief Start forward movement until obstacle is seen at \p distance
+ * 
+ * @param distance
+ */
+void start_motion_obstacle(uint16_t distance);
 
 #endif
