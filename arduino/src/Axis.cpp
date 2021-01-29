@@ -21,3 +21,10 @@ void Axis::setPower(int16_t target_power) {
     _setPower(-_power, !(_invert ^ _reverse));
   }
 }
+
+void Axis::encoderEdge() {
+  uint32_t time = micros();
+
+  _pulse_width = ((uint32_t) (255 - kEncoder_alpha) * _pulse_width + (uint32_t) kEncoder_alpha * (time - _last_edge)) >> 8;
+  _last_edge = time;
+}

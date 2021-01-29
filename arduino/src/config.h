@@ -14,6 +14,14 @@ const uint8_t kSensor_filter_alpha = 16;
 const int16_t kMax_axis_accel = 64;
 const int16_t kMax_axis_decel = -128;
 
+// alpha for encoder filtering
+// smaller for more aggressive filtering
+const uint8_t kEncoder_alpha = 25;
+
+// timeout (us) for time since encoder pulse received
+// after which a motor is treated as stationary
+const uint16_t kEncoder_timeout = 10000;
+
 // minimum encoder delta for the robot to be considered moving
 const int32_t kEncoder_move_threshold = 10;
 

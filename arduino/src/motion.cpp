@@ -36,17 +36,18 @@ volatile int32_t _encoder_right = 0;
 
 ISR(PCINT2_vect) {
   // http://makeatronics.blogspot.com/2013/02/efficiently-reading-quadrature-with.html
-  const int8_t _kEncoder_LUT[16] = {0, -1, 1, 0, 1, 0, 0, -1, -1, 0, 0, 1, 0, 1, -1, 0};
+  const int8_t _kEncoder_LUT[16] = {0, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, 1, 0, 0, 0};
   static uint8_t state = 0;
+
   asm volatile(
     // update encoder state
     "lsl %[state]                    \n\t" // state << 2
     "lsl %[state]                    \n\t"
     "andi %[state], 0x0C             \n\t"
     "sbic %[in], %[encA]             \n\t" // if encoder A is set,
-    "sbr %[state], (1<<0)            \n\t" //   set bit 0 of state
-    "sbic %[in], %[encB]             \n\t" // if encoder B is set, 
     "sbr %[state], (1<<1)            \n\t" //   set bit 1 of state
+    "sbic %[in], %[encB]             \n\t" // if encoder B is set, 
+    "sbr %[state], (1<<0)            \n\t" //   set bit 0 of state
     // use state to retrieve from LUT
     "add %A[lut], %[state]           \n\t" // increment lut by state ie retrieve lut[state]
     "adc %B[lut], __zero_reg__       \n\t"
@@ -77,20 +78,23 @@ ISR(PCINT2_vect) {
       [encB] "I" (E1B_BIT),
       [lut] "z" (_kEncoder_LUT)
   );
+
+  axis_left.encoderEdge();
 }
 
 ISR(PCINT0_vect) {
-  const int8_t _kEncoder_LUT[16] = {0, 1, -1, 0, -1, 0, 0, 1, 1, 0, 0, -1, 0, -1, 1, 0};
+  const int8_t _kEncoder_LUT[16] = {0, 0, 0, -1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, 0};
   static uint8_t state = 0;
+
   asm volatile(
     // update encoder state
     "lsl %[state]                    \n\t" // state << 2
     "lsl %[state]                    \n\t"
     "andi %[state], 0x0C             \n\t"
     "sbic %[in], %[encA]             \n\t" // if encoder A is set,
-    "sbr %[state], (1<<0)            \n\t" //   set bit 0 of state
-    "sbic %[in], %[encB]             \n\t" // if encoder B is set, 
     "sbr %[state], (1<<1)            \n\t" //   set bit 1 of state
+    "sbic %[in], %[encB]             \n\t" // if encoder B is set, 
+    "sbr %[state], (1<<0)            \n\t" //   set bit 0 of state
     // use state to retrieve from LUT
     "add %A[lut], %[state]           \n\t" // increment lut by state ie retrieve lut[state]
     "adc %B[lut], __zero_reg__       \n\t"
@@ -121,6 +125,8 @@ ISR(PCINT0_vect) {
       [encB] "I" (E2B_BIT),
       [lut] "z" (_kEncoder_LUT)
   );
+
+  axis_right.encoderEdge();
 }
 
 void setPowerLeft(uint16_t power, bool reverse) {
@@ -309,14 +315,14 @@ int32_t get_encoder_left() {
 
 void setup_motion() {
   // PCI2 (left encoder):
-  PCMSK2 |=  _BV(E1A_PCINT) | _BV(E1B_PCINT); // enable interrupt sources
-  PCIFR  &= ~_BV(PCIF2);                                       // clear interrupt flag of PCI2
-  PCICR  |=  _BV(PCIE2);                                       // enable PCI2
+  PCMSK2 |=  _BV(E1A_PCINT); // enable interrupt sources
+  PCIFR  &= ~_BV(PCIF2);     // clear interrupt flag of PCI2
+  PCICR  |=  _BV(PCIE2);     // enable PCI2
 
   // PCI0 (right encoder):
-  PCMSK0 |=  _BV(E2A_PCINT) | _BV(E2B_PCINT); // enable interrupt sources
-  PCIFR  &= ~_BV(PCIF0);                                         // clear interrupt flag of PCI0
-  PCICR  |=  _BV(PCIE0);                                         // enable PCI0
+  PCMSK0 |=  _BV(E2A_PCINT); // enable interrupt sources
+  PCIFR  &= ~_BV(PCIF0);     // clear interrupt flag of PCI0
+  PCICR  |=  _BV(PCIE0);     // enable PCI0
 
   // configure timer 2 for 100Hz
   TCCR2A |= _BV(WGM21);                        // mode 2, CTC, top is OCRA

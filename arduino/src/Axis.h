@@ -46,6 +46,15 @@ class Axis {
     int16_t getPower() {
       return _power;
     }
+
+    void encoderEdge();
+    uint16_t getPulseWidth() {
+      if ((micros() - _last_edge) > kEncoder_timeout) {
+        return kEncoder_timeout;
+      } else {
+        return _pulse_width;
+      }
+    }
   private:
     /**
      * @brief Function pointer to be called to set motor PWM duty cycle
@@ -70,6 +79,17 @@ class Axis {
      * 
      */
     bool _reverse = false;
+
+    /**
+     * @brief Time difference between the last two edges in microseconds
+     * 
+     */
+    uint16_t _pulse_width = 0;
+    /**
+     * @brief Time at which the last edge was received in microseconds
+     * 
+     */
+    uint32_t _last_edge = 0;
 };
 
 #endif
