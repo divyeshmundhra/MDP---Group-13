@@ -8,7 +8,7 @@ const uint8_t kMin_motor_threshold = 16;
 
 // alpha for exponential filter used to smooth sensor data
 // [0-255], lower for more filtering
-const uint8_t kSensor_filter_alpha = 4;
+const uint8_t kSensor_filter_alpha = 16;
 
 // max axis acceleration/deceleration
 const int16_t kMax_axis_accel = 64;
