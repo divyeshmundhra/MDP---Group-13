@@ -299,6 +299,14 @@ ISR(TIMER2_COMPA_vect) {
   axis_right.setPower(power_right);
 }
 
+bool get_motion_done() {
+  return state == IDLE;
+}
+
+int32_t get_encoder_left() {
+  return axis_left.readEncoder(_encoder_left);
+}
+
 void setup_motion() {
   // PCI2 (left encoder):
   PCMSK2 |=  _BV(E1A_PCINT) | _BV(E1B_PCINT); // enable interrupt sources
