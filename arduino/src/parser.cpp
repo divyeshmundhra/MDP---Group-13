@@ -35,6 +35,8 @@ static bool parse_buf() {
     start_motion_distance(RIGHT, distanceToTicks(angleToDistance(val)));
   } else if (cmd == 'O') {
     start_motion_obstacle(val);
+  } else if (cmd == 'S') {
+    set_speed(val);
   } else if (cmd == 'o') {
     if (cmd1 == 'p') {
       kP_offset = val;
@@ -58,6 +60,12 @@ static bool parse_buf() {
       kI_obstacle = val;
     } else if (cmd1 == 'd') {
       kD_obstacle = val;
+    }
+  } else if (cmd == 'p') {
+    if (cmd1 == 'p') {
+      kP_speed = val;
+    } else if (cmd1 == 'i') {
+      kI_speed = val;
     }
   }
   else if (cmd == 'A') {

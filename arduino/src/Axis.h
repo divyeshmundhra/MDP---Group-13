@@ -2,6 +2,7 @@
 #define AXIS_H
 
 #include <stdint.h>
+#include "config.h"
 
 class Axis {
   public:
@@ -48,13 +49,12 @@ class Axis {
     }
 
     void encoderEdge();
-    uint16_t getPulseWidth() {
-      if ((micros() - _last_edge) > kEncoder_timeout) {
-        return kEncoder_timeout;
-      } else {
-        return _pulse_width;
-      }
+    void controllerSpeed();
+
+    void setTargetSpeed(uint16_t speed) {
+      _target_speed = speed;
     }
+    uint16_t getSpeed();
   private:
     /**
      * @brief Function pointer to be called to set motor PWM duty cycle
@@ -90,6 +90,11 @@ class Axis {
      * 
      */
     uint32_t _last_edge = 0;
+    /**
+     * @brief Target speed
+     * 
+     */
+    uint16_t _target_speed = 0;
 };
 
 #endif

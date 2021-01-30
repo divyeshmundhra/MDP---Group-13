@@ -28,3 +28,29 @@ void Axis::encoderEdge() {
   _pulse_width = ((uint32_t) (255 - kEncoder_alpha) * _pulse_width + (uint32_t) kEncoder_alpha * (time - _last_edge)) >> 8;
   _last_edge = time;
 }
+
+uint16_t Axis::getSpeed() {
+  // rpm = 60 / ( pulse_width * 1124.5/1000000 )
+  // 53357 = 60 / ( 1124.5/1000000 )
+
+  if (_pulse_width > kEncoder_timeout) {
+    return 0;
+  }
+
+  return 53357 / _pulse_width;
+}
+
+void Axis::controllerSpeed() {
+  // expected to be called from an ISR, does not handle atomic reads of variables
+  int16_t integral = 0;
+
+  int16_t error = _target_speed - getSpeed();
+  integral = constrain(integral + error, kSpeed_integral_min, kSpeed_integral_max);
+  int16_t power = ((int32_t) kP_speed * error + (int32_t) kI_speed * integral) >> 8;
+
+  if (power < 0) {
+    power = 0;
+  }
+
+  setPower(power);
+}

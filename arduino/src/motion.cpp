@@ -233,76 +233,78 @@ ISR(TIMER2_COMPA_vect) {
   static int32_t pEncoder_right = 0;
 
   convert_sensor_data();
+  axis_left.controllerSpeed();
+  axis_right.controllerSpeed();
 
-  if (state == IDLE) {
-    axis_left.setPower(0);
-    axis_right.setPower(0);
-    return;
-  }
+  // if (state == IDLE) {
+  //   axis_left.setPower(0);
+  //   axis_right.setPower(0);
+  //   return;
+  // }
 
-  int32_t encoder_cor_left = axis_left.readEncoder(_encoder_left);
-  int32_t encoder_cor_right = axis_right.readEncoder(_encoder_right);
+  // int32_t encoder_cor_left = axis_left.readEncoder(_encoder_left);
+  // int32_t encoder_cor_right = axis_right.readEncoder(_encoder_right);
 
-  int32_t delta_left = encoder_cor_left - pEncoder_left;
-  int32_t delta_right = encoder_cor_right - pEncoder_right;
+  // int32_t delta_left = encoder_cor_left - pEncoder_left;
+  // int32_t delta_right = encoder_cor_right - pEncoder_right;
 
-  // whether the encoder has changed from the last update
-  bool has_delta = (delta_left < -kEncoder_move_threshold) || (delta_left > kEncoder_move_threshold) ||
-                  (delta_right < -kEncoder_move_threshold) || (delta_right > kEncoder_move_threshold);
+  // // whether the encoder has changed from the last update
+  // bool has_delta = (delta_left < -kEncoder_move_threshold) || (delta_left > kEncoder_move_threshold) ||
+  //                 (delta_right < -kEncoder_move_threshold) || (delta_right > kEncoder_move_threshold);
 
-  if (state == MOVING && !has_delta) {
-    // encoder delta has slowed to almost zero - lets check if we should finish the move
-    int32_t diff_err = encoder_cor_left - encoder_cor_right;
-    if (diff_err > -kMax_encoder_diff_error && diff_err < kMax_encoder_diff_error) {
-      // if the error between both encoders are really similar, we can check for the
-      // move-specific terminating condition
-      if (move_type == DISTANCE) {
-        // DISTANCE terminates when the left encoder is really close to target
-        int32_t diff_left = encoder_cor_left - target;
-        if (diff_left > -kMax_encoder_error && diff_left < kMax_encoder_error) {
-          Serial.println("move distance done");
-          state = IDLE;
-          return;
-        }
-      } else if (move_type == OBSTACLE) {
-        // OBSTACLE terminates when the sensor distance is really close to target
-        int16_t diff_err = sensor_distances[FRONT_MID] - target;
-        if (diff_err > -kMax_obstacle_error && diff_err < kMax_obstacle_error) {
-          Serial.println("move obstacle done");
-          state = IDLE;
-          return;
-        }
-      }
-    }
-  } else if (state == MOVE_COMMANDED) {
-    resetControllerState(&state_tl, encoder_cor_right);
-    if (move_type == DISTANCE) {
-      resetControllerState(&state_straight_left, encoder_cor_left);
-      resetControllerState(&state_straight_right, encoder_cor_right);
-    } else if (move_type == OBSTACLE) {
-      resetControllerState(&state_obstacle, sensor_distances[FRONT_MID]);
-    }
-    state = MOVING;
-  }
+  // if (state == MOVING && !has_delta) {
+  //   // encoder delta has slowed to almost zero - lets check if we should finish the move
+  //   int32_t diff_err = encoder_cor_left - encoder_cor_right;
+  //   if (diff_err > -kMax_encoder_diff_error && diff_err < kMax_encoder_diff_error) {
+  //     // if the error between both encoders are really similar, we can check for the
+  //     // move-specific terminating condition
+  //     if (move_type == DISTANCE) {
+  //       // DISTANCE terminates when the left encoder is really close to target
+  //       int32_t diff_left = encoder_cor_left - target;
+  //       if (diff_left > -kMax_encoder_error && diff_left < kMax_encoder_error) {
+  //         Serial.println("move distance done");
+  //         state = IDLE;
+  //         return;
+  //       }
+  //     } else if (move_type == OBSTACLE) {
+  //       // OBSTACLE terminates when the sensor distance is really close to target
+  //       int16_t diff_err = sensor_distances[FRONT_MID] - target;
+  //       if (diff_err > -kMax_obstacle_error && diff_err < kMax_obstacle_error) {
+  //         Serial.println("move obstacle done");
+  //         state = IDLE;
+  //         return;
+  //       }
+  //     }
+  //   }
+  // } else if (state == MOVE_COMMANDED) {
+  //   resetControllerState(&state_tl, encoder_cor_right);
+  //   if (move_type == DISTANCE) {
+  //     resetControllerState(&state_straight_left, encoder_cor_left);
+  //     resetControllerState(&state_straight_right, encoder_cor_right);
+  //   } else if (move_type == OBSTACLE) {
+  //     resetControllerState(&state_obstacle, sensor_distances[FRONT_MID]);
+  //   }
+  //   state = MOVING;
+  // }
 
-  pEncoder_left = encoder_cor_left;
-  pEncoder_right = encoder_cor_right;
+  // pEncoder_left = encoder_cor_left;
+  // pEncoder_right = encoder_cor_right;
 
-  if (move_type == DISTANCE) {
-    base_left = controllerStraight(&state_straight_left, encoder_cor_left, target);
-    base_right = controllerStraight(&state_straight_right, encoder_cor_right, target);
-  } else if (move_type == OBSTACLE) {
-    base_left = controllerObstacle(&state_obstacle, sensor_distances[FRONT_MID], target);
-    base_right = base_left;
-  }
+  // if (move_type == DISTANCE) {
+  //   base_left = controllerStraight(&state_straight_left, encoder_cor_left, target);
+  //   base_right = controllerStraight(&state_straight_right, encoder_cor_right, target);
+  // } else if (move_type == OBSTACLE) {
+  //   base_left = controllerObstacle(&state_obstacle, sensor_distances[FRONT_MID], target);
+  //   base_right = base_left;
+  // }
 
-  correction = controllerTrackLeft(encoder_cor_left, encoder_cor_right);
+  // correction = controllerTrackLeft(encoder_cor_left, encoder_cor_right);
 
-  int16_t power_left = base_left - correction;
-  int16_t power_right = base_right + correction;
+  // int16_t power_left = base_left - correction;
+  // int16_t power_right = base_right + correction;
 
-  axis_left.setPower(power_left);
-  axis_right.setPower(power_right);
+  // axis_left.setPower(power_left);
+  // axis_right.setPower(power_right);
 }
 
 bool get_motion_done() {
@@ -392,6 +394,11 @@ void start_motion_obstacle(uint16_t distance) {
   sei();
 }
 
+void set_speed(uint16_t speed) {
+  axis_left.setTargetSpeed(speed);
+  axis_right.setTargetSpeed(speed);
+}
+
 void loop_motion() {
   static state_t pState = IDLE;
 
@@ -415,15 +422,19 @@ void loop_motion() {
       int16_t _correction = correction;
       int16_t _error = __encoder_left - __encoder_right;
       uint16_t _sensor_mid = sensor_distances[FRONT_MID];
+      uint16_t speed_left = axis_left.getSpeed();
+      uint16_t speed_right = axis_right.getSpeed();
       sei();
       Serial.print("SYNC");
       Serial.write((char *) &__encoder_left, 4);
       Serial.write((char *) &__encoder_right, 4);
       Serial.write((char *) &power_left, 2);
       Serial.write((char *) &power_right, 2);
-      Serial.write((char *) &_error, 2);
+      Serial.write((char *) &speed_left, 2);
+      Serial.write((char *) &speed_right, 2);
+      // Serial.write((char *) &_error, 2);
       // Serial.write((char *) &_correction, 2);
-      Serial.write((char *) &_sensor_mid, 2);
+      // Serial.write((char *) &_sensor_mid, 2);
       Serial.println();
 
       last_print = cur_time;

@@ -36,6 +36,13 @@ const int8_t kMax_encoder_diff_error = 5;
 // determines max length of command that can be sent
 const uint8_t kParser_buf_size = 16;
 
+// controller parameters for axis velocity
+extern int16_t kP_speed;
+extern int16_t kI_speed;
+
+const int16_t kSpeed_integral_min = -400;
+const int16_t kSpeed_integral_max = 400;
+
 // controller parameters for offset (minimise error between encoder readings) controller
 extern int16_t kP_offset;
 extern int16_t kI_offset;
