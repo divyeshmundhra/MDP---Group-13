@@ -1,7 +1,7 @@
 #include "config.h"
 
-int16_t kP_speed = 5000;
-int16_t kI_speed = 50;
+int16_t kP_speed = 2000;
+int16_t kI_speed = 300;
 
 int16_t kP_offset = 500;
 int16_t kI_offset = 10;

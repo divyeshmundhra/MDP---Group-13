@@ -15,13 +15,6 @@ class Axis {
      */
     Axis(void (*setPower)(uint16_t power, bool reverse), bool invert): _setPower(setPower), _invert(invert) {};
     /**
-     * @brief Updates target PWM duty cycle, then updates actual duty cycle after
-     *  limiting maximum change with kMax_axis_accel/kMax_axis_decel
-     * 
-     * @param target_power New target power
-     */
-    void setPower(int16_t target_power);
-    /**
      * @brief Invert the axis temporarily
      * 
      * @param reverse true to invert, or false otherwise
@@ -48,18 +41,25 @@ class Axis {
       return _power;
     }
 
-    void encoderEdge();
-    void controllerSpeed();
+    void encoderEdge(int8_t delta);
+    void controllerVelocity();
 
-    void setTargetSpeed(uint16_t speed) {
-      _target_speed = speed;
+    void setVelocity(int16_t velocity) {
+      _target_velocity = velocity;
     }
-    uint16_t getSpeed();
+    int16_t getVelocity();
   private:
     /**
      * @brief Function pointer to be called to set motor PWM duty cycle
      */
     void (*_setPower)(uint16_t power, bool reverse);
+    /**
+     * @brief Updates target PWM duty cycle, then updates actual duty cycle after
+     *  limiting maximum change with kMax_axis_accel/kMax_axis_decel
+     * 
+     * @param target_power New target power
+     */
+    void setPower(int16_t target_power);
     /**
      * @brief Actual duty cycle written to the motor
      */
@@ -91,10 +91,15 @@ class Axis {
      */
     uint32_t _last_edge = 0;
     /**
-     * @brief Target speed
+     * @brief Direction of last encoder edge
      * 
      */
-    uint16_t _target_speed = 0;
+    int8_t _last_encoder_dir = 0;
+    /**
+     * @brief Target velocity
+     * 
+     */
+    int16_t _target_velocity = 0;
 };
 
 #endif

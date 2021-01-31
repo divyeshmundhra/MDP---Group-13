@@ -39,6 +39,7 @@ ISR(PCINT2_vect) {
   const int8_t _kEncoder_LUT[16] = {0, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, 1, 0, 0, 0};
   static uint8_t state = 0;
 
+  int8_t delta = 0;
   asm volatile(
     // update encoder state
     "lsl %[state]                    \n\t" // state << 2
@@ -52,6 +53,7 @@ ISR(PCINT2_vect) {
     "add %A[lut], %[state]           \n\t" // increment lut by state ie retrieve lut[state]
     "adc %B[lut], __zero_reg__       \n\t"
     "ld __tmp_reg__, Z               \n\t"
+    "mov %[delta], __tmp_reg__       \n\t"
     /*
       add lut[state] to count
       - at this stage, __tmp_reg__ will contain either 0, 1, or -1 (0xFF)
@@ -69,7 +71,8 @@ ISR(PCINT2_vect) {
     "adc %D[count], __tmp_reg__      \n\t"
     :
       [state] "=d" (state), // has to go into upper register because ANDI and SBR only operate on upper
-      [count] "=w" (_encoder_left)
+      [count] "=w" (_encoder_left),
+      [delta] "=w" (delta)
     :
       "0" (state),
       "1" (_encoder_left),
@@ -79,13 +82,14 @@ ISR(PCINT2_vect) {
       [lut] "z" (_kEncoder_LUT)
   );
 
-  axis_left.encoderEdge();
+  axis_left.encoderEdge(delta);
 }
 
 ISR(PCINT0_vect) {
   const int8_t _kEncoder_LUT[16] = {0, 0, 0, -1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, 0};
   static uint8_t state = 0;
 
+  int8_t delta = 0;
   asm volatile(
     // update encoder state
     "lsl %[state]                    \n\t" // state << 2
@@ -99,6 +103,7 @@ ISR(PCINT0_vect) {
     "add %A[lut], %[state]           \n\t" // increment lut by state ie retrieve lut[state]
     "adc %B[lut], __zero_reg__       \n\t"
     "ld __tmp_reg__, Z               \n\t"
+    "mov %[delta], __tmp_reg__       \n\t"
     /*
       add lut[state] to count
       - at this stage, __tmp_reg__ will contain either 0, 1, or -1 (0xFF)
@@ -116,7 +121,8 @@ ISR(PCINT0_vect) {
     "adc %D[count], __tmp_reg__      \n\t"
     :
       [state] "=d" (state), // has to go into upper register because ANDI and SBR only operate on upper
-      [count] "=w" (_encoder_right)
+      [count] "=w" (_encoder_right),
+      [delta] "=w" (delta)
     :
       "0" (state),
       "1" (_encoder_right),
@@ -126,7 +132,7 @@ ISR(PCINT0_vect) {
       [lut] "z" (_kEncoder_LUT)
   );
 
-  axis_right.encoderEdge();
+  axis_right.encoderEdge(delta);
 }
 
 void setPowerLeft(uint16_t power, bool reverse) {
@@ -233,8 +239,8 @@ ISR(TIMER2_COMPA_vect) {
   static int32_t pEncoder_right = 0;
 
   convert_sensor_data();
-  axis_left.controllerSpeed();
-  axis_right.controllerSpeed();
+  axis_left.controllerVelocity();
+  axis_right.controllerVelocity();
 
   // if (state == IDLE) {
   //   axis_left.setPower(0);
@@ -394,9 +400,9 @@ void start_motion_obstacle(uint16_t distance) {
   sei();
 }
 
-void set_speed(uint16_t speed) {
-  axis_left.setTargetSpeed(speed);
-  axis_right.setTargetSpeed(speed);
+void set_velocity(uint16_t velocity) {
+  axis_left.setTargetVelocity(velocity);
+  axis_right.setTargetVelocity(velocity);
 }
 
 void loop_motion() {
@@ -422,16 +428,16 @@ void loop_motion() {
       int16_t _correction = correction;
       int16_t _error = __encoder_left - __encoder_right;
       uint16_t _sensor_mid = sensor_distances[FRONT_MID];
-      uint16_t speed_left = axis_left.getSpeed();
-      uint16_t speed_right = axis_right.getSpeed();
+      uint16_t velocity_left = axis_left.getVelocity();
+      uint16_t velocity_right = axis_right.getVelocity();
       sei();
       Serial.print("SYNC");
       Serial.write((char *) &__encoder_left, 4);
       Serial.write((char *) &__encoder_right, 4);
       Serial.write((char *) &power_left, 2);
       Serial.write((char *) &power_right, 2);
-      Serial.write((char *) &speed_left, 2);
-      Serial.write((char *) &speed_right, 2);
+      Serial.write((char *) &velocity_left, 2);
+      Serial.write((char *) &velocity_right, 2);
       // Serial.write((char *) &_error, 2);
       // Serial.write((char *) &_correction, 2);
       // Serial.write((char *) &_sensor_mid, 2);

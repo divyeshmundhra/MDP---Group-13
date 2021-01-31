@@ -36,7 +36,7 @@ static bool parse_buf() {
   } else if (cmd == 'O') {
     start_motion_obstacle(val);
   } else if (cmd == 'S') {
-    set_speed(val);
+    set_velocity(val);
   } else if (cmd == 'o') {
     if (cmd1 == 'p') {
       kP_offset = val;

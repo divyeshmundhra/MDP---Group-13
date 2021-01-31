@@ -22,35 +22,37 @@ void Axis::setPower(int16_t target_power) {
   }
 }
 
-void Axis::encoderEdge() {
+void Axis::encoderEdge(int8_t delta) {
   uint32_t time = micros();
 
   _pulse_width = ((uint32_t) (255 - kEncoder_alpha) * _pulse_width + (uint32_t) kEncoder_alpha * (time - _last_edge)) >> 8;
   _last_edge = time;
+
+  _last_encoder_dir = delta;
 }
 
-uint16_t Axis::getSpeed() {
+int16_t Axis::getVelocity() {
   // rpm = 60 / ( pulse_width * 1124.5/1000000 )
   // 53357 = 60 / ( 1124.5/1000000 )
 
-  if (_pulse_width > kEncoder_timeout) {
+  if ((micros() - _last_edge) > kEncoder_timeout) {
     return 0;
   }
 
-  return 53357 / _pulse_width;
+  if (_last_encoder_dir >= 0 && !_reverse) {
+    return 53357 / _pulse_width;
+  } else {
+    return -53357 / _pulse_width;
+  }
 }
 
-void Axis::controllerSpeed() {
+void Axis::controllerVelocity() {
   // expected to be called from an ISR, does not handle atomic reads of variables
-  int16_t integral = 0;
+  static int16_t integral = 0;
 
-  int16_t error = _target_speed - getSpeed();
+  int16_t error = _target_velocity - getVelocity();
   integral = constrain(integral + error, kSpeed_integral_min, kSpeed_integral_max);
   int16_t power = ((int32_t) kP_speed * error + (int32_t) kI_speed * integral) >> 8;
-
-  if (power < 0) {
-    power = 0;
-  }
 
   setPower(power);
 }
