@@ -29,6 +29,7 @@ void Axis::encoderEdge(int8_t delta) {
   _last_edge = time;
 
   _last_encoder_dir = delta;
+  _encoder_count += delta;
 }
 
 int16_t Axis::getVelocity() {
@@ -39,7 +40,7 @@ int16_t Axis::getVelocity() {
     return 0;
   }
 
-  if (_last_encoder_dir >= 0 && !_reverse) {
+  if ((_last_encoder_dir >= 0) ^ _reverse) {
     return 53357 / _pulse_width;
   } else {
     return -53357 / _pulse_width;

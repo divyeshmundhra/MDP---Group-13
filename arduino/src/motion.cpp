@@ -31,9 +31,6 @@ typedef struct {
   int32_t last_input = 0;
 } pid_state_t;
 
-volatile int32_t _encoder_left = 0;
-volatile int32_t _encoder_right = 0;
-
 ISR(PCINT2_vect) {
   // http://makeatronics.blogspot.com/2013/02/efficiently-reading-quadrature-with.html
   const int8_t _kEncoder_LUT[16] = {0, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, 1, 0, 0, 0};
@@ -52,30 +49,12 @@ ISR(PCINT2_vect) {
     // use state to retrieve from LUT
     "add %A[lut], %[state]           \n\t" // increment lut by state ie retrieve lut[state]
     "adc %B[lut], __zero_reg__       \n\t"
-    "ld __tmp_reg__, Z               \n\t"
-    "mov %[delta], __tmp_reg__       \n\t"
-    /*
-      add lut[state] to count
-      - at this stage, __tmp_reg__ will contain either 0, 1, or -1 (0xFF)
-      - adding 0 or 1 is straight forward, but to add 0xFF to int32_t, need to sign extend
-        (ie add 0xFFFFFFFF)
-      - as a cheap hack, we're going to clear __tmp_reg__ if the highest bit of it is clear (ie non negative),
-        then add it to all the bytes of count. this allows us to continuously add __tmp_reg__ to all bytes to
-        handle both 0, 1 and -1 without using 3 more registers
-    */
-    "add %A[count], __tmp_reg__      \n\t"
-    "sbrs __tmp_reg__, 7             \n\t" // if highest bit is clear,
-    "eor __tmp_reg__, __tmp_reg__    \n\t" //   clear __tmp_reg__ so adding it later dosent do anything
-    "adc %B[count], __tmp_reg__      \n\t"
-    "adc %C[count], __tmp_reg__      \n\t"
-    "adc %D[count], __tmp_reg__      \n\t"
+    "ld %[delta], Z                 \n\t"
     :
       [state] "=d" (state), // has to go into upper register because ANDI and SBR only operate on upper
-      [count] "=w" (_encoder_left),
       [delta] "=w" (delta)
     :
       "0" (state),
-      "1" (_encoder_left),
       [in] "I" (_SFR_IO_ADDR(E1_PIN)),
       [encA] "I" (E1A_BIT),
       [encB] "I" (E1B_BIT),
@@ -102,30 +81,12 @@ ISR(PCINT0_vect) {
     // use state to retrieve from LUT
     "add %A[lut], %[state]           \n\t" // increment lut by state ie retrieve lut[state]
     "adc %B[lut], __zero_reg__       \n\t"
-    "ld __tmp_reg__, Z               \n\t"
-    "mov %[delta], __tmp_reg__       \n\t"
-    /*
-      add lut[state] to count
-      - at this stage, __tmp_reg__ will contain either 0, 1, or -1 (0xFF)
-      - adding 0 or 1 is straight forward, but to add 0xFF to int32_t, need to sign extend
-        (ie add 0xFFFFFFFF)
-      - as a cheap hack, we're going to clear __tmp_reg__ if the highest bit of it is clear (ie non negative),
-        then add it to all the bytes of count. this allows us to continuously add __tmp_reg__ to all bytes to
-        handle both 0, 1 and -1 without using 3 more registers
-    */
-    "add %A[count], __tmp_reg__      \n\t"
-    "sbrs __tmp_reg__, 7             \n\t" // if highest bit is clear,
-    "eor __tmp_reg__, __tmp_reg__    \n\t" //   clear __tmp_reg__ so adding it later dosent do anything
-    "adc %B[count], __tmp_reg__      \n\t"
-    "adc %C[count], __tmp_reg__      \n\t"
-    "adc %D[count], __tmp_reg__      \n\t"
+    "ld %[delta], Z                  \n\t"
     :
       [state] "=d" (state), // has to go into upper register because ANDI and SBR only operate on upper
-      [count] "=w" (_encoder_right),
       [delta] "=w" (delta)
     :
       "0" (state),
-      "1" (_encoder_right),
       [in] "I" (_SFR_IO_ADDR(E2_PIN)),
       [encA] "I" (E2A_BIT),
       [encB] "I" (E2B_BIT),
@@ -349,8 +310,8 @@ void start_motion_distance(motion_direction_t _direction, uint32_t distance) {
   }
 
   cli();
-  _encoder_left = 0;
-  _encoder_right = 0;
+  axis_left.resetPosition();
+  axis_right.resetPosition();
 
   state = MOVE_COMMANDED;
   move_type = DISTANCE;
@@ -389,8 +350,8 @@ void start_motion_obstacle(uint16_t distance) {
   }
 
   cli();
-  _encoder_left = 0;
-  _encoder_right = 0;
+  axis_left.resetPosition();
+  axis_right.resetPosition();
 
   state = MOVE_COMMANDED;
   move_type = OBSTACLE;
@@ -401,8 +362,13 @@ void start_motion_obstacle(uint16_t distance) {
 }
 
 void set_velocity(uint16_t velocity) {
-  axis_left.setTargetVelocity(velocity);
-  axis_right.setTargetVelocity(velocity);
+  axis_left.setVelocity(velocity);
+  axis_right.setVelocity(velocity);
+}
+
+void set_rev(uint8_t rev) {
+  axis_left.setReverse(rev);
+  axis_right.setReverse(rev);
 }
 
 void loop_motion() {
@@ -420,20 +386,20 @@ void loop_motion() {
 
     if ((cur_time - last_print) > 10) {
       cli();
-      int32_t __encoder_left = _encoder_left;
-      int32_t __encoder_right = _encoder_right;
+      int32_t encoder_left = axis_left.getPosition();
+      int32_t encoder_right = axis_right.getPosition();
       int16_t power_left = axis_left.getPower();
       int16_t power_right = axis_right.getPower();
       // int16_t _base_power = base_power;
       int16_t _correction = correction;
-      int16_t _error = __encoder_left - __encoder_right;
+      int16_t _error = encoder_left - encoder_right;
       uint16_t _sensor_mid = sensor_distances[FRONT_MID];
       uint16_t velocity_left = axis_left.getVelocity();
       uint16_t velocity_right = axis_right.getVelocity();
       sei();
       Serial.print("SYNC");
-      Serial.write((char *) &__encoder_left, 4);
-      Serial.write((char *) &__encoder_right, 4);
+      Serial.write((char *) &encoder_left, 4);
+      Serial.write((char *) &encoder_right, 4);
       Serial.write((char *) &power_left, 2);
       Serial.write((char *) &power_right, 2);
       Serial.write((char *) &velocity_left, 2);

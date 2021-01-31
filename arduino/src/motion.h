@@ -29,4 +29,6 @@ void set_velocity(uint16_t velocity);
 bool get_motion_done();
 int32_t get_encoder_left();
 
+void set_rev(uint8_t rev);
+
 #endif

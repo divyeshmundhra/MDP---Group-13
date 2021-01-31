@@ -67,9 +67,10 @@ static bool parse_buf() {
     } else if (cmd1 == 'i') {
       kI_speed = val;
     }
-  }
-  else if (cmd == 'A') {
+  } else if (cmd == 'A') {
     start_checklist(val);
+  } else if (cmd == 'd') {
+    set_rev(val);
   } else {
     Serial.println("Unknown cmd");
   }
