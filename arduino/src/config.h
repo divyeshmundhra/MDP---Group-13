@@ -48,30 +48,30 @@ extern int16_t kP_offset;
 extern int16_t kI_offset;
 extern int16_t kD_offset;
 
-const int16_t kTL_integral_min = -400;
-const int16_t kTL_integral_max = 400;
+const int16_t kTL_integral_min = -130;
+const int16_t kTL_integral_max = 130;
 
 // controller parameters for move-straight controller
 extern int16_t kP_straight;
 extern int16_t kI_straight;
 extern int16_t kD_straight;
 
-const int16_t kMS_integral_min = -400;
-const int16_t kMS_integral_max = 400;
+const int16_t kMS_integral_min = -130;
+const int16_t kMS_integral_max = 130;
 
-const int16_t kMS_max_output = 400;
-const int16_t kMS_min_output = -400;
+const int16_t kMS_max_output = 130;
+const int16_t kMS_min_output = -130;
 
 // controller parameters for move-until-obstacle controller
 extern int16_t kP_obstacle;
 extern int16_t kI_obstacle;
 extern int16_t kD_obstacle;
 
-const int16_t kMO_integral_min = -400;
-const int16_t kMO_integral_max = 400;
+const int16_t kMO_integral_min = -130;
+const int16_t kMO_integral_max = 130;
 
-const int16_t kMO_max_output = 400;
-const int16_t kMO_min_output = -400;
+const int16_t kMO_max_output = 130;
+const int16_t kMO_min_output = -130;
 
 // constants for sensor conversion
 // each array corresponds to the constants for one sensor
