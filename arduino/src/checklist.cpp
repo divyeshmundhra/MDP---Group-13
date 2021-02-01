@@ -58,7 +58,7 @@ const uint16_t kA7_total_distance = 1500;
 // distance (mm) offset after handling diagonal moves
 const uint16_t kA7_distance_offset = 510;
 // distance (mm) to move diagonally
-const uint16_t kA7_diagonal_distance = 361;
+const uint16_t kA7_diagonal_distance = 400;
 
 void checklist_a7(bool reset) {
   static state_a7 state = A7_UNSET;
