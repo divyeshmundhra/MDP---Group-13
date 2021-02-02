@@ -12,10 +12,22 @@ ISR(ADC_vect) {
   // represents the channel of the next conversion
   static uint8_t next_channel = 0;
 
+  // use the decimation method described at http://ww1.microchip.com/downloads/en/Appnotes/doc8003.pdf
+  static uint16_t sum[6] = {0};
+  static uint8_t sum_count[6] = {0};
+
   uint16_t new_val = ADCL;
   new_val |= ADCH << 8;
 
-  adc_val[channel] = ((uint32_t) kSensor_filter_alpha * new_val + (uint32_t) (255 - kSensor_filter_alpha) * adc_val[channel]) >> 8;
+  sum[channel] += new_val;
+  sum_count[channel] ++;
+
+  // we take 4^3 samples, giving us a 13 bit result
+  if (sum_count[channel] >= 64) {
+    adc_val[channel] = adc_val[channel] = ((uint32_t) kSensor_filter_alpha * (sum[channel] >> 3) + (uint32_t) (255 - kSensor_filter_alpha) * adc_val[channel]) >> 8;;
+    sum[channel] = 0;
+    sum_count[channel] = 0;
+  }
 
   channel = next_channel;
   next_channel ++;
