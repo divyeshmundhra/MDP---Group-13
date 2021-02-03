@@ -1,7 +1,7 @@
 import pygame
 from constants import *
 
-class Robot:
+class RobotSprite:
     def __init__(self, game, x, y):
         pygame.sprite.Sprite.__init__(self)
         self.game = game

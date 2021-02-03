@@ -1,4 +1,4 @@
-from cell import Cell
+from ..dto.cell import Cell
 from constants import *
 
 # Read the arena text file and store it as a list ==========================================
