@@ -40,7 +40,7 @@ ISR(ADC_vect) {
 }
 
 void setup_sensors() {
-  ADMUX |= _BV(REFS0); // Voltage Reference = AVcc
+  // using external AREF (3.3V) by default
   /*
     ADEN: enable ADC
     ADATE: auto trigger (ADCSRB ADTS[2:0] defaults to 0, free running mode)
