@@ -1,13 +1,15 @@
 from constants import Orientation
 
-class Image:
-    def __init__(self, id, coord, orientation):
-        self.id = id
+class Robotinfo:
+    def __init__(self, coord, orientation):
         self.coord = coord
         self.orientation = orientation
 
     def get_coord(self):
         return self.coord
+    
+    def set_coord(self, coord):
+        self.coord = coord
 
     def get_orientation(self):
         return self.orientation
