@@ -1,4 +1,4 @@
-from constants import Orientation
+from src.dto.constants import Orientation
 
 class Robotinfo:
     def __init__(self, coord, orientation):
@@ -11,5 +11,5 @@ class Robotinfo:
     def set_coord(self, coord):
         self.coord = coord
 
-    def get_orientation(self):
+    def get_orientation(self) -> Orientation:
         return self.orientation
