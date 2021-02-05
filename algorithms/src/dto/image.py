@@ -1,8 +1,8 @@
 from constants import Orientation
 
 class Image:
-    def __init__(self, id, coord, orientation):
-        self.id = id
+    def __init__(self, image_id, coord, orientation):
+        self.image_id = image_id
         self.coord = coord
         self.orientation = orientation
 
