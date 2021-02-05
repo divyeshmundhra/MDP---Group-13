@@ -1,17 +1,19 @@
 from src.dto.constants import Orientation
 from src.dto import Coord
 
-class Image:
-    def __init__(self, image_id: int, coord: Coord, orientation: Orientation):
-        self.image_id = image_id
+class Robotinfo:
+    def __init__(self, coord, orientation):
         self.coord = coord
         self.orientation = orientation
 
-    def get_image_id(self) -> int:
-        return self.image_id
-
     def get_coord(self) -> Coord:
         return self.coord
+    
+    def set_coord(self, coord: Coord) -> None:
+        self.coord = coord
 
     def get_orientation(self) -> Orientation:
         return self.orientation
+
+    def set_orientation(self, orientation: Orientation) -> None:
+        self.orientation = orientation
