@@ -20,4 +20,7 @@ class Orientation(Enum):
     EAST = 1
     SOUTH = 2
     WEST = 3
-        
+
+class AgentTask(Enum):
+    FAST = 0
+    EXPLORE = 1
