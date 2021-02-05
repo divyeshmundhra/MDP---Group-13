@@ -14,3 +14,15 @@ class Coord:
     
     def set_y(self, y):
         self.y = y
+    
+    def add(self, operand: Coord) -> Coord:
+        return Coord(
+            self.get_x() + operand.get_x(),
+            self.get_y() + operand.get_y()
+        )
+ 
+    def subtract(self, operand: Coord) -> Coord:
+        return Coord(
+            self.get_x() - operand.get_x(),
+            self.get_y() - operand.get_y()
+        )
