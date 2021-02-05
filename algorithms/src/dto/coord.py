@@ -26,3 +26,6 @@ class Coord:
             self.get_x() - operand.get_x(),
             self.get_y() - operand.get_y()
         )
+    
+    def manhattan_distance(self) -> int:
+        return abs(self.x) + abs(self.y)
