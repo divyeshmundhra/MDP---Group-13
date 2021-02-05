@@ -29,3 +29,6 @@ class Coord:
     
     def manhattan_distance(self) -> int:
         return abs(self.x) + abs(self.y)
+    
+    def is_equal(self, coord) -> bool:
+        return self.x == coord.get_x and self.y == coord.get_y
