@@ -9,11 +9,11 @@ green = [0,255,0]
 yellow = [255,255,0]
 
 # Defining map dimensions
-map_row = 20 
-map_col = 15
-tile_size = 20
-dis_x = 300
-dis_y = 400
+MAP_ROW = 20
+MAP_COL = 15
+TILE_SIZE = 20
+DIS_X = 300
+DIS_Y = 400
 
 class Orientation(Enum):
     NORTH = 0
