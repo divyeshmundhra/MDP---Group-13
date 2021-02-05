@@ -1,4 +1,4 @@
-from constants import Orientation
+from src.dto.constants import Orientation
 
 class Image:
     def __init__(self, image_id, coord, orientation):
@@ -9,5 +9,5 @@ class Image:
     def get_coord(self):
         return self.coord
 
-    def get_orientation(self):
+    def get_orientation(self) -> Orientation:
         return self.orientation
