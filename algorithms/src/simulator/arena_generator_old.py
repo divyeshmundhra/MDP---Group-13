@@ -1,5 +1,5 @@
 from src.dto.cell import Cell
-from src.simulator.constants import *
+from src.dto.constants import *
 
 # Read the arena text file and store it as a list ==========================================
 f = open("sample_arena.txt", "r") #import the arena file

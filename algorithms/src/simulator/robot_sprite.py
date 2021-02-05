@@ -1,5 +1,5 @@
 from lib import pygame
-from src.simulator.constants import *
+from src.dto.constants import *
 
 class RobotSprite:
     def __init__(self, game, x, y):

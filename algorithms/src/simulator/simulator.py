@@ -3,7 +3,7 @@ from src.simulator.arena_generator_old import Grid
 from src.simulator.robot_sprite import RobotSprite
 from lib import pygame
 from lib.pygame.locals import *
-from src.simulator.constants import *
+from src.dto.constants import *
 
 class Simulator:
     def __init__(self):

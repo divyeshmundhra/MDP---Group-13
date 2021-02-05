@@ -13,3 +13,10 @@ map_col = 15
 tile_size = 20
 dis_x = 300
 dis_y = 400
+
+class Orientation(Enum):
+    NORTH = 0
+    EAST = 1
+    SOUTH = 2
+    WEST = 3
+        
