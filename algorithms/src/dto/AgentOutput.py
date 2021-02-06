@@ -1,7 +1,7 @@
 class AgentOutput:
-    def __init__(self):
-        self.move_command = None
-        self.message = None
+    def __init__(self, move_command, message):
+        self.move_command = move_command
+        self.message = message
 
     def get_move_command(self):
         return self.move_command
