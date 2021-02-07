@@ -68,3 +68,18 @@ void loop_sensors() {
     delay(10);
   #endif
 }
+
+void log_sensor(uint8_t i) {
+  if (i == 0 || i > 6) {
+    return;
+  }
+
+  Serial.print("Sensor ");
+  Serial.print(i);
+  Serial.print(": raw=");
+  cli();
+  Serial.print(adc_val[i - 1]);
+  Serial.print(" actual=");
+  Serial.println(sensor_distances[i - 1]);
+  sei();
+}
