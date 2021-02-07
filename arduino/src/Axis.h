@@ -35,13 +35,19 @@ class Axis {
      * @param count encoder count
      * @return int32_t corrected encoder count
      */
-    int32_t readEncoder(int32_t count) {
-      if (_reverse) {
-        return -count;
+    int32_t getEncoder() {
+      if (_invert ^ _reverse) {
+        return -encoder_count;
       }
 
-      return count;
+      return encoder_count;
     }
+
+    void resetEncoder() {
+      encoder_count = 0;
+    }
+
+    volatile int32_t encoder_count = 0;
 
     int16_t getPower() {
       return _power;
@@ -51,6 +57,7 @@ class Axis {
      * @brief Function pointer to be called to set motor PWM duty cycle
      */
     void (*_setPower)(uint16_t power, bool reverse);
+
     /**
      * @brief Actual duty cycle written to the motor
      */
