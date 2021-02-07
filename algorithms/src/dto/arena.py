@@ -9,7 +9,7 @@ class Arena:
         for y in range(MAP_ROW): #create Cell objects for each cell in the matrix
             for x in range(MAP_COL): 
                 coord = Coord(x, y)
-                self.cell_matrix[coord.get_x()][coord.get_x()] = Cell(coord)
+                self.cell_matrix[coord.get_x()][coord.get_y()] = Cell(coord)
     
     # def set_cell_at_coord(self, cell, coord):
     #     self.cell_matrix[coord.get_x()][coord.get_y()] = cell
