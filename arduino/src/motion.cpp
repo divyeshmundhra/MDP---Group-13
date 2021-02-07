@@ -31,95 +31,123 @@ typedef struct {
   int32_t last_input = 0;
 } pid_state_t;
 
-volatile int32_t _encoder_left = 0;
-volatile int32_t _encoder_right = 0;
-
 ISR(PCINT2_vect) {
   // http://makeatronics.blogspot.com/2013/02/efficiently-reading-quadrature-with.html
-  const int8_t _kEncoder_LUT[16] = {0, -1, 1, 0, 1, 0, 0, -1, -1, 0, 0, 1, 0, 1, -1, 0};
+  // https://github.com/PaulStoffregen/Encoder/blob/master/Encoder.h
   static uint8_t state = 0;
   asm volatile(
-    // update encoder state
-    "lsl %[state]                    \n\t" // state << 2
-    "lsl %[state]                    \n\t"
-    "andi %[state], 0x0C             \n\t"
-    "sbic %[in], %[encA]             \n\t" // if encoder A is set,
-    "sbr %[state], (1<<0)            \n\t" //   set bit 0 of state
-    "sbic %[in], %[encB]             \n\t" // if encoder B is set, 
-    "sbr %[state], (1<<1)            \n\t" //   set bit 1 of state
-    // use state to retrieve from LUT
-    "add %A[lut], %[state]           \n\t" // increment lut by state ie retrieve lut[state]
-    "adc %B[lut], __zero_reg__       \n\t"
-    "ld __tmp_reg__, Z               \n\t"
-    /*
-      add lut[state] to count
-      - at this stage, __tmp_reg__ will contain either 0, 1, or -1 (0xFF)
-      - adding 0 or 1 is straight forward, but to add 0xFF to int32_t, need to sign extend
-        (ie add 0xFFFFFFFF)
-      - as a cheap hack, we're going to clear __tmp_reg__ if the highest bit of it is clear (ie non negative),
-        then add it to all the bytes of count. this allows us to continuously add __tmp_reg__ to all bytes to
-        handle both 0, 1 and -1 without using 3 more registers
-    */
-    "add %A[count], __tmp_reg__      \n\t"
-    "sbrs __tmp_reg__, 7             \n\t" // if highest bit is clear,
-    "eor __tmp_reg__, __tmp_reg__    \n\t" //   clear __tmp_reg__ so adding it later dosent do anything
-    "adc %B[count], __tmp_reg__      \n\t"
-    "adc %C[count], __tmp_reg__      \n\t"
-    "adc %D[count], __tmp_reg__      \n\t"
+      // update encoder state
+      "lsl %[state]                    \n\t" // state << 2
+      "lsl %[state]                    \n\t"
+      "andi %[state], 0x0C             \n\t"
+      "sbic %[in], %[encA]             \n\t" // if encoder A is set,
+      "sbr %[state], (1<<0)            \n\t" //   set bit 0 of state
+      "sbic %[in], %[encB]             \n\t" // if encoder B is set, 
+      "sbr %[state], (1<<1)            \n\t" //   set bit 1 of state
+      // use state to retrieve from LUT
+      "ldi r30, lo8(pm(L%=jmptable))   \n\t"
+      "ldi r31, hi8(pm(L%=jmptable))   \n\t"
+      "add r30, %[state]               \n\t" // increment lut by state ie retrieve lut[state]
+      "adc r31, __zero_reg__           \n\t"
+      "ijmp                            \n\t"
+    "L%=jmptable:                      \n\t"
+      "rjmp L%=end                     \n\t" // 0
+      "rjmp L%=plus1                   \n\t" // 1
+      "rjmp L%=minus1                  \n\t" // 2
+      "rjmp L%=end                     \n\t" // 3
+      "rjmp L%=minus1                  \n\t" // 4
+      "rjmp L%=end                     \n\t" // 5
+      "rjmp L%=end                     \n\t" // 6
+      "rjmp L%=plus1                   \n\t" // 7
+      "rjmp L%=plus1                   \n\t" // 8
+      "rjmp L%=end                     \n\t" // 9
+      "rjmp L%=end                     \n\t" // 10
+      "rjmp L%=minus1                  \n\t" // 11
+      "rjmp L%=end                     \n\t" // 12
+      "rjmp L%=minus1                  \n\t" // 13
+      "rjmp L%=plus1                   \n\t" // 14
+      "rjmp L%=end                     \n\t" // 15
+    "L%=plus1:                         \n\t"
+      "subi %A[count], 255             \n\t"
+      "sbci %B[count], 255             \n\t"
+      "sbci %C[count], 255             \n\t"
+      "sbci %D[count], 255             \n\t"
+      "rjmp L%=end                     \n\t"
+    "L%=minus1:                        \n\t"
+      "subi %A[count], 1               \n\t"
+      "sbci %B[count], 0               \n\t"
+      "sbci %C[count], 0               \n\t"
+      "sbci %D[count], 0               \n\t"
+    "L%=end:                           \n\t"
     :
       [state] "=d" (state), // has to go into upper register because ANDI and SBR only operate on upper
-      [count] "=w" (_encoder_left)
+      [count] "=w" (axis_left.encoder_count)
     :
       "0" (state),
-      "1" (_encoder_left),
+      "1" (axis_left.encoder_count),
       [in] "I" (_SFR_IO_ADDR(E1_PIN)),
       [encA] "I" (E1A_BIT),
-      [encB] "I" (E1B_BIT),
-      [lut] "z" (_kEncoder_LUT)
+      [encB] "I" (E1B_BIT)
+    : "r30", "r31"
   );
 }
 
 ISR(PCINT0_vect) {
-  const int8_t _kEncoder_LUT[16] = {0, 1, -1, 0, -1, 0, 0, 1, 1, 0, 0, -1, 0, -1, 1, 0};
   static uint8_t state = 0;
   asm volatile(
-    // update encoder state
-    "lsl %[state]                    \n\t" // state << 2
-    "lsl %[state]                    \n\t"
-    "andi %[state], 0x0C             \n\t"
-    "sbic %[in], %[encA]             \n\t" // if encoder A is set,
-    "sbr %[state], (1<<0)            \n\t" //   set bit 0 of state
-    "sbic %[in], %[encB]             \n\t" // if encoder B is set, 
-    "sbr %[state], (1<<1)            \n\t" //   set bit 1 of state
-    // use state to retrieve from LUT
-    "add %A[lut], %[state]           \n\t" // increment lut by state ie retrieve lut[state]
-    "adc %B[lut], __zero_reg__       \n\t"
-    "ld __tmp_reg__, Z               \n\t"
-    /*
-      add lut[state] to count
-      - at this stage, __tmp_reg__ will contain either 0, 1, or -1 (0xFF)
-      - adding 0 or 1 is straight forward, but to add 0xFF to int32_t, need to sign extend
-        (ie add 0xFFFFFFFF)
-      - as a cheap hack, we're going to clear __tmp_reg__ if the highest bit of it is clear (ie non negative),
-        then add it to all the bytes of count. this allows us to continuously add __tmp_reg__ to all bytes to
-        handle both 0, 1 and -1 without using 3 more registers
-    */
-    "add %A[count], __tmp_reg__      \n\t"
-    "sbrs __tmp_reg__, 7             \n\t" // if highest bit is clear,
-    "eor __tmp_reg__, __tmp_reg__    \n\t" //   clear __tmp_reg__ so adding it later dosent do anything
-    "adc %B[count], __tmp_reg__      \n\t"
-    "adc %C[count], __tmp_reg__      \n\t"
-    "adc %D[count], __tmp_reg__      \n\t"
+      // update encoder state
+      "lsl %[state]                    \n\t" // state << 2
+      "lsl %[state]                    \n\t"
+      "andi %[state], 0x0C             \n\t"
+      "sbic %[in], %[encA]             \n\t" // if encoder A is set,
+      "sbr %[state], (1<<0)            \n\t" //   set bit 0 of state
+      "sbic %[in], %[encB]             \n\t" // if encoder B is set, 
+      "sbr %[state], (1<<1)            \n\t" //   set bit 1 of state
+      // use state to retrieve from LUT
+      "ldi r30, lo8(pm(L%=jmptable))   \n\t"
+      "ldi r31, hi8(pm(L%=jmptable))   \n\t"
+      "add r30, %[state]               \n\t" // increment lut by state ie retrieve lut[state]
+      "adc r31, __zero_reg__           \n\t"
+      "ijmp                            \n\t"
+    "L%=jmptable:                      \n\t"
+      "rjmp L%=end                     \n\t" // 0
+      "rjmp L%=plus1                   \n\t" // 1
+      "rjmp L%=minus1                  \n\t" // 2
+      "rjmp L%=end                     \n\t" // 3
+      "rjmp L%=minus1                  \n\t" // 4
+      "rjmp L%=end                     \n\t" // 5
+      "rjmp L%=end                     \n\t" // 6
+      "rjmp L%=plus1                   \n\t" // 7
+      "rjmp L%=plus1                   \n\t" // 8
+      "rjmp L%=end                     \n\t" // 9
+      "rjmp L%=end                     \n\t" // 10
+      "rjmp L%=minus1                  \n\t" // 11
+      "rjmp L%=end                     \n\t" // 12
+      "rjmp L%=minus1                  \n\t" // 13
+      "rjmp L%=plus1                   \n\t" // 14
+      "rjmp L%=end                     \n\t" // 15
+    "L%=plus1:                         \n\t"
+      "subi %A[count], 255             \n\t"
+      "sbci %B[count], 255             \n\t"
+      "sbci %C[count], 255             \n\t"
+      "sbci %D[count], 255             \n\t"
+      "rjmp L%=end                     \n\t"
+    "L%=minus1:                        \n\t"
+      "subi %A[count], 1               \n\t"
+      "sbci %B[count], 0               \n\t"
+      "sbci %C[count], 0               \n\t"
+      "sbci %D[count], 0               \n\t"
+    "L%=end:                           \n\t"
     :
       [state] "=d" (state), // has to go into upper register because ANDI and SBR only operate on upper
-      [count] "=w" (_encoder_right)
+      [count] "=w" (axis_right.encoder_count)
     :
       "0" (state),
-      "1" (_encoder_right),
+      "1" (axis_right.encoder_count),
       [in] "I" (_SFR_IO_ADDR(E2_PIN)),
       [encA] "I" (E2A_BIT),
-      [encB] "I" (E2B_BIT),
-      [lut] "z" (_kEncoder_LUT)
+      [encB] "I" (E2B_BIT)
+    : "r30", "r31"
   );
 }
 
@@ -234,11 +262,11 @@ ISR(TIMER2_COMPA_vect) {
     return;
   }
 
-  int32_t encoder_cor_left = axis_left.readEncoder(_encoder_left);
-  int32_t encoder_cor_right = axis_right.readEncoder(_encoder_right);
+  int32_t encoder_left = axis_left.getEncoder();
+  int32_t encoder_right = axis_right.getEncoder();
 
-  int32_t delta_left = encoder_cor_left - pEncoder_left;
-  int32_t delta_right = encoder_cor_right - pEncoder_right;
+  int32_t delta_left = encoder_left - pEncoder_left;
+  int32_t delta_right = encoder_right - pEncoder_right;
 
   // whether the encoder has changed from the last update
   bool has_delta = (delta_left < -kEncoder_move_threshold) || (delta_left > kEncoder_move_threshold) ||
@@ -246,13 +274,13 @@ ISR(TIMER2_COMPA_vect) {
 
   if (state == MOVING && !has_delta) {
     // encoder delta has slowed to almost zero - lets check if we should finish the move
-    int32_t diff_err = encoder_cor_left - encoder_cor_right;
+    int32_t diff_err = encoder_left - encoder_right;
     if (diff_err > -kMax_encoder_diff_error && diff_err < kMax_encoder_diff_error) {
       // if the error between both encoders are really similar, we can check for the
       // move-specific terminating condition
       if (move_type == DISTANCE) {
         // DISTANCE terminates when the left encoder is really close to target
-        int32_t diff_left = encoder_cor_left - target;
+        int32_t diff_left = encoder_left - target;
         if (diff_left > -kMax_encoder_error && diff_left < kMax_encoder_error) {
           Serial.println("move distance done");
           state = IDLE;
@@ -269,28 +297,28 @@ ISR(TIMER2_COMPA_vect) {
       }
     }
   } else if (state == MOVE_COMMANDED) {
-    resetControllerState(&state_tl, encoder_cor_right);
+    resetControllerState(&state_tl, encoder_right);
     if (move_type == DISTANCE) {
-      resetControllerState(&state_straight_left, encoder_cor_left);
-      resetControllerState(&state_straight_right, encoder_cor_right);
+      resetControllerState(&state_straight_left, encoder_left);
+      resetControllerState(&state_straight_right, encoder_right);
     } else if (move_type == OBSTACLE) {
       resetControllerState(&state_obstacle, sensor_distances[FRONT_FRONT_MID]);
     }
     state = MOVING;
   }
 
-  pEncoder_left = encoder_cor_left;
-  pEncoder_right = encoder_cor_right;
+  pEncoder_left = encoder_left;
+  pEncoder_right = encoder_right;
 
   if (move_type == DISTANCE) {
-    base_left = controllerStraight(&state_straight_left, encoder_cor_left, target);
-    base_right = controllerStraight(&state_straight_right, encoder_cor_right, target);
+    base_left = controllerStraight(&state_straight_left, encoder_left, target);
+    base_right = controllerStraight(&state_straight_right, encoder_right, target);
   } else if (move_type == OBSTACLE) {
     base_left = controllerObstacle(&state_obstacle, sensor_distances[FRONT_FRONT_MID], target);
     base_right = base_left;
   }
 
-  correction = controllerTrackLeft(encoder_cor_left, encoder_cor_right);
+  correction = controllerTrackLeft(encoder_left, encoder_right);
 
   int16_t power_left = base_left - correction;
   int16_t power_right = base_right + correction;
@@ -304,7 +332,7 @@ bool get_motion_done() {
 }
 
 int32_t get_encoder_left() {
-  return axis_left.readEncoder(_encoder_left);
+  return axis_left.getEncoder();
 }
 
 void setup_motion() {
@@ -335,8 +363,8 @@ void start_motion_distance(motion_direction_t _direction, uint32_t distance) {
   }
 
   cli();
-  _encoder_left = 0;
-  _encoder_right = 0;
+  axis_left.resetEncoder();
+  axis_right.resetEncoder();
 
   state = MOVE_COMMANDED;
   move_type = DISTANCE;
@@ -375,8 +403,8 @@ void start_motion_obstacle(uint16_t distance) {
   }
 
   cli();
-  _encoder_left = 0;
-  _encoder_right = 0;
+  axis_left.resetEncoder();
+  axis_right.resetEncoder();
 
   state = MOVE_COMMANDED;
   move_type = OBSTACLE;
@@ -401,8 +429,8 @@ void loop_motion() {
 
     if ((cur_time - last_print) > 10) {
       cli();
-      int32_t __encoder_left = _encoder_left;
-      int32_t __encoder_right = _encoder_right;
+      int32_t __encoder_left = axis_left.getEncoder();
+      int32_t __encoder_right = axis_right.getEncoder();
       int16_t power_left = axis_left.getPower();
       int16_t power_right = axis_right.getPower();
       // int16_t _base_power = base_power;
