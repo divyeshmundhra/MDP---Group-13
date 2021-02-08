@@ -1,8 +1,10 @@
-
+import sys, os
+path_of_directory_head = os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))))
+sys.path.append(path_of_directory_head)
 from src.simulator.arena_generator_old import Grid
 from src.simulator.robot_sprite import RobotSprite
-from lib import pygame
-from lib.pygame.locals import *
+import pygame
+from pygame.locals import *
 from src.dto.constants import *
 
 class Simulator:

@@ -1,4 +1,4 @@
-from lib import pygame
+import pygame
 from src.dto.constants import *
 
 class RobotSprite:
