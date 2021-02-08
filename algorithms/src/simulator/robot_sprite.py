@@ -3,14 +3,14 @@ import pygame #change this later
 from src.dto.constants import *
 
 class RobotSprite:
-    def __init__(self, game, x, y):
+    def __init__(self, game, robot): # Pass the robot object as a parameter so the sprite can retrieve the details
         pygame.sprite.Sprite.__init__(self)
         self.game = game
         self.image = pygame.Surface((30, 30))
         self.image.fill(yellow)
         self.rect = self.image.get_rect()
-        self.x = x
-        self.y = y
+        self.x = robot.get_coord().get_x()
+        self.y = robot.get_coord().get_y()
 
     def move(self, dx=0, dy=0):
         self.x += dx

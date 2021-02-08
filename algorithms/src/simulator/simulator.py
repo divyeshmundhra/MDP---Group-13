@@ -9,6 +9,7 @@ from src.simulator.robot_sprite import RobotSprite
 import pygame #change this later
 from src.dto.constants import *
 from src.dto.coord import Coord
+from src.dto.RobotInfo import RobotInfo
 
 class Simulator:
     def __init__(self):
@@ -23,8 +24,10 @@ class Simulator:
             self.update()
             self.display()
     
-    def new(self):
-        self.robotold = RobotSprite(self, 30, 370)
+    def init_robot(self):
+        start_coord = Coord(30, 370)
+        robot = RobotInfo(start_coord, Orientation.NORTH)
+        self.robot_sprite = RobotSprite(self, robot)
 
     def draw_grid(self):
         # Display coloured boxes to indicate obstacles, start and end points
@@ -49,12 +52,12 @@ class Simulator:
     def display(self):
         self.dis.fill(white)
         self.draw_grid()
-        self.robotold.draw(self.dis)
+        self.robot_sprite.draw(self.dis)
         pygame.display.update() 
         #pygame.display.flip()
 
     def update(self):
-        self.robotold.update()
+        self.robot_sprite.update()
 
     def quit(self):
         pygame.quit()
@@ -69,20 +72,20 @@ class Simulator:
             # Control robot using arrow keys
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
-                    self.robotold.move(dx=-TILE_SIZE)
+                    self.robot_sprite.move(dx=-TILE_SIZE)
                     print("move left")
                 if event.key == pygame.K_RIGHT:
-                    self.robotold.move(dx=TILE_SIZE)
+                    self.robot_sprite.move(dx=TILE_SIZE)
                     print("move right")
                 if event.key == pygame.K_UP:
-                    self.robotold.move(dy=-TILE_SIZE)
+                    self.robot_sprite.move(dy=-TILE_SIZE)
                     print("move up")
                 if event.key == pygame.K_DOWN:
-                    self.robotold.move(dy=TILE_SIZE)
+                    self.robot_sprite.move(dy=TILE_SIZE)
                     print("move down")
 
 
 g = Simulator()
 while True:
-    g.new()
+    g.init_robot()
     g.run()
