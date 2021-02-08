@@ -52,7 +52,9 @@ void setup_sensors() {
 }
 
 void convert_sensor_data() {
-  sensor_distances[FRONT_MID] = (kSensor_constants[FRONT_MID][0] * adc_val[FRONT_MID] + kSensor_constants[FRONT_MID][1]) / (adc_val[FRONT_MID] + kSensor_constants[FRONT_MID][2]);
+  for(uint8_t i = 0; i < 6; i++) {
+    sensor_distances[i] = (kSensor_constants[i][0] * adc_val[i] + kSensor_constants[i][1]) / (adc_val[i] + kSensor_constants[i][2]);
+  }
 }
 
 void loop_sensors() {

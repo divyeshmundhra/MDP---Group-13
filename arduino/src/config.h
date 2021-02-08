@@ -60,11 +60,11 @@ const int16_t kMO_min_output = -400;
 
 // constants for sensor conversion
 // each array corresponds to the constants for one sensor
-// same order as 
+// same order as sensor_position_t
 const double kSensor_constants[6][3] = {
+  {-128.8, 78270, 108.6},
   {0, 0 ,0},
   {0, 0, 0},
-  {-128.8, 78270, 108.6},
   {0, 0, 0},
   {0, 0, 0},
   {0, 0, 0}
