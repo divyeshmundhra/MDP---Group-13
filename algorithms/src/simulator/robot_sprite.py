@@ -1,4 +1,5 @@
-from lib import pygame
+# from lib import pygame
+import pygame #change this later
 from src.dto.constants import *
 
 class RobotSprite:
@@ -16,8 +17,8 @@ class RobotSprite:
         self.y += dy
 
     def update(self):
-        self.rect.x = self.x * tile_size
-        self.rect.y = self.y * tile_size
+        self.rect.x = self.x * TILE_SIZE
+        self.rect.y = self.y * TILE_SIZE
 
     def draw(self, dis):
         pygame.draw.circle(dis, yellow, (self.x,self.y), 30)

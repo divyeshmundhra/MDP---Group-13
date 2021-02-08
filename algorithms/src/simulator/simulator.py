@@ -4,9 +4,11 @@ sys.path.append(os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(
 
 from src.simulator.ArenaStringParser import Grid
 from src.simulator.robot_sprite import RobotSprite
-from lib import pygame
-from lib.pygame.locals import *
+# from lib import pygame
+# from lib.pygame.locals import *
+import pygame #change this later
 from src.dto.constants import *
+from src.dto.coord import Coord
 
 class Simulator:
     def __init__(self):
@@ -28,7 +30,8 @@ class Simulator:
         # Display coloured boxes to indicate obstacles, start and end points
         for row in range(MAP_ROW):
             for col in range(MAP_COL):
-                if Grid.grid[row][col].getObstacle() == True:
+                coord = Coord(col, row)
+                if Grid.arena.get_cell_at_coord(coord).get_obstacle_flag() == True:
                     pygame.draw.rect(self.dis, black, [col*TILE_SIZE, row*TILE_SIZE, TILE_SIZE, TILE_SIZE])
 
                 if 0<=row<=2 and 12<=col<=14:
