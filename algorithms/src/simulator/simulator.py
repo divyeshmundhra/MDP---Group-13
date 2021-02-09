@@ -4,9 +4,7 @@ sys.path.append(os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(
 
 from src.simulator.ArenaStringParser import Grid
 from src.simulator.robot_sprite import RobotSprite
-# from lib import pygame
-# from lib.pygame.locals import *
-import pygame #change this later
+import pygame
 from src.dto.constants import *
 from src.dto.coord import Coord
 from src.dto.RobotInfo import RobotInfo
