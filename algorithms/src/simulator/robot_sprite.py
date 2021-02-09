@@ -20,4 +20,4 @@ class RobotSprite:
         self.rect.y = self.y * TILE_SIZE
 
     def draw(self, dis):
-        pygame.draw.circle(dis, yellow, (self.x,self.y), 30)
+        pygame.draw.circle(dis, yellow, (self.x*20+10, 400-self.y*20-10), 30)  #start at (30,370)

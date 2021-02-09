@@ -23,7 +23,7 @@ class Simulator:
             self.display()
     
     def init_robot(self):
-        start_coord = Coord(30, 370)
+        start_coord = Coord(1, 1)
         self.robot_info = RobotInfo(start_coord, Orientation.NORTH)
         self.robot_sprite = RobotSprite(self, self.robot_info)
 
@@ -69,16 +69,16 @@ class Simulator:
             # Control robot using arrow keys
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
-                    self.robot_sprite.move(dx=-TILE_SIZE)
+                    self.robot_sprite.move(dx=-1)
                     print("move left")
                 if event.key == pygame.K_RIGHT:
-                    self.robot_sprite.move(dx=TILE_SIZE)
+                    self.robot_sprite.move(dx=1)
                     print("move right")
                 if event.key == pygame.K_UP:
-                    self.robot_sprite.move(dy=-TILE_SIZE)
+                    self.robot_sprite.move(dy=1)
                     print("move up")
                 if event.key == pygame.K_DOWN:
-                    self.robot_sprite.move(dy=TILE_SIZE)
+                    self.robot_sprite.move(dy=-1)
                     print("move down")
 
         #TODO: call the agent at each step, passing in the current RobotInfo and known ArenaInfo (aka the arena object)
