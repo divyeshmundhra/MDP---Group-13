@@ -26,8 +26,8 @@ class Simulator:
     
     def init_robot(self):
         start_coord = Coord(30, 370)
-        robot = RobotInfo(start_coord, Orientation.NORTH)
-        self.robot_sprite = RobotSprite(self, robot)
+        self.robot_info = RobotInfo(start_coord, Orientation.NORTH)
+        self.robot_sprite = RobotSprite(self, self.robot_info)
 
     def draw_grid(self):
         # Display coloured boxes to indicate obstacles, start and end points
@@ -47,14 +47,13 @@ class Simulator:
         for x in range(0,DIS_X+TILE_SIZE,TILE_SIZE):
             pygame.draw.line(self.dis, grey, (x,0), (x,DIS_Y))
         for y in range(0,DIS_Y+TILE_SIZE,TILE_SIZE):
-            pygame.draw.line(self.dis, grey, (0,y), (DIS_Y,y))
+            pygame.draw.line(self.dis, grey, (0,y), (DIS_X,y))
 
     def display(self):
         self.dis.fill(white)
         self.draw_grid()
         self.robot_sprite.draw(self.dis)
         pygame.display.update() 
-        #pygame.display.flip()
 
     def update(self):
         self.robot_sprite.update()
@@ -83,6 +82,10 @@ class Simulator:
                 if event.key == pygame.K_DOWN:
                     self.robot_sprite.move(dy=TILE_SIZE)
                     print("move down")
+
+        #TODO: call the agent at each step, passing in the current RobotInfo and known ArenaInfo (aka the arena object)
+        # agent then uses the ArenaInfo to calculate move_command and pass it back to RobotInfo
+        # using the new RobotInfo, update the robot_sprite display
 
 
 g = Simulator()
