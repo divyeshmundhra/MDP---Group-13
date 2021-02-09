@@ -4,7 +4,7 @@
 #include "config.h"
 
 volatile uint16_t adc_val[6] = {0};
-volatile uint16_t sensor_distances[6] = {0};
+volatile int16_t sensor_distances[6] = {0};
 
 ISR(ADC_vect) {
   // channel represents the channel of this conversion (the trigger for this ISR)
@@ -54,6 +54,9 @@ void setup_sensors() {
 void convert_sensor_data() {
   for(uint8_t i = 0; i < 6; i++) {
     sensor_distances[i] = (kSensor_constants[i][0] * adc_val[i] + kSensor_constants[i][1]) / (adc_val[i] + kSensor_constants[i][2]);
+    if (sensor_distances[i] < 0) {
+      sensor_distances[i] = 0;
+    }
   }
 }
 
