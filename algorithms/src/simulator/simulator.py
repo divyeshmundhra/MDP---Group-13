@@ -1,7 +1,6 @@
-
 import sys, os
-sys.path.append(os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
-
+path_of_directory_head = os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))))
+sys.path.append(path_of_directory_head)
 from src.simulator.ArenaStringParser import Grid
 from src.simulator.robot_sprite import RobotSprite
 import pygame
