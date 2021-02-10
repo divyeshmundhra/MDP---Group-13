@@ -10,14 +10,14 @@ class Cell:
     def set_coord(self, coord):
         self.coord = coord
 
-    def get_explored_flag(self):
+    def is_explored(self):
         return self.explored
     
-    def set_explored_flag(self, explored):
+    def set_is_explored(self, explored):
         self.explored = explored
     
-    def get_obstacle_flag(self):
+    def is_obstacle(self):
         return self.obstacle
 
-    def set_obstacle_flag(self, obstacle):
+    def set_is_obstacle(self, obstacle):
         self.obstacle = obstacle

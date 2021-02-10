@@ -24,3 +24,8 @@ class Orientation(Enum):
 class AgentTask(Enum):
     FAST = 0
     EXPLORE = 1
+
+class TimeCosts:
+    QUARTER_TURN = 1
+    MOVE_ONE_UNIT = 1
+    # extendable: predefined times for larger turns and moves? linear equation to calculate time for larger turns and moves?
