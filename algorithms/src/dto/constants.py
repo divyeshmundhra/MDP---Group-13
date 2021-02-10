@@ -1,4 +1,5 @@
 from enum import Enum
+from src.dto.coord import Coord
 # Defining colours
 blue=[0,0,255]
 white = [255, 255, 255]
@@ -14,6 +15,11 @@ MAP_COL = 15
 TILE_SIZE = 20
 DIS_X = 300
 DIS_Y = 400
+
+# Defining start, end and waypoint coord
+START_COORD = Coord(1,1)
+END_COORD = Coord(13,18)
+WAYPOINT = Coord(2,2)
 
 class Orientation(Enum):
     NORTH = 0

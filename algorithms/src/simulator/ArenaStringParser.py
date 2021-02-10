@@ -17,7 +17,7 @@ class Grid:
             if arena_list[i] == '\n':
                 i = i+1 
             if arena_list[i] == '1':
-                arena.get_cell_at_coord(coord).set_obstacle_flag(True)
+                arena.get_cell_at_coord(coord).set_is_obstacle(True)
             elif arena_list[i] == '0':
-                arena.get_cell_at_coord(coord).set_obstacle_flag(False)
+                arena.get_cell_at_coord(coord).set_is_obstacle(False)
             i = i+1

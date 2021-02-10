@@ -7,6 +7,7 @@ import pygame
 from src.dto.constants import *
 from src.dto.coord import Coord
 from src.dto.RobotInfo import RobotInfo
+from src.agent.agent import Agent
 
 class Simulator:
     def __init__(self):
@@ -26,12 +27,14 @@ class Simulator:
         self.robot_info = RobotInfo(start_coord, Orientation.NORTH)
         self.robot_sprite = RobotSprite(self, self.robot_info)
 
+        self.agent = Agent(Grid.arena, self.robot_info, 0, END_COORD, WAYPOINT)
+
     def draw_grid(self):
         # Display coloured boxes to indicate obstacles, start and end points
         for row in range(MAP_ROW):
             for col in range(MAP_COL):
                 coord = Coord(col, row)
-                if Grid.arena.get_cell_at_coord(coord).get_obstacle_flag() == True:
+                if Grid.arena.get_cell_at_coord(coord).is_obstacle() == True:
                     pygame.draw.rect(self.dis, black, [col*TILE_SIZE, row*TILE_SIZE, TILE_SIZE, TILE_SIZE])
 
                 if 0<=row<=2 and 12<=col<=14:
@@ -68,22 +71,37 @@ class Simulator:
             # Control robot using arrow keys
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
-                    self.robot_sprite.move(dx=-1)
+                    new_coord = Coord(self.robot_info.get_coord().get_x() - 1, self.robot_info.get_coord().get_y())
+                    self.move(new_coord, Orientation.WEST)
                     print("move left")
                 if event.key == pygame.K_RIGHT:
-                    self.robot_sprite.move(dx=1)
+                    new_coord = Coord(self.robot_info.get_coord().get_x() + 1, self.robot_info.get_coord().get_y())
+                    self.move(new_coord, Orientation.EAST)
                     print("move right")
                 if event.key == pygame.K_UP:
-                    self.robot_sprite.move(dy=1)
+                    new_coord = Coord(self.robot_info.get_coord().get_x(), self.robot_info.get_coord().get_y()+1)
+                    self.move(new_coord, Orientation.NORTH)
                     print("move up")
                 if event.key == pygame.K_DOWN:
-                    self.robot_sprite.move(dy=-1)
+                    new_coord = Coord(self.robot_info.get_coord().get_x(), self.robot_info.get_coord().get_y()-1)
+                    self.move(new_coord, Orientation.SOUTH)
                     print("move down")
 
-        #TODO: call the agent at each step, passing in the current RobotInfo and known ArenaInfo (aka the arena object)
-        # agent then uses the ArenaInfo to calculate move_command and pass it back to RobotInfo
-        # using the new RobotInfo, update the robot_sprite display
+            # obs1 = Coord(4,0)
+            # obs2 = Coord(4,1)
+            # obs3 = Coord(4,2)
+            # obs4 = Coord(4,3)
+            # self.obstacles_coord_list = [obs1, obs2, obs3, obs4]
+            # self.turn_angle = self.agent.step(self.obstacles_coord_list).get_move_command().get_turn_angle()
+            # self.cells_to_advance = self.agent.step(self.obstacles_coord_list).get_move_command().get_turn_angle()
+            # print("AGENT OUTPUT: ", self.turn_angle, self.cells_to_advance)
+            # TODO: calculate new orientation and new coords, then call the function self.robot_sprite.move()
 
+
+    def move(self, new_coord: Coord, new_orientation):
+        self.robot_info.set_coord(new_coord)
+        self.robot_info.set_orientation(new_orientation)
+        self.robot_sprite.move(self.robot_info)
 
 g = Simulator()
 while True:
