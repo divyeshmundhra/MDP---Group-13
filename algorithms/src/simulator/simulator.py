@@ -95,7 +95,7 @@ class Simulator:
             # self.turn_angle = self.agent.step(self.obstacles_coord_list).get_move_command().get_turn_angle()
             # self.cells_to_advance = self.agent.step(self.obstacles_coord_list).get_move_command().get_turn_angle()
             # print("AGENT OUTPUT: ", self.turn_angle, self.cells_to_advance)
-            # TODO: calculate new orientation and new coords, then call the function self.robot_sprite.move()
+            # TODO: calculate new orientation and new coords, then call the function self.move(new_coord, new_orientation)
 
 
     def move(self, new_coord: Coord, new_orientation):
