@@ -62,12 +62,12 @@ const int16_t kMO_min_output = -400;
 // each array corresponds to the constants for one sensor
 // same order as sensor_position_t
 const double kSensor_constants[6][3] = {
-  {-128.8, 78270, 108.6},
-  {0, 0 ,0},
-  {-123.3, 707900, 11.64},
-  {0, 0, 0},
-  {-123.3, 707900, 11.64},
-  {0, 0, 0}
+  {-94.94, 748500, -19.02},  // FRONT_FRONT_MID
+  {-141.4, 1559000, -114.8}, // FRONT_FRONT_RIGHT
+  {-123.3, 707900, 11.64},   // LEFT_REAR
+  {-170.8, 1789000, 114.5},  // FRONT_FRONT_LEFT
+  {-123.3, 707900, 11.64},   // LEFT_FRONT
+  {-131, 821700, 137.6}      // RIGHT_FRONT
 };
 
 #endif
