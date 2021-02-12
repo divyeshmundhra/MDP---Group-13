@@ -1,5 +1,15 @@
-from src.dto import Coord, MoveCommand, AgentOutput, Arena, RobotInfo, OrientationTransform
-from src.agent import FastestPathAlgo, ExplorationAlgo
+# from src.dto import Coord, MoveCommand, AgentOutput, Arena, RobotInfo, OrientationTransform
+from src.dto.coord import Coord
+from src.dto.MoveCommand import MoveCommand
+from src.dto.AgentOutput import AgentOutput
+from src.dto.RobotInfo import RobotInfo
+from src.dto.OrientationTransform import OrientationTransform
+from src.dto.arena import Arena
+
+# from src.agent import FastestPathAlgo, ExplorationAlgo
+from src.agent.FastestPathAlgo import FastestPathAlgo
+from src.agent.ExplorationAlgo import ExplorationAlgo
+
 from src.dto.constants import AgentTask
 
 class Agent:
@@ -23,21 +33,21 @@ class Agent:
     def update_arena(self, obstacles_coord_list: list) -> None:
         for coord in obstacles_coord_list:
             cell = self.arena.get_cell_at_coord(coord)
-            cell.set_obstacle_flag(True)
+            cell.set_is_obstacle(True)
 
     def think(self) -> Coord:
         if self.task == AgentTask.FAST:
-            algo = FastestPathAlgo.FastestPathAlgo
+            algo = FastestPathAlgo()
         else:
-            algo = ExplorationAlgo.ExplorationAlgo
+            algo = ExplorationAlgo()
         return algo.get_next_step(self.arena, self.robot_info, self.end_coord, self.waypoint_coord)
 
     def calculate_move(self, target_coord) -> MoveCommand:
         current_coord = self.robot_info.get_coord()
         displacement = target_coord.subtract(current_coord)
-        target_orientation = OrientationTransform.OrientationTransform.displacement_to_orientation(displacement)
-        turn_angle = OrientationTransform.OrientationTransform.calc_degree_of_turn(self.robot_info.get_orientation(), target_orientation)
-        return MoveCommand.MoveCommand(
+        target_orientation = OrientationTransform.displacement_to_orientation(displacement)
+        turn_angle = OrientationTransform.calc_degree_of_turn(self.robot_info.get_orientation(), target_orientation)
+        return MoveCommand(
             turn_angle,
             displacement.manhattan_distance()
         )

@@ -1,5 +1,5 @@
 from src.dto.constants import Orientation
-from src.dto import Coord
+from src.dto.coord import Coord
 
 class OrientationTransform:
     orientation_to_degree = {

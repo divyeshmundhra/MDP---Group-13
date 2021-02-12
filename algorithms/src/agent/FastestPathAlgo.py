@@ -1,5 +1,10 @@
 from queue import PriorityQueue
-from src.dto import Arena, Coord, RobotInfo, OrientationTransform
+# from src.dto import Arena, Coord, RobotInfo, OrientationTransform
+from src.dto.coord import Coord
+from src.dto.RobotInfo import RobotInfo
+from src.dto.OrientationTransform import OrientationTransform
+from src.dto.arena import Arena
+
 from src.dto.constants import TimeCosts
 from src.agent import DecisionNode
 

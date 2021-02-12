@@ -1,13 +1,14 @@
 from src.dto.constants import *
-from src.dto import Cell
-from src.dto import Coord
+from src.dto.cell import Cell
+from src.dto.coord import Coord
 
 class Arena:
+
     ADJACENCY = [
-        Coord.Coord(0, 1),
-        Coord.Coord(1, 0),
-        Coord.Coord(0, -1),
-        Coord.Coord(-1, 0)
+        Coord(0, 1),
+        Coord(1, 0),
+        Coord(0, -1),
+        Coord(-1, 0)
     ]
 
     def __init__(self):
