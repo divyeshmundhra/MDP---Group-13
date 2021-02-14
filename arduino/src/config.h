@@ -16,6 +16,8 @@ const int16_t kMax_axis_decel = -128;
 
 // minimum encoder delta for the robot to be considered moving
 const int32_t kEncoder_move_threshold = 10;
+// minimum sensor delta to be considered sensor unstable
+const int16_t kSensor_delta_threshold = 1;
 
 // maximum error for move-distance to be completed
 const int8_t kMax_encoder_error = 5;
@@ -23,6 +25,8 @@ const int8_t kMax_encoder_error = 5;
 const int8_t kMax_obstacle_error = 5;
 // max difference between both axis for moves to be completed
 const int8_t kMax_encoder_diff_error = 5;
+// max error for wall align to be completed (mm)
+const int8_t kMax_align_error = 2;
 
 // parser buffer size
 // determines max length of command that can be sent
@@ -57,6 +61,14 @@ const int16_t kMO_integral_max = 400;
 
 const int16_t kMO_max_output = 400;
 const int16_t kMO_min_output = -400;
+
+// controller parameters for wall-align controller
+extern int16_t kP_align;
+extern int16_t kI_align;
+extern int16_t kD_align;
+
+const int16_t kWA_integral_min = -80;
+const int16_t kWA_integral_max = 80;
 
 // constants for sensor conversion
 // each array corresponds to the constants for one sensor

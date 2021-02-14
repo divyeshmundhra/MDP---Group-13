@@ -25,6 +25,8 @@ void start_motion_distance(motion_direction_t direction, uint32_t distance);
  */
 void start_motion_obstacle(uint16_t distance);
 
+void start_align();
+
 bool get_motion_done();
 int32_t get_encoder_left();
 
