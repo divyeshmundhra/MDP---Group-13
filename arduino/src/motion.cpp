@@ -284,6 +284,8 @@ ISR(TIMER2_COMPA_vect) {
         if (diff_left > -kMax_encoder_error && diff_left < kMax_encoder_error) {
           Serial.println("move distance done");
           state = IDLE;
+          axis_left.setPower(0);
+          axis_right.setPower(0);
           return;
         }
       } else if (move_type == OBSTACLE) {
@@ -292,6 +294,8 @@ ISR(TIMER2_COMPA_vect) {
         if (diff_err > -kMax_obstacle_error && diff_err < kMax_obstacle_error) {
           Serial.println("move obstacle done");
           state = IDLE;
+          axis_left.setPower(0);
+          axis_right.setPower(0);
           return;
         }
       }
