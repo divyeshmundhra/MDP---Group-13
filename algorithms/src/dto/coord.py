@@ -15,20 +15,26 @@ class Coord:
     def set_y(self, y):
         self.y = y
     
-    def add(self, operand: Coord) -> Coord:
+    def add(self, operand):
         return Coord(
             self.get_x() + operand.get_x(),
             self.get_y() + operand.get_y()
         )
  
-    def subtract(self, operand: Coord) -> Coord:
+    def subtract(self, operand):
         return Coord(
             self.get_x() - operand.get_x(),
             self.get_y() - operand.get_y()
+        )
+    
+    def multiply(self, operand):
+        return Coord(
+            self.get_x() * operand,
+            self.get_y() * operand
         )
     
     def manhattan_distance(self) -> int:
         return abs(self.x) + abs(self.y)
     
     def is_equal(self, coord) -> bool:
-        return self.x == coord.get_x and self.y == coord.get_y
+        return self.x == coord.get_x() and self.y == coord.get_y()

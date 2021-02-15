@@ -10,14 +10,13 @@ class RobotSprite:
         self.rect = self.image.get_rect()
         self.x = robot_info.get_coord().get_x()
         self.y = robot_info.get_coord().get_y()
+        self.orientation = robot_info.get_orientation()
 
-    def move(self, dx=0, dy=0):
-        self.x += dx
-        self.y += dy
+    def move(self, robot_info):
+        self.x = robot_info.get_coord().get_x()
+        self.y = robot_info.get_coord().get_y()
+        self.orientation = robot_info.get_orientation()
 
     def update(self):
         self.rect.x = self.x * TILE_SIZE
         self.rect.y = self.y * TILE_SIZE
-
-    def draw(self, dis):
-        pygame.draw.circle(dis, yellow, (self.x*20+10, 400-self.y*20-10), 30)  #start at (30,370)

@@ -1,7 +1,7 @@
-from src.dto import Coord
+from src.dto.coord import Coord
 
 class DecisionNode:
-    def __init__(self, coord: Coord, exact_cost: int, parent: DecisionNode):
+    def __init__(self, coord: Coord, exact_cost: int, parent):
         self.coord = coord
         self.exact_cost = exact_cost
         self.parent = parent
