@@ -11,7 +11,3 @@ int16_t kD_straight = 2000;
 int16_t kP_obstacle = 400;
 int16_t kI_obstacle = 50;
 int16_t kD_obstacle = 0;
-
-int16_t kP_align = 500;
-int16_t kI_align = 128;
-int16_t kD_align = 32;
