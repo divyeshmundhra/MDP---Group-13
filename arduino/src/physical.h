@@ -16,4 +16,6 @@ const uint16_t kRobot_circumference = 3.14159 * kWheel_distance;
 #define distanceToTicks(distance) (((uint32_t) distance) * kCount_per_rev / kWheel_circumference)
 #define angleToDistance(angle) (((uint32_t) angle) * kRobot_circumference / 360)
 
+const uint16_t kBlock_distance = distanceToTicks(100);
+
 #endif

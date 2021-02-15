@@ -35,13 +35,13 @@ static bool parse_buf() {
   }
 
   if (cmd == 'F') {
-    start_motion_distance(FORWARD, distanceToTicks(val));
+    start_motion_unit(FORWARD, val);
   } else if (cmd == 'B') {
-    start_motion_distance(REVERSE, distanceToTicks(val));
+    start_motion_unit(REVERSE, val);
   } else if (cmd == 'L') {
-    start_motion_distance(LEFT, distanceToTicks(angleToDistance(val)));
+    start_motion_unit(LEFT, val);
   } else if (cmd == 'R') {
-    start_motion_distance(RIGHT, distanceToTicks(angleToDistance(val)));
+    start_motion_unit(RIGHT, val);
   } else if (cmd == 'O') {
     start_motion_obstacle(val);
   } else if (cmd == 'A') {
