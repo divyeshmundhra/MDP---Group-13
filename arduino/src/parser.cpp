@@ -80,16 +80,7 @@ static bool parse_buf() {
     } else if (cmd1 == 'd') {
       kD_obstacle = val;
     }
-  } else if (cmd == 'a') {
-    if (cmd1 == 'p') {
-      kP_align = val;
-    } else if (cmd1 == 'i') {
-      kI_align = val;
-    } else if (cmd1 == 'd') {
-      kD_align = val;
-    }
-  }
-  else if (cmd == 'A') {
+  } else if (cmd == 'A') {
     start_checklist(val);
   } else {
     Serial.println("Unknown cmd");

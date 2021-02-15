@@ -8,7 +8,7 @@ const uint8_t kMin_motor_threshold = 16;
 
 // alpha for exponential filter used to smooth sensor data
 // [0-255], lower for more filtering
-const uint8_t kSensor_filter_alpha = 64;
+const uint8_t kSensor_filter_alpha = 127;
 
 // max axis acceleration/deceleration
 const int16_t kMax_axis_accel = 64;
@@ -61,14 +61,6 @@ const int16_t kMO_integral_max = 400;
 
 const int16_t kMO_max_output = 400;
 const int16_t kMO_min_output = -400;
-
-// controller parameters for wall-align controller
-extern int16_t kP_align;
-extern int16_t kI_align;
-extern int16_t kD_align;
-
-const int16_t kWA_integral_min = -80;
-const int16_t kWA_integral_max = 80;
 
 // constants for sensor conversion
 // each array corresponds to the constants for one sensor
