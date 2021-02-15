@@ -1,62 +1,63 @@
-import sys, os
+import sys, os, time
 path_of_directory_head = os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))))
 sys.path.append(path_of_directory_head)
-from src.simulator.ArenaStringParser import Grid
+from src.dto.ArenaStringParser import ArenaStringParser
 from src.simulator.robot_sprite import RobotSprite
 import pygame
 from src.dto.constants import *
 from src.dto.coord import Coord
 from src.dto.RobotInfo import RobotInfo
+from src.dto.OrientationTransform import OrientationTransform
 from src.agent.agent import Agent
+from src.simulator.SimulationDisplay import SimulationDisplay
 
 class Simulator:
     def __init__(self):
+        # display
         pygame.init()
-        self.dis = pygame.display.set_mode((DIS_X,500))
+        self.sim_display = None
         pygame.display.set_caption('arena simulator')
 
-    def run(self):
-        running=True
-        while running:
-            self.events()
-            self.update()
-            self.display()
+        # data
+        self.robot_info = None
+        self.robot_sprite = None
+        self.agent = None
+        self.arena = None
     
-    def init_robot(self):
-        start_coord = Coord(1, 1)
-        self.robot_info = RobotInfo(start_coord, Orientation.NORTH)
-        self.robot_sprite = RobotSprite(self, self.robot_info)
+    def init(self, agent_task: AgentTask, arena_string: str, waypoint: Coord):
+        self.robot_info = RobotInfo(START_COORD, Orientation.NORTH)
+        self.sim_display = SimulationDisplay(self.robot_info)
+        self.arena = ArenaStringParser.parse_arena_string(arena_string)
 
-        self.agent = Agent(Grid.arena, self.robot_info, 0, END_COORD, WAYPOINT)
+        # send copies of arena and robot info so that simulator and agent do not modify a mutual copy
+        self.agent = Agent(arena_string, self.robot_info.copy(), agent_task, END_COORD, waypoint)
 
-    def draw_grid(self):
-        # Display coloured boxes to indicate obstacles, start and end points
-        for row in range(MAP_ROW):
-            for col in range(MAP_COL):
-                coord = Coord(col, row)
-                if Grid.arena.get_cell_at_coord(coord).is_obstacle() == True:
-                    pygame.draw.rect(self.dis, black, [col*TILE_SIZE, row*TILE_SIZE, TILE_SIZE, TILE_SIZE])
+    def step(self):
+        # calculate agent percepts
+        obstacle_list = [] # for fastest path the agent already knows all obstacle locations
+        # get agent next move
+        agent_output = self.agent.step(obstacle_list, self.robot_info)
+        print(agent_output.get_message())
+        move_command = agent_output.get_move_command()
+        # update internal representation of robot
+        new_orientation = OrientationTransform.calc_orientation_after_turn(self.robot_info.get_orientation(), move_command.get_turn_angle())
+        unit_move = OrientationTransform.orientation_to_unit_displacement(new_orientation)
+        move = unit_move.multiply(move_command.get_cells_to_advance())
+        self.robot_info.set_coord(self.robot_info.get_coord().add(move))
+        # update pygame display
+        self.update_display()
 
-                if 0<=row<=2 and 12<=col<=14:
-                    pygame.draw.rect(self.dis, red, [col*TILE_SIZE, row*TILE_SIZE, TILE_SIZE, TILE_SIZE])
+    def run(self):
+        i = 0
+        while i<99:
+            self.events()
+            self.step()
+            time.sleep(0.5)
+            i+=1
 
-                if 17<=row<=19 and 0<=col<=2:
-                    pygame.draw.rect(self.dis, green, [col*TILE_SIZE, row*TILE_SIZE, TILE_SIZE, TILE_SIZE])
-
-        # Draw the lines for the grid
-        for x in range(0,DIS_X+TILE_SIZE,TILE_SIZE):
-            pygame.draw.line(self.dis, grey, (x,0), (x,DIS_Y))
-        for y in range(0,DIS_Y+TILE_SIZE,TILE_SIZE):
-            pygame.draw.line(self.dis, grey, (0,y), (DIS_X,y))
-
-    def display(self):
-        self.dis.fill(white)
-        self.draw_grid()
-        self.robot_sprite.draw(self.dis)
+    def update_display(self):
+        self.sim_display.draw(self.arena, self.robot_info)
         pygame.display.update() 
-
-    def update(self):
-        self.robot_sprite.update()
 
     def quit(self):
         pygame.quit()
@@ -69,41 +70,26 @@ class Simulator:
                 self.quit()
 
             # Control robot using arrow keys
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
-                    new_coord = Coord(self.robot_info.get_coord().get_x() - 1, self.robot_info.get_coord().get_y())
-                    self.move(new_coord, Orientation.WEST)
-                    print("move left")
-                if event.key == pygame.K_RIGHT:
-                    new_coord = Coord(self.robot_info.get_coord().get_x() + 1, self.robot_info.get_coord().get_y())
-                    self.move(new_coord, Orientation.EAST)
-                    print("move right")
-                if event.key == pygame.K_UP:
-                    new_coord = Coord(self.robot_info.get_coord().get_x(), self.robot_info.get_coord().get_y()+1)
-                    self.move(new_coord, Orientation.NORTH)
-                    print("move up")
-                if event.key == pygame.K_DOWN:
-                    new_coord = Coord(self.robot_info.get_coord().get_x(), self.robot_info.get_coord().get_y()-1)
-                    self.move(new_coord, Orientation.SOUTH)
-                    print("move down")
-
-            # obs1 = Coord(4,0)
-            # obs2 = Coord(4,1)
-            # obs3 = Coord(4,2)
-            # obs4 = Coord(4,3)
-            # self.obstacles_coord_list = [obs1, obs2, obs3, obs4]
-            # self.turn_angle = self.agent.step(self.obstacles_coord_list).get_move_command().get_turn_angle()
-            # self.cells_to_advance = self.agent.step(self.obstacles_coord_list).get_move_command().get_turn_angle()
-            # print("AGENT OUTPUT: ", self.turn_angle, self.cells_to_advance)
-            # TODO: calculate new orientation and new coords, then call the function self.move(new_coord, new_orientation)
-
-
-    def move(self, new_coord: Coord, new_orientation):
-        self.robot_info.set_coord(new_coord)
-        self.robot_info.set_orientation(new_orientation)
-        self.robot_sprite.move(self.robot_info)
+            # if event.type == pygame.KEYDOWN:
+            #     if event.key == pygame.K_LEFT:
+            #         new_coord = Coord(self.robot_info.get_coord().get_x() - 1, self.robot_info.get_coord().get_y())
+            #         self.move(new_coord, Orientation.WEST)
+            #         print("move left")
+            #     if event.key == pygame.K_RIGHT:
+            #         new_coord = Coord(self.robot_info.get_coord().get_x() + 1, self.robot_info.get_coord().get_y())
+            #         self.move(new_coord, Orientation.EAST)
+            #         print("move right")
+            #     if event.key == pygame.K_UP:
+            #         new_coord = Coord(self.robot_info.get_coord().get_x(), self.robot_info.get_coord().get_y()+1)
+            #         self.move(new_coord, Orientation.NORTH)
+            #         print("move up")
+            #     if event.key == pygame.K_DOWN:
+            #         new_coord = Coord(self.robot_info.get_coord().get_x(), self.robot_info.get_coord().get_y()-1)
+            #         self.move(new_coord, Orientation.SOUTH)
+            #         print("move down")
 
 g = Simulator()
-while True:
-    g.init_robot()
-    g.run()
+# Read the arena text file and store it as a list ==========================================
+f = open("sample_arena.txt", "r") #import the arena file (this is for testing, for the actual we will have to import from RPi)
+g.init(AgentTask.FAST, f.read(), WAYPOINT)
+g.run()

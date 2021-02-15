@@ -17,3 +17,6 @@ class RobotInfo:
 
     def set_orientation(self, orientation: Orientation) -> None:
         self.orientation = orientation
+
+    def copy(self):
+        return RobotInfo(self.coord, self.orientation)

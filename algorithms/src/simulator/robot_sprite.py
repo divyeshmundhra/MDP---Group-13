@@ -20,16 +20,3 @@ class RobotSprite:
     def update(self):
         self.rect.x = self.x * TILE_SIZE
         self.rect.y = self.y * TILE_SIZE
-
-    def draw(self, dis):
-        pygame.draw.circle(dis, yellow, (self.x*20+10, 400-self.y*20-10), 30)  #start at (30,370)
-
-        #takes in the current pos of the robot and faces the direction based on the orientation
-        if self.orientation == Orientation.NORTH:
-            pygame.draw.circle(dis, blue, (self.x*20+10, 400-self.y*20-10-20), 5)
-        elif self.orientation == Orientation.EAST:
-            pygame.draw.circle(dis, blue, (self.x*20+10+20, 400-self.y*20-10), 5)
-        elif self.orientation == Orientation.SOUTH:
-            pygame.draw.circle(dis, blue, (self.x*20+10, 400-self.y*20-10+20), 5)
-        elif self.orientation == Orientation.WEST:
-            pygame.draw.circle(dis, blue, (self.x*20+10-20, 400-self.y*20-10), 5)

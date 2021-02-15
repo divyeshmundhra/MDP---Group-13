@@ -18,18 +18,18 @@ class Arena:
             for x in range(MAP_COL): 
                 coord = Coord(x, y)
                 self.cell_matrix[coord.get_x()][coord.get_y()] = Cell(coord)
-    
-    # def set_cell_at_coord(self, cell, coord):
-    #     self.cell_matrix[coord.get_x()][coord.get_y()] = cell
 
     def get_cell_at_coord(self, coord):
         return self.cell_matrix[coord.get_x()][coord.get_y()]
     
     def get_adjacent_unblocked(self, coord):
         adj = []
-        x = coord.get_x()
-        y = coord.get_y()
-        for coord in Arena.ADJACENCY:
-            if not self.get_cell_at_coord(coord).is_obstacle:
-                adj.append(coord)
+        for displacement in Arena.ADJACENCY:
+            adj_coord = coord.add(displacement)
+            if not adj_coord.get_x() in range(MAP_COL) or not adj_coord.get_y() in range(MAP_ROW):
+                # skip if not in range
+                continue
+            cell = self.get_cell_at_coord(adj_coord)
+            if not cell.is_obstacle() and not cell.is_dangerous():
+                adj.append(adj_coord)
         return adj

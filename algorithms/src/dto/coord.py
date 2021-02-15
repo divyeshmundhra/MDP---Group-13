@@ -27,8 +27,14 @@ class Coord:
             self.get_y() - operand.get_y()
         )
     
+    def multiply(self, operand):
+        return Coord(
+            self.get_x() * operand,
+            self.get_y() * operand
+        )
+    
     def manhattan_distance(self) -> int:
         return abs(self.x) + abs(self.y)
     
     def is_equal(self, coord) -> bool:
-        return self.x == coord.get_x and self.y == coord.get_y
+        return self.x == coord.get_x() and self.y == coord.get_y()

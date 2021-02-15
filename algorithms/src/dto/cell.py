@@ -3,6 +3,7 @@ class Cell:
         self.coord = coord
         self.explored = False
         self.obstacle = None
+        self.danger = None # danger when too close to wall, thus danger of collision
         
     def get_coord(self):
         return self.coord
@@ -21,3 +22,9 @@ class Cell:
 
     def set_is_obstacle(self, obstacle):
         self.obstacle = obstacle
+    
+    def is_dangerous(self):
+        return self.danger
+    
+    def set_is_dangerous(self, danger):
+        self.danger = danger
