@@ -418,6 +418,19 @@ void setup_motion() {
   md.init();
 }
 
+void start_motion_unit(motion_direction_t _direction, uint8_t unit) {
+  switch (_direction) {
+    case FORWARD:
+    case REVERSE:
+      start_motion_distance(_direction, unit * kBlock_distance);
+      break;
+    case LEFT:
+    case RIGHT:
+      start_motion_distance(_direction, distanceToTicks(angleToDistance(unit * 45)));
+      break;
+  }
+}
+
 void start_motion_distance(motion_direction_t _direction, uint32_t distance) {
   if (state != IDLE) {
     Serial.println("Cannot start motion, movement in progress");
