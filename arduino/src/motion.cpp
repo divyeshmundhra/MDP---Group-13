@@ -326,6 +326,7 @@ ISR(TIMER2_COMPA_vect) {
     base_right = base_left;
   }
 
+
   correction = controllerTrackLeft(encoder_left, encoder_right);
 
   power_left = base_left - correction;
