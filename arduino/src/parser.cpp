@@ -45,6 +45,10 @@ static bool parse_buf() {
     start_motion_unit(RIGHT, val);
   } else if (cmd == 'O') {
     start_motion_obstacle(val);
+  } else if (cmd == 'l') {
+    start_motion_distance(LEFT, distanceToTicks(angleToDistance(val)));
+  } else if (cmd == 'r') {
+    start_motion_distance(RIGHT, distanceToTicks(angleToDistance(val)));
   } else if (cmd == 'A') {
     start_align();
   } else if (cmd == 'D') {
