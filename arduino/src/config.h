@@ -70,4 +70,30 @@ const double kSensor_constants[6][3] = {
   {-131, 821700, 137.6}      // RIGHT_FRONT
 };
 
+// maximum valid distance reportable by each sensor
+const uint16_t kSensor_max[6] = {
+  600,
+  600,
+  600,
+  600,
+  600,
+  600
+};
+
+#define kSensor_threshold_count 10
+// distance thresholds below which there will be an obstacle in that position
+/*
+  ie
+  |0|1|2|3|4|5|6|7|8|9|255|
+*/
+const int16_t kSensor_thresholds[6][kSensor_threshold_count] = {
+  // 0    1    2    3    4    5    6    7    8    9
+  { 100, 200, 300, 400, 470, 550, 700, 800, 900, 1000 },
+  { 100, 200, 300, 400, 470, 550, 700, 800, 900, 1000 },
+  { 100, 200, 300, 400, 500, 650, 700, 800, 900, 1000 },
+  { 100, 200, 300, 400, 470, 550, 700, 800, 900, 1000 },
+  { 100, 200, 300, 400, 500, 650, 700, 800, 900, 1000 },
+  { 100, 200, 300, 400, 500, 650, 750, 800, 900, 1000 },
+};
+
 #endif

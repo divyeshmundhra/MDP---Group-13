@@ -5,6 +5,7 @@
 
 volatile uint16_t adc_val[6] = {0};
 volatile int16_t sensor_distances[6] = {0};
+volatile int8_t sensor_obstacles[6] = {0};
 
 ISR(ADC_vect) {
   // channel represents the channel of this conversion (the trigger for this ISR)
@@ -57,6 +58,14 @@ void convert_sensor_data() {
     if (sensor_distances[i] < 0) {
       sensor_distances[i] = 0;
     }
+
+    sensor_obstacles[i] = -1;
+    for (uint8_t u = 0; u < kSensor_threshold_count; u++) {
+      if (sensor_distances[i] < kSensor_thresholds[i][u]) {
+        sensor_obstacles[i] = u;
+        break;
+      }
+    }
   }
 }
 
@@ -85,6 +94,8 @@ void log_sensor(uint8_t i) {
   cli();
   Serial.print(adc_val[i - 1]);
   Serial.print(" actual=");
-  Serial.println(sensor_distances[i - 1]);
+  Serial.print(sensor_distances[i - 1]);
+  Serial.print(" obstacle=");
+  Serial.println(sensor_obstacles[i - 1]);
   sei();
 }
