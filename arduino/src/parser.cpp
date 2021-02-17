@@ -11,7 +11,8 @@ static uint8_t buf_count = 0;
 
 typedef enum {
   DEBUG_IDLE,
-  DEBUG_LOG_SENSORS
+  DEBUG_LOG_SPECIFIC_SENSOR,
+  DEBUG_LOG_ALL_SENSORS
 } debug_state_t;
 
 debug_state_t state = DEBUG_IDLE;
@@ -47,8 +48,12 @@ static bool parse_buf() {
   } else if (cmd == 'D') {
     state = DEBUG_IDLE;
   } else if (cmd == 'S') {
-    state = DEBUG_LOG_SENSORS;
-    debug_sensor_target = val;
+    if (cmd1 == 'A') {
+      state = DEBUG_LOG_ALL_SENSORS;
+    } else {
+      state = DEBUG_LOG_SPECIFIC_SENSOR;
+      debug_sensor_target = val;
+    }
   } else if (cmd == 'o') {
     if (cmd1 == 'p') {
       kP_offset = val;
@@ -126,8 +131,11 @@ void loop_parser() {
     last_log = cur;
 
     switch (state) {
-      case DEBUG_LOG_SENSORS:
+      case DEBUG_LOG_SPECIFIC_SENSOR:
         log_sensor(debug_sensor_target);
+        break;
+      case DEBUG_LOG_ALL_SENSORS:
+        log_all_sensors();
         break;
       default:
         break;

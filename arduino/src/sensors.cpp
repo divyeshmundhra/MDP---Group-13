@@ -71,15 +71,20 @@ void convert_sensor_data() {
 
 void loop_sensors() {
   #if 0
-    Serial.print("SYNC");
-    cli();
-    for(uint8_t i = 0; i < 6; i++) {
-      Serial.write((char *) &sensor_distances[i], 2);
-    }
-    sei();
-    Serial.println();
+    static uint32_t last_log = 0;
+    uint32_t cur_time = millis();
+    
+    if ((cur_time - last_log) > 10) {
+      Serial.print("SYNC");
+      cli();
+      for(uint8_t i = 0; i < 6; i++) {
+        Serial.write((char *) &sensor_distances[i], 2);
+      }
+      sei();
+      Serial.println();
 
-    delay(10);
+      last_log = cur_time;
+    }
   #endif
 }
 
@@ -98,4 +103,16 @@ void log_sensor(uint8_t i) {
   Serial.print(" obstacle=");
   Serial.println(sensor_obstacles[i - 1]);
   sei();
+}
+
+void log_all_sensors() {
+  Serial.print("SENSOR ");
+  for(uint8_t i = 0; i < 6; i++) {
+    if (sensor_obstacles[i] == -1) {
+      Serial.print("i");
+    } else {
+      Serial.print(sensor_obstacles[i]);
+    }
+  }
+  Serial.println();
 }
