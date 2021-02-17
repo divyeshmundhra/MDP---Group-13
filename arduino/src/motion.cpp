@@ -260,7 +260,7 @@ ISR(TIMER2_COMPA_vect) {
         }
       } else if (move_type == OBSTACLE) {
         // OBSTACLE terminates when the sensor distance is really close to target
-        int16_t diff_err = sensor_distances[FRONT_MID] - target;
+        int16_t diff_err = sensor_distances[FRONT_FRONT_MID] - target;
         if (diff_err > -kMax_obstacle_error && diff_err < kMax_obstacle_error) {
           Serial.println("move obstacle done");
           state = IDLE;
@@ -274,7 +274,7 @@ ISR(TIMER2_COMPA_vect) {
       resetControllerState(&state_straight_left, encoder_cor_left);
       resetControllerState(&state_straight_right, encoder_cor_right);
     } else if (move_type == OBSTACLE) {
-      resetControllerState(&state_obstacle, sensor_distances[FRONT_MID]);
+      resetControllerState(&state_obstacle, sensor_distances[FRONT_FRONT_MID]);
     }
     state = MOVING;
   }
@@ -286,7 +286,7 @@ ISR(TIMER2_COMPA_vect) {
     base_left = controllerStraight(&state_straight_left, encoder_cor_left, target);
     base_right = controllerStraight(&state_straight_right, encoder_cor_right, target);
   } else if (move_type == OBSTACLE) {
-    base_left = controllerObstacle(&state_obstacle, sensor_distances[FRONT_MID], target);
+    base_left = controllerObstacle(&state_obstacle, sensor_distances[FRONT_FRONT_MID], target);
     base_right = base_left;
   }
 
@@ -408,7 +408,7 @@ void loop_motion() {
       // int16_t _base_power = base_power;
       int16_t _correction = correction;
       int16_t _error = __encoder_left - __encoder_right;
-      uint16_t _sensor_mid = sensor_distances[FRONT_MID];
+      uint16_t _sensor_mid = sensor_distances[FRONT_FRONT_MID];
       sei();
       Serial.print("SYNC");
       Serial.write((char *) &__encoder_left, 4);

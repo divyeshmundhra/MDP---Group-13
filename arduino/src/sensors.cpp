@@ -4,7 +4,8 @@
 #include "config.h"
 
 volatile uint16_t adc_val[6] = {0};
-volatile uint16_t sensor_distances[6] = {0};
+volatile int16_t sensor_distances[6] = {0};
+volatile int8_t sensor_obstacles[6] = {0};
 
 ISR(ADC_vect) {
   // channel represents the channel of this conversion (the trigger for this ISR)
@@ -40,7 +41,7 @@ ISR(ADC_vect) {
 }
 
 void setup_sensors() {
-  ADMUX |= _BV(REFS0); // Voltage Reference = AVcc
+  // using external AREF (3.3V) by default
   /*
     ADEN: enable ADC
     ADATE: auto trigger (ADCSRB ADTS[2:0] defaults to 0, free running mode)
@@ -52,19 +53,66 @@ void setup_sensors() {
 }
 
 void convert_sensor_data() {
-  sensor_distances[FRONT_MID] = (kSensor_constants[FRONT_MID][0] * adc_val[FRONT_MID] + kSensor_constants[FRONT_MID][1]) / (adc_val[FRONT_MID] + kSensor_constants[FRONT_MID][2]);
+  for(uint8_t i = 0; i < 6; i++) {
+    sensor_distances[i] = (kSensor_constants[i][0] * adc_val[i] + kSensor_constants[i][1]) / (adc_val[i] + kSensor_constants[i][2]);
+    if (sensor_distances[i] < 0) {
+      sensor_distances[i] = 0;
+    }
+
+    sensor_obstacles[i] = -1;
+    for (uint8_t u = 0; u < kSensor_threshold_count; u++) {
+      if (sensor_distances[i] < kSensor_thresholds[i][u]) {
+        sensor_obstacles[i] = u;
+        break;
+      }
+    }
+  }
 }
 
 void loop_sensors() {
   #if 0
-    Serial.print("SYNC");
-    cli();
-    for(uint8_t i = 0; i < 6; i++) {
-      Serial.write((char *) &sensor_distances[i], 2);
-    }
-    sei();
-    Serial.println();
+    static uint32_t last_log = 0;
+    uint32_t cur_time = millis();
+    
+    if ((cur_time - last_log) > 10) {
+      Serial.print("SYNC");
+      cli();
+      for(uint8_t i = 0; i < 6; i++) {
+        Serial.write((char *) &sensor_distances[i], 2);
+      }
+      sei();
+      Serial.println();
 
-    delay(10);
+      last_log = cur_time;
+    }
   #endif
+}
+
+void log_sensor(uint8_t i) {
+  if (i == 0 || i > 6) {
+    return;
+  }
+
+  Serial.print("Sensor ");
+  Serial.print(i);
+  Serial.print(": raw=");
+  cli();
+  Serial.print(adc_val[i - 1]);
+  Serial.print(" actual=");
+  Serial.print(sensor_distances[i - 1]);
+  Serial.print(" obstacle=");
+  Serial.println(sensor_obstacles[i - 1]);
+  sei();
+}
+
+void log_all_sensors() {
+  Serial.print("SENSOR ");
+  for(uint8_t i = 0; i < 6; i++) {
+    if (sensor_obstacles[i] == -1) {
+      Serial.print("i");
+    } else {
+      Serial.print(sensor_obstacles[i]);
+    }
+  }
+  Serial.println();
 }

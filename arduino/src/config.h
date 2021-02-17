@@ -60,14 +60,40 @@ const int16_t kMO_min_output = -400;
 
 // constants for sensor conversion
 // each array corresponds to the constants for one sensor
-// same order as 
+// same order as sensor_position_t
 const double kSensor_constants[6][3] = {
-  {0, 0 ,0},
-  {0, 0, 0},
-  {-128.8, 78270, 108.6},
-  {0, 0, 0},
-  {0, 0, 0},
-  {0, 0, 0}
+  {-94.94, 748500, -19.02},  // FRONT_FRONT_MID
+  {-141.4, 1559000, -114.8}, // FRONT_FRONT_RIGHT
+  {-123.3, 707900, 11.64},   // LEFT_REAR
+  {-170.8, 1789000, 114.5},  // FRONT_FRONT_LEFT
+  {-123.3, 707900, 11.64},   // LEFT_FRONT
+  {-131, 821700, 137.6}      // RIGHT_FRONT
+};
+
+// maximum valid distance reportable by each sensor
+const uint16_t kSensor_max[6] = {
+  600,
+  600,
+  600,
+  600,
+  600,
+  600
+};
+
+#define kSensor_threshold_count 10
+// distance thresholds below which there will be an obstacle in that position
+/*
+  ie
+  |0|1|2|3|4|5|6|7|8|9|255|
+*/
+const int16_t kSensor_thresholds[6][kSensor_threshold_count] = {
+  // 0    1    2    3    4    5    6    7    8    9
+  { 100, 200, 300, 400, 470, 550, 700, 800, 900, 1000 },
+  { 100, 200, 300, 400, 470, 550, 700, 800, 900, 1000 },
+  { 100, 200, 300, 400, 500, 650, 700, 800, 900, 1000 },
+  { 100, 200, 300, 400, 470, 550, 700, 800, 900, 1000 },
+  { 100, 200, 300, 400, 500, 650, 700, 800, 900, 1000 },
+  { 100, 200, 300, 400, 500, 650, 750, 800, 900, 1000 },
 };
 
 #endif

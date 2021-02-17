@@ -26,13 +26,15 @@
 #define M2_INB_BIT 0
 
 // map of sensor position to analog input
+// the physical cables are labelled indexed from 1 while these are indexed from 0
+// the enum values are <point_direction>_<position>
 typedef enum {
-  LEFT_FRONT = 0,
-  FRONT_LEFT = 1,
-  FRONT_MID = 2,
-  CHANGEME = 3,
-  RIGHT_FRONT = 4,
-  FRONT_RIGHT = 5,
+  LEFT_FRONT = 4,
+  FRONT_FRONT_LEFT = 3,
+  FRONT_FRONT_MID = 0,
+  FRONT_FRONT_RIGHT = 1,
+  LEFT_REAR = 2,
+  RIGHT_FRONT = 5,
 } sensor_position_t;
 
 #endif

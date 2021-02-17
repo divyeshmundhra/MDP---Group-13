@@ -3,10 +3,20 @@
 #include "motion.h"
 #include "checklist.h"
 #include "physical.h"
+#include "sensors.h"
 #include "config.h"
 
 static char buf[kParser_buf_size + 1]; // + 1 for NULL character
 static uint8_t buf_count = 0;
+
+typedef enum {
+  DEBUG_IDLE,
+  DEBUG_LOG_SPECIFIC_SENSOR,
+  DEBUG_LOG_ALL_SENSORS
+} debug_state_t;
+
+debug_state_t state = DEBUG_IDLE;
+uint8_t debug_sensor_target = 0;
 
 static bool parse_buf() {
   char cmd = buf[0];
@@ -35,6 +45,15 @@ static bool parse_buf() {
     start_motion_distance(RIGHT, distanceToTicks(angleToDistance(val)));
   } else if (cmd == 'O') {
     start_motion_obstacle(val);
+  } else if (cmd == 'D') {
+    state = DEBUG_IDLE;
+  } else if (cmd == 'S') {
+    if (cmd1 == 'A') {
+      state = DEBUG_LOG_ALL_SENSORS;
+    } else {
+      state = DEBUG_LOG_SPECIFIC_SENSOR;
+      debug_sensor_target = val;
+    }
   } else if (cmd == 'o') {
     if (cmd1 == 'p') {
       kP_offset = val;
@@ -97,11 +116,29 @@ void loop_parser() {
       buf_count = 0;
     } else {
       if (buf_count >= kParser_buf_size) {
-        printf("buffer full\n");
+        Serial.println("buffer full");
         buf_count = 0;
       }
 
       buf[buf_count++] = c;
+    }
+  }
+
+  static uint32_t last_log = 0;
+  uint32_t cur = millis();
+
+  if ((cur - last_log) > 10) {
+    last_log = cur;
+
+    switch (state) {
+      case DEBUG_LOG_SPECIFIC_SENSOR:
+        log_sensor(debug_sensor_target);
+        break;
+      case DEBUG_LOG_ALL_SENSORS:
+        log_all_sensors();
+        break;
+      default:
+        break;
     }
   }
 }
