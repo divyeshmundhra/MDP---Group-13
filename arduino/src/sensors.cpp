@@ -60,6 +60,11 @@ void convert_sensor_data() {
     }
 
     sensor_obstacles[i] = -1;
+
+    if (sensor_distances[i] > kSensor_max[i]) {
+      continue;
+    }
+
     for (uint8_t u = 0; u < kSensor_threshold_count; u++) {
       if (sensor_distances[i] < kSensor_thresholds[i][u]) {
         sensor_obstacles[i] = u;
