@@ -317,7 +317,6 @@ ISR(TIMER2_COMPA_vect) {
   }
 
   int16_t power_left = 0, power_right = 0;
-
   if (move_type == DISTANCE) {
     base_left = controllerStraight(&state_straight_left, encoder_left, target);
     base_right = controllerStraight(&state_straight_right, encoder_right, target);
