@@ -11,11 +11,15 @@ from src.agent import DecisionNode
 class FastestPathAlgo():
     def __init__(self):
         pass
-    
-    @staticmethod
-    def get_next_step(arena: Arena, robot_info: RobotInfo, end: Coord, waypoint: Coord) -> Coord:
+
+    def get_next_step(self, arena: Arena, robot_info: RobotInfo, end: Coord, waypoint: Coord) -> Coord:
         start = robot_info.get_coord()
         current_orientation = robot_info.get_orientation()
+        if not arena.coord_is_valid(end):
+            raise Exception('FastestPath: end coord out of arena')
+        end_cell = arena.get_cell_at_coord(end)
+        if end_cell.is_obstacle() or end_cell.is_dangerous():
+            raise Exception('FastestPath: cannot move to dangerous cell')
         if waypoint:
             # we haven't passed through it yet
             target = waypoint
@@ -36,7 +40,7 @@ class FastestPathAlgo():
         while not cur.get_coord().is_equal(target):
             cur_coord = cur.get_coord()
             examined[cur_coord.get_x()][cur_coord.get_y()] = True
-            adjacent_coords = arena.get_adjacent_unblocked(cur_coord)
+            adjacent_coords = arena.get_adjacent_safe(cur_coord)
             for coord in adjacent_coords:
                 if examined[coord.get_x()][coord.get_y()]:
                     # assume heuristic is admissible, otherwise need to assess total_cost \
@@ -54,14 +58,14 @@ class FastestPathAlgo():
                 fringe_node = DecisionNode.DecisionNode(coord, exact_cost=exact_cost, parent=cur)
                 queue_tie_breaker += 1
                 fringe_nodes.put((total_cost, queue_tie_breaker, fringe_node))
-                
+
             if fringe_nodes.empty():
                 return None
             cur = fringe_nodes.get()[-1]
 
         while cur.get_parent() and not cur.get_parent().get_coord().is_equal(start):
             cur = cur.get_parent()
-    
+
         return cur.get_coord()
 
     @staticmethod

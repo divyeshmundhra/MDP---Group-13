@@ -18,6 +18,9 @@ class SimulationDisplay:
                 coord = Coord(col, row)
                 cell = arena.get_cell_at_coord(coord)
                 graph_row = MAP_ROW-row-1 # pygame coordinates are inverted (row 0 starts at the top rather than bottom)
+                if cell.is_explored():
+                    pygame.draw.rect(self.dis, light_grey, [col*TILE_SIZE, graph_row*TILE_SIZE, TILE_SIZE, TILE_SIZE])
+
                 if cell.is_obstacle():
                     pygame.draw.rect(self.dis, black, [col*TILE_SIZE, graph_row*TILE_SIZE, TILE_SIZE, TILE_SIZE])
                 
