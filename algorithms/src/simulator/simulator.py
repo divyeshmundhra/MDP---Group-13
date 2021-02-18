@@ -91,6 +91,6 @@ class Simulator:
 
 g = Simulator()
 # Read the arena text file and store it as a list ==========================================
-f = open("src/simulator/sample_arena.txt", "r") #import the arena file (this is for testing, for the actual we will have to import from RPi)
+f = open("sample_arena.txt", "r") #import the arena file (this is for testing, for the actual we will have to import from RPi)
 g.init(AgentTask.FAST, f.read(), WAYPOINT)
 g.run()
