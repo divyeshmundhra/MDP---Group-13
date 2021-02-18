@@ -24,6 +24,17 @@ static bool parse_buf() {
   char *next;
   uint32_t val;
 
+  if (cmd == 'e') {
+    char *c = &buf[1];
+    while(*c) {
+      Serial.write((*c) + 1);
+      c++;
+    }
+    Serial.println();
+
+    return true;
+  }
+
   if (cmd1 >= '0' && cmd1 <= '9') {
     val = strtoul(&buf[1], &next, 10);
   } else {
@@ -108,7 +119,9 @@ void loop_parser() {
       buf[buf_count] = '\0';
 
       if (parse_buf()) {
-        Serial.println("ok");
+        if (buf[0] != 'e') {
+          Serial.println("ok");
+        }
       } else {
         Serial.println("err");
       }

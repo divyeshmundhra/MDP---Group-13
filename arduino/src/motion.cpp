@@ -395,7 +395,7 @@ void loop_motion() {
     }
   }
 
-  #if 1
+  #if 0
     static uint32_t last_print = 0;
     uint32_t cur_time = millis();
 
