@@ -450,6 +450,8 @@ void start_align() {
   }
 }
 
+bool log_motion = false;
+
 void loop_motion() {
   static state_t pState = IDLE;
 
@@ -459,7 +461,7 @@ void loop_motion() {
     }
   }
 
-  #if 1
+  if (log_motion) {
     static uint32_t last_print = 0;
     uint32_t cur_time = millis();
 
@@ -489,5 +491,5 @@ void loop_motion() {
 
       last_print = cur_time;
     }
-  #endif
+  }
 }

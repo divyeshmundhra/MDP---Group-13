@@ -60,6 +60,12 @@ static bool parse_buf() {
       state = DEBUG_LOG_SPECIFIC_SENSOR;
       debug_sensor_target = val;
     }
+  } else if (cmd == 'E') {
+    if (cmd1 == 'm') {
+      log_motion = !log_motion;
+    } else if (cmd1 == 's') {
+      log_sensors = !log_sensors;
+    }
   } else if (cmd == 'o') {
     if (cmd1 == 'p') {
       kP_offset = val;

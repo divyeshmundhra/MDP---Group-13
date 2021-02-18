@@ -40,4 +40,6 @@ void start_align();
 bool get_motion_done();
 int32_t get_encoder_left();
 
+extern bool log_motion;
+
 #endif

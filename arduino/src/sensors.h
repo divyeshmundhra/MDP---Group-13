@@ -12,4 +12,6 @@ void convert_sensor_data();
 extern volatile int16_t sensor_distances[6];
 extern volatile int8_t sensor_obstacles[6];
 
+extern bool log_sensors;
+
 #endif

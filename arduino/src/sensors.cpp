@@ -74,8 +74,9 @@ void convert_sensor_data() {
   }
 }
 
+bool log_sensors = false;
 void loop_sensors() {
-  #if 0
+  if (log_sensors) {
     static uint32_t last_log = 0;
     uint32_t cur_time = millis();
     
@@ -90,7 +91,7 @@ void loop_sensors() {
 
       last_log = cur_time;
     }
-  #endif
+  }
 }
 
 void log_sensor(uint8_t i) {
