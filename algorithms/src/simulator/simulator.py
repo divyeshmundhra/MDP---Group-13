@@ -41,6 +41,7 @@ class Simulator:
         move_command = agent_output.get_move_command()
         # update internal representation of robot
         new_orientation = OrientationTransform.calc_orientation_after_turn(self.robot_info.get_orientation(), move_command.get_turn_angle())
+        self.robot_info.set_orientation(new_orientation)
         unit_move = OrientationTransform.orientation_to_unit_displacement(new_orientation)
         move = unit_move.multiply(move_command.get_cells_to_advance())
         self.robot_info.set_coord(self.robot_info.get_coord().add(move))
