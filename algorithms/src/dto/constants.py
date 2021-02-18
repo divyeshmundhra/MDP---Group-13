@@ -8,6 +8,7 @@ grey = [100,100,100]
 red = [255,0,0]
 green = [0,255,0]
 yellow = [255,255,0]
+purple = [138,43,226]
 
 # Defining map dimensions
 MAP_ROW = 20

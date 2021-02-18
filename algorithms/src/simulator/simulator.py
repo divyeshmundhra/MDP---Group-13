@@ -39,6 +39,9 @@ class Simulator:
         agent_output = self.agent.step(obstacle_list, self.robot_info)
         print(agent_output.get_message())
         move_command = agent_output.get_move_command()
+        if move_command == None:
+            self.quit()
+
         # update internal representation of robot
         new_orientation = OrientationTransform.calc_orientation_after_turn(self.robot_info.get_orientation(), move_command.get_turn_angle())
         self.robot_info.set_orientation(new_orientation)
