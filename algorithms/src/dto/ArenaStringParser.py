@@ -40,7 +40,7 @@ class ArenaStringParser:
             ]
             for d in displacements:
                 dangerous_coord = obs.add(d)
-                if dangerous_coord.get_x() < 15 and dangerous_coord.get_y() < 20:
+                if 0 <= dangerous_coord.get_x() < 15 and 0 <= dangerous_coord.get_y() < 20:
                     arena.get_cell_at_coord(dangerous_coord).set_is_dangerous(True)
         
         return arena
