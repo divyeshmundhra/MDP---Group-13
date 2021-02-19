@@ -11,7 +11,7 @@ function onEvent(label, display) {
 
     console.log(logline);
     if (display) {
-      displayData += logline;
+      displayData += logline.trim() + "\n";
     }
   };
 }
@@ -24,11 +24,11 @@ console.log("Opened bt port");
 const mcuPort = new SerialPort("/dev/ttyACM0", { baudRate: 115200 });
 console.log("Opened mcu port");
 
-const btStream = btPort.pipe(new Readline());
-btStream.on("data", (line) => {
+//const btStream = btPort.pipe(new Readline());
+btPort.on("data", (line) => {
   onEvent("BT RX", true)(line);
   // arduino will echo lines prefixed with e
-  mcuPort.write(`e${line.trim()}\n`);
+  mcuPort.write(`e${line.toString().trim()}\n`);
 });
 
 const mcuStream = mcuPort.pipe(new Readline());
