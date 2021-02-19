@@ -54,6 +54,9 @@ class FastestPathAlgo():
                 fringe_node = DecisionNode.DecisionNode(coord, exact_cost=exact_cost, parent=cur)
                 queue_tie_breaker += 1
                 fringe_nodes.put((total_cost, queue_tie_breaker, fringe_node))
+                
+            if fringe_nodes.empty():
+                return None
             cur = fringe_nodes.get()[-1]
 
         while cur.get_parent() and not cur.get_parent().get_coord().is_equal(start):

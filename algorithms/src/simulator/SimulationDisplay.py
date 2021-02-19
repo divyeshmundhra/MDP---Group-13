@@ -30,6 +30,9 @@ class SimulationDisplay:
                 if 17<=row<=19 and 12<=col<=14:
                     pygame.draw.rect(self.dis, green, [col*TILE_SIZE, graph_row*TILE_SIZE, TILE_SIZE, TILE_SIZE])
 
+                if row == WAYPOINT.get_x() and col == WAYPOINT.get_y():
+                    pygame.draw.rect(self.dis, purple, [col*TILE_SIZE, graph_row*TILE_SIZE, TILE_SIZE, TILE_SIZE])
+
         # Draw the lines for the grid
         for x in range(0,DIS_X+TILE_SIZE,TILE_SIZE):
             pygame.draw.line(self.dis, grey, (x,0), (x,DIS_Y))
