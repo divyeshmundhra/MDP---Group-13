@@ -52,11 +52,14 @@ class Simulator:
         self.update_display()
 
     def run(self):
+        self.speed = 1 / float(input("Enter robot speed (steps per second) (-1 for default): "))
+        if self.speed < 0:
+            self.speed = 0.5
         i = 0
         while i<99:
             self.events()
             self.step()
-            time.sleep(0.5)
+            time.sleep(self.speed)
             i+=1
 
     def update_display(self):
