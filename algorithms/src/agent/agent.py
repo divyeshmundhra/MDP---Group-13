@@ -64,7 +64,7 @@ class Agent:
             waypoint = None if self.reached_waypoint else self.waypoint_coord
             next_step = self.algo.get_next_step(self.arena, self.robot_info, self.end_coord, waypoint)
         else:
-            next_step = self.algo.get_next_step(self.arena, self.robot_info, end=None, waypoint=None)
+            next_step = self.algo.get_next_step(self.arena, self.robot_info) # pylint: disable=no-value-for-parameter
         return next_step
 
     def calculate_move(self, target_coord) -> MoveCommand:

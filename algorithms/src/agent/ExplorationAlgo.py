@@ -11,7 +11,7 @@ class ExplorationAlgo():
         self.cur_coord = None
         self.unexplored_stack = []
 
-    def get_next_step(self, arena: Arena, robot_info: RobotInfo, end=None, waypoint=None) -> Coord:
+    def get_next_step(self, arena: Arena, robot_info: RobotInfo) -> Coord:
         # implement the flood fill algorithm using a stack
         self.arena = arena
         self.cur_coord = robot_info.get_coord()
