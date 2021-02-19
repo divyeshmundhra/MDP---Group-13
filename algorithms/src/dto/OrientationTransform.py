@@ -37,7 +37,7 @@ class OrientationTransform:
         elif x < 0 and y == 0: return Orientation.WEST
         elif x == 0 and y > 0: return Orientation.NORTH
         elif x == 0 and y < 0: return Orientation.SOUTH
-        else: raise Exception('Invalid displacement: displacement_to_orientation only implemented for cardinal directions')
+        else: raise Exception(f'Invalid displacement: tried moving {x}, {y}. displacement_to_orientation only implemented for cardinal directions')
     
     @staticmethod
     def orientation_to_unit_displacement(orientation: Orientation) -> Coord:
@@ -45,4 +45,4 @@ class OrientationTransform:
         elif orientation == Orientation.WEST: return Coord(-1, 0)
         elif orientation == Orientation.NORTH: return Coord(0, 1)
         elif orientation == Orientation.SOUTH: return Coord(0, -1)
-        else: raise Exception('Invalid orientation: orientation_to_unit_displacement only implemented for cardinal directions')
+        else: raise Exception(f'Invalid orientation: tried moving {x}, {y}. orientation_to_unit_displacement only implemented for cardinal directions')

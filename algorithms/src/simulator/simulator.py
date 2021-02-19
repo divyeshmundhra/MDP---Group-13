@@ -34,9 +34,14 @@ class Simulator:
 
     def step(self):
         # calculate agent percepts
-        obstacle_list = [] # for fastest path the agent already knows all obstacle locations
+        obstacle_coord_list, no_obs_coord_list = self.calculate_percepts() 
+        for coord in obstacle_coord_list:
+            self.arena.get_cell_at_coord(coord).set_is_explored(True)
+        for coord in no_obs_coord_list:
+            self.arena.get_cell_at_coord(coord).set_is_explored(True)
+        self.arena.get_cell_at_coord(self.robot_info.get_coord()).set_is_visited(True)
         # get agent next move
-        agent_output = self.agent.step(obstacle_list, self.robot_info)
+        agent_output = self.agent.step(obstacle_coord_list, no_obs_coord_list, self.robot_info)
         print(agent_output.get_message())
         move_command = agent_output.get_move_command()
         if move_command == None:
@@ -62,7 +67,8 @@ class Simulator:
                 time.sleep(self.speed)
 
         unit_move = OrientationTransform.orientation_to_unit_displacement(new_orientation)
-        move = unit_move.multiply(move_command.get_cells_to_advance())
+        # move = unit_move.multiply(move_command.get_cells_to_advance()) # enable this if robot can move multiple squares
+        move = unit_move # enable this if robot can move one square at a time
         self.robot_info.set_coord(self.robot_info.get_coord().add(move))
 
         # update pygame display
@@ -78,6 +84,13 @@ class Simulator:
             self.step()
             time.sleep(self.speed)
             i+=1
+        print(f'Run timed-out after {i+1} steps')
+    
+    def calculate_percepts(self):
+        coord = self.robot_info.get_coord()
+        obstacles_coord_list = self.arena.get_adjacent_blocked(coord)
+        no_obs_coord_list = self.arena.get_adjacent_unblocked(coord)
+        return obstacles_coord_list, no_obs_coord_list
 
     def update_display(self):
         self.sim_display.draw(self.arena, self.robot_info)
@@ -114,6 +127,6 @@ class Simulator:
 
 g = Simulator()
 # Read the arena text file and store it as a list ==========================================
-f = open("sample_arena.txt", "r") #import the arena file (this is for testing, for the actual we will have to import from RPi)
-g.init(AgentTask.FAST, f.read(), WAYPOINT)
+f = open("./algorithms/src/simulator/sample_arena.txt", "r") #import the arena file (this is for testing, for the actual we will have to import from RPi)
+g.init(AgentTask.EXPLORE, f.read(), WAYPOINT)
 g.run()

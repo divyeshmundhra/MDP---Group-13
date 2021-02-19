@@ -21,13 +21,20 @@ class Agent:
         self.end_coord = end_coord
         self.waypoint_coord = waypoint_coord
         self.reached_waypoint = False
+        self.algo = None # initialized 3 lines below
+        
+        if self.task == AgentTask.FAST:
+            self.algo = FastestPathAlgo()
+        else:
+            self.algo = ExplorationAlgo()
+            self.reached_waypoint = True
     
-    def step(self, obstacles_coord_list: list, robot_info: RobotInfo) -> AgentOutput:
+    def step(self, obstacles_coord_list: list, no_obs_coord_list: list, robot_info: RobotInfo) -> AgentOutput:
         self.robot_info = robot_info
-        self.update_arena(obstacles_coord_list)
+        self.update_arena(obstacles_coord_list, no_obs_coord_list)
         target_coord = self.think()
         if target_coord == None:
-            message = f'No valid path!'
+            message = f'No valid path!' if self.task == AgentTask.FAST else f'Exploration complete!'
             move_command = None
         else:
             move_command = self.calculate_move(target_coord)
@@ -37,21 +44,28 @@ class Agent:
             move_command,
             message
         )
-    
-    def update_arena(self, obstacles_coord_list: list) -> None:
+
+    def update_arena(self, obstacles_coord_list: list, no_obs_coord_list: list) -> None:
+        self.arena.get_cell_at_coord(self.robot_info.get_coord()).set_is_visited(True)
         for coord in obstacles_coord_list:
+            # mark seen obstacles as explored
             cell = self.arena.get_cell_at_coord(coord)
             cell.set_is_obstacle(True)
+            self.arena.mark_dangerous_cells_around_obstacle(coord)
+            self.arena.get_cell_at_coord(coord).set_is_explored(True)
+        for coord in no_obs_coord_list:
+            # mark seen clear cells as explored
+            self.arena.get_cell_at_coord(coord).set_is_explored(True)
         if not self.reached_waypoint and self.robot_info.get_coord().is_equal(self.waypoint_coord):
             self.reached_waypoint = True
 
     def think(self) -> Coord:
         if self.task == AgentTask.FAST:
-            algo = FastestPathAlgo()
+            waypoint = None if self.reached_waypoint else self.waypoint_coord
+            next_step = self.algo.get_next_step(self.arena, self.robot_info, self.end_coord, waypoint)
         else:
-            algo = ExplorationAlgo()
-        waypoint = None if self.reached_waypoint else self.waypoint_coord
-        return algo.get_next_step(self.arena, self.robot_info, self.end_coord, waypoint)
+            next_step = self.algo.get_next_step(self.arena, self.robot_info) # pylint: disable=no-value-for-parameter
+        return next_step
 
     def calculate_move(self, target_coord) -> MoveCommand:
         current_coord = self.robot_info.get_coord()
