@@ -32,7 +32,7 @@ class Agent:
         else:
             move_command = self.calculate_move(target_coord)
             message = f'TURN: {move_command.get_turn_angle()} degs, then \
-                MOVE: {move_command.get_cells_to_advance()} cells forwards' # implement messaging later
+                MOVE: {move_command.get_cells_to_advance()} cells forwards'
         return AgentOutput(
             move_command,
             message
