@@ -44,10 +44,27 @@ class Simulator:
 
         # update internal representation of robot
         new_orientation = OrientationTransform.calc_orientation_after_turn(self.robot_info.get_orientation(), move_command.get_turn_angle())
-        self.robot_info.set_orientation(new_orientation)
+        
+        if new_orientation != self.robot_info.get_orientation():
+            if abs(new_orientation.value - self.robot_info.get_orientation().value) == 1:
+                self.robot_info.set_orientation(new_orientation)
+                self.robot_info.set_coord(self.robot_info.get_coord())
+                self.update_display()
+                time.sleep(self.speed)
+            elif abs(new_orientation.value - self.robot_info.get_orientation().value) == 2:
+                self.robot_info.set_orientation(Orientation((new_orientation.value-1)%3))
+                self.robot_info.set_coord(self.robot_info.get_coord())
+                self.update_display()
+                time.sleep(self.speed)
+                self.robot_info.set_orientation(new_orientation)
+                self.robot_info.set_coord(self.robot_info.get_coord())
+                self.update_display()
+                time.sleep(self.speed)
+
         unit_move = OrientationTransform.orientation_to_unit_displacement(new_orientation)
         move = unit_move.multiply(move_command.get_cells_to_advance())
         self.robot_info.set_coord(self.robot_info.get_coord().add(move))
+
         # update pygame display
         self.update_display()
 
