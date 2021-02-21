@@ -63,8 +63,16 @@ static bool parse_buf() {
   } else if (cmd == 'E') {
     if (cmd1 == 'm') {
       log_motion = !log_motion;
+      Serial.print("log motion: ");
+      Serial.println(log_motion);
     } else if (cmd1 == 's') {
       log_sensors = !log_sensors;
+      Serial.print("log sensors: ");
+      Serial.println(log_sensors);
+    } else if (cmd1 == 'p') {
+      parse_moves = !parse_moves;
+      Serial.print("parse moves: ");
+      Serial.println(parse_moves);
     }
   } else if (cmd == 'o') {
     if (cmd1 == 'p') {

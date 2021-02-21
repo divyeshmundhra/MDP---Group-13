@@ -532,9 +532,12 @@ void start_align() {
 }
 
 bool log_motion = false;
+bool parse_moves = true;
 
 void loop_motion() {
-  parse_next_move();
+  if (parse_moves) {
+    parse_next_move();
+  }
 
   if (log_motion) {
     static uint32_t last_print = 0;

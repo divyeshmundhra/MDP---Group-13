@@ -41,5 +41,6 @@ bool get_motion_done();
 int32_t get_encoder_left();
 
 extern bool log_motion;
+extern bool parse_moves;
 
 #endif
