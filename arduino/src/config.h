@@ -100,4 +100,6 @@ const int16_t kSensor_thresholds[6][kSensor_threshold_count] = {
   { 100, 200, 300, 400, 500, 650, 750, 800, 900, 1000 },
 };
 
+const uint8_t kMovement_buffer_size = 8;
+
 #endif

@@ -29,6 +29,12 @@ typedef enum {
 } move_type_t;
 
 typedef struct {
+  move_type_t type;
+  motion_direction_t direction;
+  int32_t target;
+} move_t;
+
+typedef struct {
   int16_t integral = 0;
   int32_t last_input = 0;
 } pid_state_t;
@@ -390,6 +396,11 @@ void setup_motion() {
   md.init();
 }
 
+move_t buffered_moves[kMovement_buffer_size];
+uint8_t num_moves = 0;
+uint8_t pos_moves_start = 0;
+uint8_t pos_moves_end = 0;
+
 void start_motion_unit(motion_direction_t _direction, uint8_t unit) {
   switch (_direction) {
     case FORWARD:
@@ -404,61 +415,105 @@ void start_motion_unit(motion_direction_t _direction, uint8_t unit) {
 }
 
 void start_motion_distance(motion_direction_t _direction, uint32_t distance) {
-  if (state != IDLE) {
-    Serial.println("Cannot start motion, movement in progress");
+  if (num_moves >= kMovement_buffer_size) {
+    Serial.println("movement buffer full");
     return;
   }
 
-  cli();
-  axis_left.resetEncoder();
-  axis_right.resetEncoder();
+  buffered_moves[pos_moves_end].type = DISTANCE;
+  buffered_moves[pos_moves_end].direction = _direction;
+  buffered_moves[pos_moves_end].target = distance;
 
-  state = MOVE_COMMANDED;
-  move_type = DISTANCE;
-  target = distance;
-
-  if (_direction == FORWARD) {
-    axis_left.setReverse(false);
-    axis_right.setReverse(false);
-    Serial.print("start forward - target=");
-    Serial.println(target);
-  } else if (_direction == REVERSE) {
-    axis_left.setReverse(true);
-    axis_right.setReverse(true);
-    Serial.print("start reverse - target=");
-    Serial.println(target);
-  } else if (_direction == LEFT) {
-    axis_left.setReverse(true);
-    axis_right.setReverse(false);
-    Serial.print("start left turn - target=");
-    Serial.println(target);
-  } else if (_direction == RIGHT) {
-    axis_left.setReverse(false);
-    axis_right.setReverse(true);
-    Serial.print("start right turn - target=");
-    Serial.println(target);
-  } else {
-    Serial.println("Not implemented");
+  num_moves ++;
+  pos_moves_end ++;
+  if (pos_moves_end >= kMovement_buffer_size) {
+    pos_moves_end = 0;
   }
-  sei();
 }
 
 void start_motion_obstacle(uint16_t distance) {
-  if (state != IDLE) {
-    Serial.println("Cannot start motion, movement in progress");
+  if (num_moves >= kMovement_buffer_size) {
+    Serial.println("movement buffer full");
     return;
   }
+
+  buffered_moves[pos_moves_end].type = OBSTACLE;
+  buffered_moves[pos_moves_end].target = distance;
+
+  num_moves ++;
+  pos_moves_end ++;
+  if (pos_moves_end >= kMovement_buffer_size) {
+    pos_moves_end = 0;
+  }
+}
+
+void parse_next_move() {
+  static state_t pState = IDLE;
+
+  if (pState != state) {
+    if (state == IDLE) {
+      Serial.println("move done");
+    }
+  }
+
+  if (num_moves == 0 || state != IDLE) {
+    return;
+  }
+
+  Serial.print("Parsing motion buffer index=");
+  Serial.println(pos_moves_start);
 
   cli();
   axis_left.resetEncoder();
   axis_right.resetEncoder();
-
   state = MOVE_COMMANDED;
-  move_type = OBSTACLE;
-  target = distance;
-  axis_left.setReverse(false);
-  axis_right.setReverse(false);
+
+  switch (buffered_moves[pos_moves_start].type) {
+    case DISTANCE:
+      move_type = DISTANCE;
+      target = buffered_moves[pos_moves_start].target;
+      switch (buffered_moves[pos_moves_start].direction) {
+        case FORWARD:
+          axis_left.setReverse(false);
+          axis_right.setReverse(false);
+          Serial.print("start forward - target=");
+          Serial.println(target);
+          break;
+        case REVERSE:
+          axis_left.setReverse(true);
+          axis_right.setReverse(true);
+          Serial.print("start reverse - target=");
+          Serial.println(target);
+          break;
+        case LEFT:
+          axis_left.setReverse(true);
+          axis_right.setReverse(false);
+          Serial.print("start left turn - target=");
+          Serial.println(target);
+          break;
+        case RIGHT:
+          axis_left.setReverse(false);
+          axis_right.setReverse(true);
+          Serial.print("start right turn - target=");
+          Serial.println(target);
+          break;
+      }
+      break;
+    case OBSTACLE:
+      move_type = OBSTACLE;
+      target = buffered_moves[pos_moves_start].target;
+      axis_left.setReverse(false);
+      axis_right.setReverse(false);
+      Serial.println("start move to obstacle");
+      break;
+  }
   sei();
+
+  num_moves --;
+  pos_moves_start ++;
+  if (pos_moves_start > kMovement_buffer_size) {
+    pos_moves_start = 0;
+  }
 }
 
 void start_align() {
@@ -479,13 +534,7 @@ void start_align() {
 bool log_motion = false;
 
 void loop_motion() {
-  static state_t pState = IDLE;
-
-  if (pState != state) {
-    if (state == IDLE) {
-      Serial.println("done");
-    }
-  }
+  parse_next_move();
 
   if (log_motion) {
     static uint32_t last_print = 0;
