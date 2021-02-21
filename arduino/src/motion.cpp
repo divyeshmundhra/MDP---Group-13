@@ -281,6 +281,9 @@ ISR(TIMER2_COMPA_vect) {
   pEncoder_left = encoder_left;
   pEncoder_right = encoder_right;
 
+  // whether track left controller is enabled
+  static bool straight_enabled = true;
+
   // whether the encoder has changed from the last update
   bool has_encoder_delta = (delta_left < -kEncoder_move_threshold) || (delta_left > kEncoder_move_threshold) ||
                   (delta_right < -kEncoder_move_threshold) || (delta_right > kEncoder_move_threshold);
@@ -293,13 +296,17 @@ ISR(TIMER2_COMPA_vect) {
   if (state == MOVING && !has_encoder_delta) {
     // encoder delta has slowed to almost zero - lets check if we should finish the move
     int32_t diff_err = encoder_left - encoder_right;
-    if (diff_err > -kMax_encoder_diff_error && diff_err < kMax_encoder_diff_error) {
+    if (!straight_enabled || (diff_err > -kMax_encoder_diff_error && diff_err < kMax_encoder_diff_error)) {
       // if the error between both encoders are really similar, we can check for the
       // move-specific terminating condition
       if (move_type == DISTANCE) {
-        // DISTANCE terminates when the left encoder is really close to target
+        // DISTANCE terminates when both encoders are close to target
         int32_t diff_left = encoder_left - target_left;
-        if (diff_left > -kMax_encoder_error && diff_left < kMax_encoder_error) {
+        int32_t diff_right = encoder_right - target_right;
+        if (
+          (diff_left > -kMax_encoder_error && diff_left < kMax_encoder_error) && 
+          (diff_right > -kMax_encoder_error && diff_right < kMax_encoder_error)
+        ) {
           Serial.println("move distance done");
           state = IDLE;
           axis_left.setPower(0);
@@ -328,6 +335,7 @@ ISR(TIMER2_COMPA_vect) {
     }
     state = MOVING;
     next_report_dist_base = 0;
+    straight_enabled = true;
   }
 
   int16_t power_left = 0, power_right = 0;
@@ -339,7 +347,11 @@ ISR(TIMER2_COMPA_vect) {
     base_right = base_left;
   }
 
-  correction = controllerTrackLeft(encoder_left, encoder_right);
+  if (straight_enabled) {
+    correction = controllerTrackLeft(encoder_left, encoder_right);
+  } else {
+    correction = 0;
+  }
 
   power_left = base_left - correction;
   power_right = base_right + correction;
