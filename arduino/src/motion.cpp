@@ -468,37 +468,63 @@ void parse_next_move() {
   axis_right.resetEncoder();
   state = MOVE_COMMANDED;
 
+  // track how many moves have been parsed
+  // this can be more than one when moves are combined, eg F1 + F1 = F2
+  uint8_t parsed_moves = 1;
+
   switch (buffered_moves[pos_moves_start].type) {
     case DISTANCE:
-      move_type = DISTANCE;
-      target = buffered_moves[pos_moves_start].target;
-      switch (buffered_moves[pos_moves_start].direction) {
-        case FORWARD:
-          axis_left.setReverse(false);
-          axis_right.setReverse(false);
-          Serial.print("start forward - target=");
-          Serial.println(target);
-          break;
-        case REVERSE:
-          axis_left.setReverse(true);
-          axis_right.setReverse(true);
-          Serial.print("start reverse - target=");
-          Serial.println(target);
-          break;
-        case LEFT:
-          axis_left.setReverse(true);
-          axis_right.setReverse(false);
-          Serial.print("start left turn - target=");
-          Serial.println(target);
-          break;
-        case RIGHT:
-          axis_left.setReverse(false);
-          axis_right.setReverse(true);
-          Serial.print("start right turn - target=");
-          Serial.println(target);
-          break;
+      {
+        move_type = DISTANCE;
+        target = buffered_moves[pos_moves_start].target;
+        motion_direction_t direction = buffered_moves[pos_moves_start].direction;
+
+        // parse the next moves to see if we can combine them together
+        for (uint8_t i = 1; i < num_moves; i++) {
+          uint8_t move_index = (pos_moves_start + i) % kMovement_buffer_size;
+
+          if (
+            buffered_moves[move_index].type != DISTANCE ||
+            buffered_moves[move_index].direction != direction
+          ) {
+            break;
+          }
+
+          Serial.print("Combining move index=");
+          Serial.println(move_index);
+
+          target += buffered_moves[move_index].target;
+          parsed_moves ++;
+        }
+
+        switch (direction) {
+          case FORWARD:
+            axis_left.setReverse(false);
+            axis_right.setReverse(false);
+            Serial.print("start forward - target=");
+            Serial.println(target);
+            break;
+          case REVERSE:
+            axis_left.setReverse(true);
+            axis_right.setReverse(true);
+            Serial.print("start reverse - target=");
+            Serial.println(target);
+            break;
+          case LEFT:
+            axis_left.setReverse(true);
+            axis_right.setReverse(false);
+            Serial.print("start left turn - target=");
+            Serial.println(target);
+            break;
+          case RIGHT:
+            axis_left.setReverse(false);
+            axis_right.setReverse(true);
+            Serial.print("start right turn - target=");
+            Serial.println(target);
+            break;
+        }
+        break;
       }
-      break;
     case OBSTACLE:
       move_type = OBSTACLE;
       target = buffered_moves[pos_moves_start].target;
@@ -509,11 +535,8 @@ void parse_next_move() {
   }
   sei();
 
-  num_moves --;
-  pos_moves_start ++;
-  if (pos_moves_start > kMovement_buffer_size) {
-    pos_moves_start = 0;
-  }
+  num_moves -= parsed_moves;
+  pos_moves_start = (pos_moves_start + parsed_moves) % kMovement_buffer_size;
 }
 
 void start_align() {
