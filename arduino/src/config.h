@@ -8,7 +8,7 @@ const uint8_t kMin_motor_threshold = 16;
 
 // alpha for exponential filter used to smooth sensor data
 // [0-255], lower for more filtering
-const uint8_t kSensor_filter_alpha = 64;
+const uint8_t kSensor_filter_alpha = 127;
 
 // max axis acceleration/deceleration
 const int16_t kMax_axis_accel = 64;
@@ -16,6 +16,8 @@ const int16_t kMax_axis_decel = -128;
 
 // minimum encoder delta for the robot to be considered moving
 const int32_t kEncoder_move_threshold = 10;
+// minimum sensor delta to be considered sensor unstable
+const int16_t kSensor_delta_threshold = 1;
 
 // maximum error for move-distance to be completed
 const int8_t kMax_encoder_error = 5;
@@ -23,6 +25,8 @@ const int8_t kMax_encoder_error = 5;
 const int8_t kMax_obstacle_error = 5;
 // max difference between both axis for moves to be completed
 const int8_t kMax_encoder_diff_error = 5;
+// max error for wall align to be completed (mm)
+const int8_t kMax_align_error = 2;
 
 // parser buffer size
 // determines max length of command that can be sent
@@ -71,11 +75,11 @@ const double kSensor_constants[6][3] = {
 };
 
 // maximum valid distance reportable by each sensor
-const uint16_t kSensor_max[6] = {
+const int16_t kSensor_max[6] = {
   600,
+  650,
   600,
-  600,
-  600,
+  700,
   600,
   600
 };
@@ -89,9 +93,9 @@ const uint16_t kSensor_max[6] = {
 const int16_t kSensor_thresholds[6][kSensor_threshold_count] = {
   // 0    1    2    3    4    5    6    7    8    9
   { 100, 200, 300, 400, 470, 550, 700, 800, 900, 1000 },
-  { 100, 200, 300, 400, 470, 550, 700, 800, 900, 1000 },
+  { 100, 200, 300, 400, 450, 550, 700, 800, 900, 1000 },
   { 100, 200, 300, 400, 500, 650, 700, 800, 900, 1000 },
-  { 100, 200, 300, 400, 470, 550, 700, 800, 900, 1000 },
+  { 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 },
   { 100, 200, 300, 400, 500, 650, 700, 800, 900, 1000 },
   { 100, 200, 300, 400, 500, 650, 750, 800, 900, 1000 },
 };

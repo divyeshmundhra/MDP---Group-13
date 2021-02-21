@@ -36,15 +36,21 @@ static bool parse_buf() {
   }
 
   if (cmd == 'F') {
-    start_motion_distance(FORWARD, distanceToTicks(val));
+    start_motion_unit(FORWARD, val);
   } else if (cmd == 'B') {
-    start_motion_distance(REVERSE, distanceToTicks(val));
+    start_motion_unit(REVERSE, val);
   } else if (cmd == 'L') {
-    start_motion_distance(LEFT, distanceToTicks(angleToDistance(val)));
+    start_motion_unit(LEFT, val);
   } else if (cmd == 'R') {
-    start_motion_distance(RIGHT, distanceToTicks(angleToDistance(val)));
+    start_motion_unit(RIGHT, val);
   } else if (cmd == 'O') {
     start_motion_obstacle(val);
+  } else if (cmd == 'l') {
+    start_motion_distance(LEFT, distanceToTicks(angleToDistance(val)));
+  } else if (cmd == 'r') {
+    start_motion_distance(RIGHT, distanceToTicks(angleToDistance(val)));
+  } else if (cmd == 'A') {
+    start_align();
   } else if (cmd == 'D') {
     state = DEBUG_IDLE;
   } else if (cmd == 'S') {
@@ -53,6 +59,12 @@ static bool parse_buf() {
     } else {
       state = DEBUG_LOG_SPECIFIC_SENSOR;
       debug_sensor_target = val;
+    }
+  } else if (cmd == 'E') {
+    if (cmd1 == 'm') {
+      log_motion = !log_motion;
+    } else if (cmd1 == 's') {
+      log_sensors = !log_sensors;
     }
   } else if (cmd == 'o') {
     if (cmd1 == 'p') {
@@ -78,8 +90,7 @@ static bool parse_buf() {
     } else if (cmd1 == 'd') {
       kD_obstacle = val;
     }
-  }
-  else if (cmd == 'A') {
+  } else if (cmd == 'A') {
     start_checklist(val);
   } else {
     Serial.println("Unknown cmd");

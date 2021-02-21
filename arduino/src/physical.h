@@ -16,4 +16,17 @@ const uint16_t kRobot_circumference = 3.14159 * kWheel_distance;
 #define distanceToTicks(distance) (((uint32_t) distance) * kCount_per_rev / kWheel_circumference)
 #define angleToDistance(angle) (((uint32_t) angle) * kRobot_circumference / 360)
 
+// distance between sideways front and rear sensors
+// (distance sensor to standoff) + (distance standoff to standoff) + (distance standoff to sensor)
+const uint16_t kSensor_side_front_rear_distance = 15 + 145 + 15;
+const uint16_t kSensor_side_center_distance = kSensor_side_front_rear_distance / 2;
+
+const uint16_t kBlock_distance = distanceToTicks(100);
+
+// distance of travel after which to report sensor values
+const uint16_t kReport_distance = 0.95 * kBlock_distance;
+// delay the sensor read until the middle of the block to get a more accurate reading
+// this is not added for the final block since we won't actually move until the end of the block
+const uint16_t kReport_distance_offset = 0.4 * kBlock_distance;
+
 #endif
