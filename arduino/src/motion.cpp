@@ -247,8 +247,10 @@ int16_t controllerObstacle(pid_state_t *state, uint16_t distance, uint16_t targe
 
 static state_t state = IDLE;
 static move_type_t move_type = DISTANCE;
-// depending on move_type, stores either target encoder ticks or target obstacle distance
-static int32_t target = 0;
+
+static int32_t target_left = 0;
+static int32_t target_right = 0;
+static int16_t target_obstacle = 0;
 
 volatile int16_t base_left = 0;
 volatile int16_t base_right = 0;
@@ -296,7 +298,7 @@ ISR(TIMER2_COMPA_vect) {
       // move-specific terminating condition
       if (move_type == DISTANCE) {
         // DISTANCE terminates when the left encoder is really close to target
-        int32_t diff_left = encoder_left - target;
+        int32_t diff_left = encoder_left - target_left;
         if (diff_left > -kMax_encoder_error && diff_left < kMax_encoder_error) {
           Serial.println("move distance done");
           state = IDLE;
@@ -306,7 +308,7 @@ ISR(TIMER2_COMPA_vect) {
         }
       } else if (move_type == OBSTACLE) {
         // OBSTACLE terminates when the sensor distance is really close to target
-        int16_t diff_err = sensor_distances[FRONT_FRONT_MID] - target;
+        int16_t diff_err = sensor_distances[FRONT_FRONT_MID] - target_obstacle;
         if (diff_err > -kMax_obstacle_error && diff_err < kMax_obstacle_error) {
           Serial.println("move obstacle done");
           state = IDLE;
@@ -330,10 +332,10 @@ ISR(TIMER2_COMPA_vect) {
 
   int16_t power_left = 0, power_right = 0;
   if (move_type == DISTANCE) {
-    base_left = controllerStraight(&state_straight_left, encoder_left, target);
-    base_right = controllerStraight(&state_straight_right, encoder_right, target);
+    base_left = controllerStraight(&state_straight_left, encoder_left, target_left);
+    base_right = controllerStraight(&state_straight_right, encoder_right, target_right);
   } else if (move_type == OBSTACLE) {
-    base_left = controllerObstacle(&state_obstacle, sensor_distances[FRONT_FRONT_MID], target);
+    base_left = controllerObstacle(&state_obstacle, sensor_distances[FRONT_FRONT_MID], target_obstacle);
     base_right = base_left;
   }
 
@@ -359,7 +361,7 @@ ISR(TIMER2_COMPA_vect) {
     // until we move past it by kReport_distance_offset to get a more accurate reading
     uint16_t offset_target = next_report_dist_base + kReport_distance_offset;
 
-    if (offset_target < target) {
+    if (offset_target < target_left) {
       next_report_dist_actual = offset_target;
     } else {
       next_report_dist_actual = next_report_dist_base;
@@ -476,7 +478,7 @@ void parse_next_move() {
     case DISTANCE:
       {
         move_type = DISTANCE;
-        target = buffered_moves[pos_moves_start].target;
+        int32_t target = buffered_moves[pos_moves_start].target;
         motion_direction_t direction = buffered_moves[pos_moves_start].direction;
 
         // parse the next moves to see if we can combine them together
@@ -523,11 +525,13 @@ void parse_next_move() {
             Serial.println(target);
             break;
         }
+        target_left = target;
+        target_right = target;
         break;
       }
     case OBSTACLE:
       move_type = OBSTACLE;
-      target = buffered_moves[pos_moves_start].target;
+      target_obstacle = buffered_moves[pos_moves_start].target;
       axis_left.setReverse(false);
       axis_right.setReverse(false);
       Serial.println("start move to obstacle");
