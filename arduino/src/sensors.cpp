@@ -112,13 +112,14 @@ void log_sensor(uint8_t i) {
 }
 
 void log_all_sensors() {
-  Serial.print("SENSOR ");
+  Serial.print("$SENSOR ");
   for(uint8_t i = 0; i < 6; i++) {
     if (sensor_obstacles[i] == -1) {
       Serial.print("i");
     } else {
       Serial.print(sensor_obstacles[i]);
     }
+    Serial.print("|");
   }
   Serial.println();
 }
