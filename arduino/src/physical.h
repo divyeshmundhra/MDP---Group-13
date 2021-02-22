@@ -21,6 +21,9 @@ const uint16_t kRobot_circumference = 3.14159 * kWheel_distance;
 // hardcode ticks per 45 degree rotation to allow for tuning
 const uint16_t kTicks_per_45_degrees = 772;
 
+// ticks to turn 45 degrees when F is combined with L/R
+const uint16_t kTicks_per_45_degrees_combined = 1500;
+
 // distance between sideways front and rear sensors
 // (distance sensor to standoff) + (distance standoff to standoff) + (distance standoff to sensor)
 const uint16_t kSensor_side_front_rear_distance = 15 + 145 + 15;

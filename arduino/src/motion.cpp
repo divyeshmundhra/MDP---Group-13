@@ -23,6 +23,7 @@ typedef struct {
   move_type_t type;
   motion_direction_t direction;
   int32_t target;
+  uint8_t unit;
 } move_t;
 
 typedef struct {
@@ -86,8 +87,14 @@ int16_t controllerObstacle(pid_state_t *state, uint16_t distance, uint16_t targe
   return power;
 }
 
+move_t buffered_moves[kMovement_buffer_size];
+uint8_t num_moves = 0;
+uint8_t pos_moves_start = 0;
+uint8_t pos_moves_end = 0;
+
 static state_t state = IDLE;
 static move_type_t move_type = DISTANCE;
+static motion_direction_t move_dir;
 
 static int32_t target_left = 0;
 static int32_t target_right = 0;
@@ -96,6 +103,11 @@ static int16_t target_obstacle = 0;
 volatile int16_t base_left = 0;
 volatile int16_t base_right = 0;
 volatile int16_t correction = 0;
+
+// whether track left controller is enabled
+static bool straight_enabled = true;
+
+void combine_next_move();
 
 // triggers at 100Hz
 ISR(TIMER2_COMPA_vect) {
@@ -122,8 +134,8 @@ ISR(TIMER2_COMPA_vect) {
   pEncoder_left = encoder_left;
   pEncoder_right = encoder_right;
 
-  // whether track left controller is enabled
-  static bool straight_enabled = true;
+  // whether the left motor has reached max power
+  static bool reached_max_power = false;
 
   // whether the encoder has changed from the last update
   bool has_encoder_delta = (delta_left < -kEncoder_move_threshold) || (delta_left > kEncoder_move_threshold) ||
@@ -153,6 +165,8 @@ ISR(TIMER2_COMPA_vect) {
           axis_left.setPower(0);
           axis_right.setPower(0);
           return;
+        } else {
+          Serial.println("A");
         }
       } else if (move_type == OBSTACLE) {
         // OBSTACLE terminates when the sensor distance is really close to target
@@ -176,6 +190,7 @@ ISR(TIMER2_COMPA_vect) {
     }
     state = MOVING;
     next_report_dist_base = 0;
+    reached_max_power = false;
     straight_enabled = true;
   }
 
@@ -183,6 +198,17 @@ ISR(TIMER2_COMPA_vect) {
   if (move_type == DISTANCE) {
     base_left = controllerStraight(&state_straight_left, encoder_left, target_left);
     base_right = controllerStraight(&state_straight_right, encoder_right, target_right);
+
+    // crude way to determine if robot is decelerating:
+    // for most of the move, controllerStraight will be saturated
+    // when it starts to fall, we're nearing the end of the move
+    if (base_left >= kMS_max_output) {
+      reached_max_power = true;
+    } else if (reached_max_power) {
+      reached_max_power = false;
+      Serial.println("decelerating");
+      combine_next_move();
+    }
   } else if (move_type == OBSTACLE) {
     base_left = controllerObstacle(&state_obstacle, sensor_distances[FRONT_FRONT_MID], target_obstacle);
     base_right = base_left;
@@ -230,21 +256,26 @@ int32_t get_encoder_left() {
   return axis_left.getEncoder();
 }
 
-move_t buffered_moves[kMovement_buffer_size];
-uint8_t num_moves = 0;
-uint8_t pos_moves_start = 0;
-uint8_t pos_moves_end = 0;
-
 void start_motion_unit(motion_direction_t _direction, uint8_t unit) {
-  switch (_direction) {
-    case FORWARD:
-    case REVERSE:
-      start_motion_distance(_direction, unit * kBlock_distance);
-      break;
-    case LEFT:
-    case RIGHT:
-      start_motion_distance(_direction, unit * kTicks_per_45_degrees);
-      break;
+  if (num_moves >= kMovement_buffer_size) {
+    Serial.println("movement buffer full");
+    return;
+  }
+
+  buffered_moves[pos_moves_end].type = DISTANCE;
+  buffered_moves[pos_moves_end].direction = _direction;
+  buffered_moves[pos_moves_end].unit = unit;
+
+  if (_direction == FORWARD || _direction == REVERSE) {
+    buffered_moves[pos_moves_end].target = unit * kBlock_distance;
+  } else if (_direction == LEFT || _direction == RIGHT) {
+    buffered_moves[pos_moves_end].target = unit * kTicks_per_45_degrees;
+  }
+
+  num_moves ++;
+  pos_moves_end ++;
+  if (pos_moves_end >= kMovement_buffer_size) {
+    pos_moves_end = 0;
   }
 }
 
@@ -257,6 +288,7 @@ void start_motion_distance(motion_direction_t _direction, uint32_t distance) {
   buffered_moves[pos_moves_end].type = DISTANCE;
   buffered_moves[pos_moves_end].direction = _direction;
   buffered_moves[pos_moves_end].target = distance;
+  buffered_moves[pos_moves_end].unit = 0;
 
   num_moves ++;
   pos_moves_end ++;
@@ -311,7 +343,7 @@ void parse_next_move() {
       {
         move_type = DISTANCE;
         int32_t target = buffered_moves[pos_moves_start].target;
-        motion_direction_t direction = buffered_moves[pos_moves_start].direction;
+        move_dir = buffered_moves[pos_moves_start].direction;
 
         // parse the next moves to see if we can combine them together
         for (uint8_t i = 1; i < num_moves; i++) {
@@ -319,7 +351,7 @@ void parse_next_move() {
 
           if (
             buffered_moves[move_index].type != DISTANCE ||
-            buffered_moves[move_index].direction != direction
+            buffered_moves[move_index].direction != move_dir
           ) {
             break;
           }
@@ -331,7 +363,7 @@ void parse_next_move() {
           parsed_moves ++;
         }
 
-        switch (direction) {
+        switch (move_dir) {
           case FORWARD:
             axis_left.setReverse(false);
             axis_right.setReverse(false);
@@ -373,6 +405,36 @@ void parse_next_move() {
 
   num_moves -= parsed_moves;
   pos_moves_start = (pos_moves_start + parsed_moves) % kMovement_buffer_size;
+}
+
+void combine_next_move() {
+  if (num_moves == 0) {
+    return;
+  }
+
+  if (move_dir == FORWARD) {
+    if (
+      buffered_moves[pos_moves_start].type == DISTANCE &&
+      (
+        buffered_moves[pos_moves_start].direction == LEFT ||
+        buffered_moves[pos_moves_start].direction == RIGHT
+      )
+    ) {
+      if (buffered_moves[pos_moves_start].direction == LEFT) {
+        target_right += buffered_moves[pos_moves_start].unit * kTicks_per_45_degrees_combined;
+        Serial.println("Starting left turn early");
+      } else if (buffered_moves[pos_moves_start].direction == RIGHT) {
+        target_left += buffered_moves[pos_moves_start].unit * kTicks_per_45_degrees_combined;
+        Serial.println("Starting right turn early");
+      }
+
+      // disable straight controller since we will now intentionally move the axis asymmetrically
+      straight_enabled = false;
+
+      num_moves --;
+      pos_moves_start = (pos_moves_start + 1) % kMovement_buffer_size;
+    }
+  }
 }
 
 void start_align() {
