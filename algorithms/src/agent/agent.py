@@ -36,6 +36,9 @@ class Agent:
         if target_coord == None:
             message = f'No valid path!' if self.task == AgentTask.FAST else f'Exploration complete!'
             move_command = None
+        elif self.task == AgentTask.FAST and self.robot_info.get_coord().is_equal(self.end_coord):
+            message = f'Fastest path complete!'
+            move_command = None
         else:
             move_command = self.calculate_move(target_coord)
             message = f'TURN: {move_command.get_turn_angle()} degs, then \
