@@ -2,6 +2,7 @@
 
 #include "board.h"
 #include "motion.h"
+#include "motion_init.h"
 #include "sensors.h"
 #include "parser.h"
 

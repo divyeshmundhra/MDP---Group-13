@@ -1,12 +1,16 @@
 #ifndef MOTION_H
 #define MOTION_H
 
+#include "Axis.h"
+
 typedef enum {
   FORWARD,
   REVERSE,
   LEFT,
   RIGHT
 } motion_direction_t;
+
+extern Axis axis_left, axis_right;
 
 void setup_motion();
 void loop_motion();

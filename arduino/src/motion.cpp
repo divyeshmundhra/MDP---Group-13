@@ -1,21 +1,12 @@
 #include <Arduino.h>
 
-#include "DualVNH5019MotorShield.h"
-
 #include "motion.h"
+#include "motion_init.h"
 #include "config.h"
 #include "board.h"
 #include "sensors.h"
 #include "physical.h"
 #include "align_LUT.h"
-#include "Axis.h"
-
-void setPowerLeft(uint16_t power, bool reverse);
-void setPowerRight(uint16_t power, bool reverse);
-
-static DualVNH5019MotorShield md;
-static Axis axis_left(setPowerLeft, true);
-static Axis axis_right(setPowerRight);
 
 typedef enum {
   IDLE,
@@ -38,156 +29,6 @@ typedef struct {
   int16_t integral = 0;
   int32_t last_input = 0;
 } pid_state_t;
-
-ISR(PCINT2_vect) {
-  // http://makeatronics.blogspot.com/2013/02/efficiently-reading-quadrature-with.html
-  // https://github.com/PaulStoffregen/Encoder/blob/master/Encoder.h
-  static uint8_t state = 0;
-  asm volatile(
-      // update encoder state
-      "lsl %[state]                    \n\t" // state << 2
-      "lsl %[state]                    \n\t"
-      "andi %[state], 0x0C             \n\t"
-      "sbic %[in], %[encA]             \n\t" // if encoder A is set,
-      "sbr %[state], (1<<0)            \n\t" //   set bit 0 of state
-      "sbic %[in], %[encB]             \n\t" // if encoder B is set, 
-      "sbr %[state], (1<<1)            \n\t" //   set bit 1 of state
-      // use state to retrieve from LUT
-      "ldi r30, lo8(pm(L%=jmptable))   \n\t"
-      "ldi r31, hi8(pm(L%=jmptable))   \n\t"
-      "add r30, %[state]               \n\t" // increment lut by state ie retrieve lut[state]
-      "adc r31, __zero_reg__           \n\t"
-      "ijmp                            \n\t"
-    "L%=jmptable:                      \n\t"
-      "rjmp L%=end                     \n\t" // 0
-      "rjmp L%=plus1                   \n\t" // 1
-      "rjmp L%=minus1                  \n\t" // 2
-      "rjmp L%=end                     \n\t" // 3
-      "rjmp L%=minus1                  \n\t" // 4
-      "rjmp L%=end                     \n\t" // 5
-      "rjmp L%=end                     \n\t" // 6
-      "rjmp L%=plus1                   \n\t" // 7
-      "rjmp L%=plus1                   \n\t" // 8
-      "rjmp L%=end                     \n\t" // 9
-      "rjmp L%=end                     \n\t" // 10
-      "rjmp L%=minus1                  \n\t" // 11
-      "rjmp L%=end                     \n\t" // 12
-      "rjmp L%=minus1                  \n\t" // 13
-      "rjmp L%=plus1                   \n\t" // 14
-      "rjmp L%=end                     \n\t" // 15
-    "L%=plus1:                         \n\t"
-      "subi %A[count], 255             \n\t"
-      "sbci %B[count], 255             \n\t"
-      "sbci %C[count], 255             \n\t"
-      "sbci %D[count], 255             \n\t"
-      "rjmp L%=end                     \n\t"
-    "L%=minus1:                        \n\t"
-      "subi %A[count], 1               \n\t"
-      "sbci %B[count], 0               \n\t"
-      "sbci %C[count], 0               \n\t"
-      "sbci %D[count], 0               \n\t"
-    "L%=end:                           \n\t"
-    :
-      [state] "=d" (state), // has to go into upper register because ANDI and SBR only operate on upper
-      [count] "=w" (axis_left.encoder_count)
-    :
-      "0" (state),
-      "1" (axis_left.encoder_count),
-      [in] "I" (_SFR_IO_ADDR(E1_PIN)),
-      [encA] "I" (E1A_BIT),
-      [encB] "I" (E1B_BIT)
-    : "r30", "r31"
-  );
-}
-
-ISR(PCINT0_vect) {
-  static uint8_t state = 0;
-  asm volatile(
-      // update encoder state
-      "lsl %[state]                    \n\t" // state << 2
-      "lsl %[state]                    \n\t"
-      "andi %[state], 0x0C             \n\t"
-      "sbic %[in], %[encA]             \n\t" // if encoder A is set,
-      "sbr %[state], (1<<0)            \n\t" //   set bit 0 of state
-      "sbic %[in], %[encB]             \n\t" // if encoder B is set, 
-      "sbr %[state], (1<<1)            \n\t" //   set bit 1 of state
-      // use state to retrieve from LUT
-      "ldi r30, lo8(pm(L%=jmptable))   \n\t"
-      "ldi r31, hi8(pm(L%=jmptable))   \n\t"
-      "add r30, %[state]               \n\t" // increment lut by state ie retrieve lut[state]
-      "adc r31, __zero_reg__           \n\t"
-      "ijmp                            \n\t"
-    "L%=jmptable:                      \n\t"
-      "rjmp L%=end                     \n\t" // 0
-      "rjmp L%=plus1                   \n\t" // 1
-      "rjmp L%=minus1                  \n\t" // 2
-      "rjmp L%=end                     \n\t" // 3
-      "rjmp L%=minus1                  \n\t" // 4
-      "rjmp L%=end                     \n\t" // 5
-      "rjmp L%=end                     \n\t" // 6
-      "rjmp L%=plus1                   \n\t" // 7
-      "rjmp L%=plus1                   \n\t" // 8
-      "rjmp L%=end                     \n\t" // 9
-      "rjmp L%=end                     \n\t" // 10
-      "rjmp L%=minus1                  \n\t" // 11
-      "rjmp L%=end                     \n\t" // 12
-      "rjmp L%=minus1                  \n\t" // 13
-      "rjmp L%=plus1                   \n\t" // 14
-      "rjmp L%=end                     \n\t" // 15
-    "L%=plus1:                         \n\t"
-      "subi %A[count], 255             \n\t"
-      "sbci %B[count], 255             \n\t"
-      "sbci %C[count], 255             \n\t"
-      "sbci %D[count], 255             \n\t"
-      "rjmp L%=end                     \n\t"
-    "L%=minus1:                        \n\t"
-      "subi %A[count], 1               \n\t"
-      "sbci %B[count], 0               \n\t"
-      "sbci %C[count], 0               \n\t"
-      "sbci %D[count], 0               \n\t"
-    "L%=end:                           \n\t"
-    :
-      [state] "=d" (state), // has to go into upper register because ANDI and SBR only operate on upper
-      [count] "=w" (axis_right.encoder_count)
-    :
-      "0" (state),
-      "1" (axis_right.encoder_count),
-      [in] "I" (_SFR_IO_ADDR(E2_PIN)),
-      [encA] "I" (E2A_BIT),
-      [encB] "I" (E2B_BIT)
-    : "r30", "r31"
-  );
-}
-
-void setPowerLeft(uint16_t power, bool reverse) {
-  OCR1A = power;
-
-  if (power < kMin_motor_threshold) {
-    M1_INA_PORT &= ~_BV(M1_INA_BIT);
-    M1_INB_PORT &= ~_BV(M1_INB_BIT);
-  } else if (reverse) {
-    M1_INA_PORT &= ~_BV(M1_INA_BIT);
-    M1_INB_PORT |= _BV(M1_INB_BIT);
-  } else {
-    M1_INA_PORT |= _BV(M1_INA_BIT);
-    M1_INB_PORT &= ~_BV(M1_INB_BIT);
-  }
-}
-
-void setPowerRight(uint16_t power, bool reverse) {
-  OCR1B = power;
-
-  if (power < kMin_motor_threshold) {
-    M2_INA_PORT &= ~_BV(M2_INA_BIT);
-    M2_INB_PORT &= ~_BV(M2_INB_BIT);
-  } else if (reverse) {
-    M2_INA_PORT &= ~_BV(M2_INA_BIT);
-    M2_INB_PORT |= _BV(M2_INB_BIT);
-  } else {
-    M2_INA_PORT |= _BV(M2_INA_BIT);
-    M2_INB_PORT &= ~_BV(M2_INB_BIT);
-  }
-}
 
 pid_state_t state_tl;
 void resetControllerState(pid_state_t *state, int32_t input) {
@@ -387,27 +228,6 @@ bool get_motion_done() {
 
 int32_t get_encoder_left() {
   return axis_left.getEncoder();
-}
-
-void setup_motion() {
-  // PCI2 (left encoder):
-  PCMSK2 |=  _BV(E1A_PCINT) | _BV(E1B_PCINT); // enable interrupt sources
-  PCIFR  &= ~_BV(PCIF2);                                       // clear interrupt flag of PCI2
-  PCICR  |=  _BV(PCIE2);                                       // enable PCI2
-
-  // PCI0 (right encoder):
-  PCMSK0 |=  _BV(E2A_PCINT) | _BV(E2B_PCINT); // enable interrupt sources
-  PCIFR  &= ~_BV(PCIF0);                                         // clear interrupt flag of PCI0
-  PCICR  |=  _BV(PCIE0);                                         // enable PCI0
-
-  // configure timer 2 for 100Hz
-  TCCR2A |= _BV(WGM21);                        // mode 2, CTC, top is OCRA
-  TCCR2B |= _BV(CS22) | _BV(CS21) | _BV(CS20); // clock/1024
-  OCR2A = 155;                                 // 16000000/1024/155 = 100Hz
-  TIFR2 &= ~_BV(OCF2A);                        // clear interrupt flag
-  TIMSK2 |= _BV(OCIE2A);                       // enable interrupt on compare match A
-
-  md.init();
 }
 
 move_t buffered_moves[kMovement_buffer_size];
