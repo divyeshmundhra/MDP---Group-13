@@ -423,7 +423,7 @@ void start_motion_unit(motion_direction_t _direction, uint8_t unit) {
       break;
     case LEFT:
     case RIGHT:
-      start_motion_distance(_direction, distanceToTicks(angleToDistance(unit * 45)));
+      start_motion_distance(_direction, unit * kTicks_per_45_degrees);
       break;
   }
 }

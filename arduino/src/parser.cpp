@@ -45,9 +45,17 @@ static bool parse_buf() {
   } else if (cmd == 'O') {
     start_motion_obstacle(val);
   } else if (cmd == 'l') {
-    start_motion_distance(LEFT, distanceToTicks(angleToDistance(val)));
+    if (cmd1 == 'r') {
+      start_motion_distance(LEFT, val);
+    } else {
+      start_motion_distance(LEFT, angleToTicks(val));
+    }
   } else if (cmd == 'r') {
-    start_motion_distance(RIGHT, distanceToTicks(angleToDistance(val)));
+    if (cmd1 == 'r') {
+      start_motion_distance(RIGHT, val);
+    } else {
+      start_motion_distance(RIGHT, angleToTicks(val));
+    }
   } else if (cmd == 'A') {
     start_align();
   } else if (cmd == 'D') {
