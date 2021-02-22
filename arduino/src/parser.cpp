@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include "parser.h"
 #include "motion.h"
-#include "checklist.h"
 #include "physical.h"
 #include "sensors.h"
 #include "config.h"
@@ -98,8 +97,6 @@ static bool parse_buf() {
     } else if (cmd1 == 'd') {
       kD_obstacle = val;
     }
-  } else if (cmd == 'A') {
-    start_checklist(val);
   } else {
     Serial.println("Unknown cmd");
   }
