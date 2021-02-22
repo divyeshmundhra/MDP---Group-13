@@ -55,6 +55,8 @@ void setup_sensors() {
 void convert_sensor_data() {
   for(uint8_t i = 0; i < 6; i++) {
     sensor_distances[i] = (kSensor_constants[i][0] * adc_val[i] + kSensor_constants[i][1]) / (adc_val[i] + kSensor_constants[i][2]);
+    sensor_distances[i] += kSensor_offset[i];
+
     if (sensor_distances[i] < 0) {
       sensor_distances[i] = 0;
     }
