@@ -141,10 +141,11 @@ ISR(TIMER2_COMPA_vect) {
   bool has_encoder_delta = (delta_left < -kEncoder_move_threshold) || (delta_left > kEncoder_move_threshold) ||
                   (delta_right < -kEncoder_move_threshold) || (delta_right > kEncoder_move_threshold);
 
-  // every recalculation of report_dist will start from base
-  static uint16_t next_report_dist_base;
-  // actual may have the report offset summed into it
-  static uint16_t next_report_dist_actual;
+  // distance travelled after which the robot will report it has moved a tile
+  static uint16_t report_block_threshold;
+  // distance travelled after which the robot will report sensor data
+  static uint16_t report_sensor_threshold;
+  static bool has_reported_sensors = true;
 
   if (state == MOVING && !has_encoder_delta) {
     // encoder delta has slowed to almost zero - lets check if we should finish the move
@@ -165,8 +166,6 @@ ISR(TIMER2_COMPA_vect) {
           axis_left.setPower(0);
           axis_right.setPower(0);
           return;
-        } else {
-          Serial.println("A");
         }
       } else if (move_type == OBSTACLE) {
         // OBSTACLE terminates when the sensor distance is really close to target
@@ -189,7 +188,8 @@ ISR(TIMER2_COMPA_vect) {
       resetControllerState(&state_obstacle, sensor_distances[FRONT_FRONT_MID]);
     }
     state = MOVING;
-    next_report_dist_base = 0;
+    report_block_threshold = 0;
+    has_reported_sensors = true;
     reached_max_power = false;
     straight_enabled = true;
   }
@@ -207,7 +207,7 @@ ISR(TIMER2_COMPA_vect) {
     } else if (reached_max_power) {
       reached_max_power = false;
       Serial.println("decelerating");
-      combine_next_move();
+      // combine_next_move();
     }
   } else if (move_type == OBSTACLE) {
     base_left = controllerObstacle(&state_obstacle, sensor_distances[FRONT_FRONT_MID], target_obstacle);
@@ -226,25 +226,51 @@ ISR(TIMER2_COMPA_vect) {
   axis_left.setPower(power_left);
   axis_right.setPower(power_right);
 
-  // we treat dist_base == 0 as a "initialise the value" condition
+  // we treat report_block_threshold == 0 as a "initialise the value" condition
   // so that we don't have to duplicate the logic for incrementing dist_actual into the MOVE_COMMANDED handler
-  if (encoder_left > next_report_dist_actual || next_report_dist_base == 0) {
-    if (next_report_dist_base > 0) {
-      log_all_sensors();
-      next_report_dist_base += kBlock_distance;
+  if (encoder_left > report_block_threshold || report_block_threshold == 0) {
+    uint16_t pReport_block_threshold = report_block_threshold;
+
+    if (report_block_threshold > 0) {
+      switch(move_dir) {
+        case FORWARD:
+          Serial.println("$UF");
+          report_block_threshold += kBlock_distance;
+          break;
+        case REVERSE:
+          Serial.println("$UB");
+          report_block_threshold += kBlock_distance;
+          break;
+        case LEFT:
+          Serial.println("$UL");
+          report_block_threshold += kTicks_per_45_degrees * 2;
+          break;
+        case RIGHT:
+          Serial.println("$UR");
+          report_block_threshold += kTicks_per_45_degrees * 2;
+          break;
+      }
     } else {
-      next_report_dist_base = kReport_distance;
+      report_block_threshold = kReport_distance;
     }
 
     // if we will eventually travel fully past this block, delay logging the sensors
     // until we move past it by kReport_distance_offset to get a more accurate reading
-    uint16_t offset_target = next_report_dist_base + kReport_distance_offset;
+    // use the previous threshold value if already initialised, else freshly initialised value
+    uint16_t offset_target = (pReport_block_threshold > 0 ? pReport_block_threshold : report_block_threshold) +
+                                kReport_distance_offset;
 
     if (offset_target < target_left) {
-      next_report_dist_actual = offset_target;
+      report_sensor_threshold = offset_target;
     } else {
-      next_report_dist_actual = next_report_dist_base;
+      report_sensor_threshold = pReport_block_threshold;
     }
+    has_reported_sensors = false;
+  }
+
+  if (!has_reported_sensors && encoder_left > report_sensor_threshold) {
+    log_all_sensors();
+    has_reported_sensors = true;
   }
 }
 
