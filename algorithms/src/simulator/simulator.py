@@ -51,7 +51,7 @@ class Simulator:
         new_orientation = OrientationTransform.calc_orientation_after_turn(self.robot_info.get_orientation(), move_command.get_turn_angle())
         
         if new_orientation != self.robot_info.get_orientation():
-            if abs(new_orientation.value - self.robot_info.get_orientation().value) == 1:
+            if abs(new_orientation.value - self.robot_info.get_orientation().value) == 1 or abs(new_orientation.value - self.robot_info.get_orientation().value) == 3:
                 self.robot_info.set_orientation(new_orientation)
                 self.robot_info.set_coord(self.robot_info.get_coord())
                 self.update_display()
