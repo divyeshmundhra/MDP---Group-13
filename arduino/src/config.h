@@ -45,8 +45,8 @@ extern int16_t kP_straight;
 extern int16_t kI_straight;
 extern int16_t kD_straight;
 
-const int16_t kMS_integral_min = -400;
-const int16_t kMS_integral_max = 400;
+const int16_t kMS_integral_min = -100;
+const int16_t kMS_integral_max = 100;
 
 const int16_t kMS_max_output = 400;
 const int16_t kMS_min_output = -400;
@@ -99,5 +99,7 @@ const int16_t kSensor_thresholds[6][kSensor_threshold_count] = {
   { 100, 200, 300, 400, 500, 650, 700, 800, 900, 1000 },
   { 100, 200, 300, 400, 500, 650, 750, 800, 900, 1000 },
 };
+
+const uint8_t kMovement_buffer_size = 8;
 
 #endif

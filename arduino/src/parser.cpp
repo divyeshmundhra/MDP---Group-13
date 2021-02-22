@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include "parser.h"
 #include "motion.h"
-#include "checklist.h"
 #include "physical.h"
 #include "sensors.h"
 #include "config.h"
@@ -46,9 +45,17 @@ static bool parse_buf() {
   } else if (cmd == 'O') {
     start_motion_obstacle(val);
   } else if (cmd == 'l') {
-    start_motion_distance(LEFT, distanceToTicks(angleToDistance(val)));
+    if (cmd1 == 'r') {
+      start_motion_distance(LEFT, val);
+    } else {
+      start_motion_distance(LEFT, angleToTicks(val));
+    }
   } else if (cmd == 'r') {
-    start_motion_distance(RIGHT, distanceToTicks(angleToDistance(val)));
+    if (cmd1 == 'r') {
+      start_motion_distance(RIGHT, val);
+    } else {
+      start_motion_distance(RIGHT, angleToTicks(val));
+    }
   } else if (cmd == 'A') {
     start_align();
   } else if (cmd == 'D') {
@@ -63,8 +70,16 @@ static bool parse_buf() {
   } else if (cmd == 'E') {
     if (cmd1 == 'm') {
       log_motion = !log_motion;
+      Serial.print("log motion: ");
+      Serial.println(log_motion);
     } else if (cmd1 == 's') {
       log_sensors = !log_sensors;
+      Serial.print("log sensors: ");
+      Serial.println(log_sensors);
+    } else if (cmd1 == 'p') {
+      parse_moves = !parse_moves;
+      Serial.print("parse moves: ");
+      Serial.println(parse_moves);
     }
   } else if (cmd == 'o') {
     if (cmd1 == 'p') {
@@ -90,8 +105,6 @@ static bool parse_buf() {
     } else if (cmd1 == 'd') {
       kD_obstacle = val;
     }
-  } else if (cmd == 'A') {
-    start_checklist(val);
   } else {
     Serial.println("Unknown cmd");
   }

@@ -1,21 +1,12 @@
 #include <Arduino.h>
 
-#include "DualVNH5019MotorShield.h"
-
 #include "motion.h"
+#include "motion_init.h"
 #include "config.h"
 #include "board.h"
 #include "sensors.h"
 #include "physical.h"
 #include "align_LUT.h"
-#include "Axis.h"
-
-void setPowerLeft(uint16_t power, bool reverse);
-void setPowerRight(uint16_t power, bool reverse);
-
-static DualVNH5019MotorShield md;
-static Axis axis_left(setPowerLeft, true);
-static Axis axis_right(setPowerRight);
 
 typedef enum {
   IDLE,
@@ -29,159 +20,16 @@ typedef enum {
 } move_type_t;
 
 typedef struct {
+  move_type_t type;
+  motion_direction_t direction;
+  int32_t target;
+  uint8_t unit;
+} move_t;
+
+typedef struct {
   int16_t integral = 0;
   int32_t last_input = 0;
 } pid_state_t;
-
-ISR(PCINT2_vect) {
-  // http://makeatronics.blogspot.com/2013/02/efficiently-reading-quadrature-with.html
-  // https://github.com/PaulStoffregen/Encoder/blob/master/Encoder.h
-  static uint8_t state = 0;
-  asm volatile(
-      // update encoder state
-      "lsl %[state]                    \n\t" // state << 2
-      "lsl %[state]                    \n\t"
-      "andi %[state], 0x0C             \n\t"
-      "sbic %[in], %[encA]             \n\t" // if encoder A is set,
-      "sbr %[state], (1<<0)            \n\t" //   set bit 0 of state
-      "sbic %[in], %[encB]             \n\t" // if encoder B is set, 
-      "sbr %[state], (1<<1)            \n\t" //   set bit 1 of state
-      // use state to retrieve from LUT
-      "ldi r30, lo8(pm(L%=jmptable))   \n\t"
-      "ldi r31, hi8(pm(L%=jmptable))   \n\t"
-      "add r30, %[state]               \n\t" // increment lut by state ie retrieve lut[state]
-      "adc r31, __zero_reg__           \n\t"
-      "ijmp                            \n\t"
-    "L%=jmptable:                      \n\t"
-      "rjmp L%=end                     \n\t" // 0
-      "rjmp L%=plus1                   \n\t" // 1
-      "rjmp L%=minus1                  \n\t" // 2
-      "rjmp L%=end                     \n\t" // 3
-      "rjmp L%=minus1                  \n\t" // 4
-      "rjmp L%=end                     \n\t" // 5
-      "rjmp L%=end                     \n\t" // 6
-      "rjmp L%=plus1                   \n\t" // 7
-      "rjmp L%=plus1                   \n\t" // 8
-      "rjmp L%=end                     \n\t" // 9
-      "rjmp L%=end                     \n\t" // 10
-      "rjmp L%=minus1                  \n\t" // 11
-      "rjmp L%=end                     \n\t" // 12
-      "rjmp L%=minus1                  \n\t" // 13
-      "rjmp L%=plus1                   \n\t" // 14
-      "rjmp L%=end                     \n\t" // 15
-    "L%=plus1:                         \n\t"
-      "subi %A[count], 255             \n\t"
-      "sbci %B[count], 255             \n\t"
-      "sbci %C[count], 255             \n\t"
-      "sbci %D[count], 255             \n\t"
-      "rjmp L%=end                     \n\t"
-    "L%=minus1:                        \n\t"
-      "subi %A[count], 1               \n\t"
-      "sbci %B[count], 0               \n\t"
-      "sbci %C[count], 0               \n\t"
-      "sbci %D[count], 0               \n\t"
-    "L%=end:                           \n\t"
-    :
-      [state] "=d" (state), // has to go into upper register because ANDI and SBR only operate on upper
-      [count] "=w" (axis_left.encoder_count)
-    :
-      "0" (state),
-      "1" (axis_left.encoder_count),
-      [in] "I" (_SFR_IO_ADDR(E1_PIN)),
-      [encA] "I" (E1A_BIT),
-      [encB] "I" (E1B_BIT)
-    : "r30", "r31"
-  );
-}
-
-ISR(PCINT0_vect) {
-  static uint8_t state = 0;
-  asm volatile(
-      // update encoder state
-      "lsl %[state]                    \n\t" // state << 2
-      "lsl %[state]                    \n\t"
-      "andi %[state], 0x0C             \n\t"
-      "sbic %[in], %[encA]             \n\t" // if encoder A is set,
-      "sbr %[state], (1<<0)            \n\t" //   set bit 0 of state
-      "sbic %[in], %[encB]             \n\t" // if encoder B is set, 
-      "sbr %[state], (1<<1)            \n\t" //   set bit 1 of state
-      // use state to retrieve from LUT
-      "ldi r30, lo8(pm(L%=jmptable))   \n\t"
-      "ldi r31, hi8(pm(L%=jmptable))   \n\t"
-      "add r30, %[state]               \n\t" // increment lut by state ie retrieve lut[state]
-      "adc r31, __zero_reg__           \n\t"
-      "ijmp                            \n\t"
-    "L%=jmptable:                      \n\t"
-      "rjmp L%=end                     \n\t" // 0
-      "rjmp L%=plus1                   \n\t" // 1
-      "rjmp L%=minus1                  \n\t" // 2
-      "rjmp L%=end                     \n\t" // 3
-      "rjmp L%=minus1                  \n\t" // 4
-      "rjmp L%=end                     \n\t" // 5
-      "rjmp L%=end                     \n\t" // 6
-      "rjmp L%=plus1                   \n\t" // 7
-      "rjmp L%=plus1                   \n\t" // 8
-      "rjmp L%=end                     \n\t" // 9
-      "rjmp L%=end                     \n\t" // 10
-      "rjmp L%=minus1                  \n\t" // 11
-      "rjmp L%=end                     \n\t" // 12
-      "rjmp L%=minus1                  \n\t" // 13
-      "rjmp L%=plus1                   \n\t" // 14
-      "rjmp L%=end                     \n\t" // 15
-    "L%=plus1:                         \n\t"
-      "subi %A[count], 255             \n\t"
-      "sbci %B[count], 255             \n\t"
-      "sbci %C[count], 255             \n\t"
-      "sbci %D[count], 255             \n\t"
-      "rjmp L%=end                     \n\t"
-    "L%=minus1:                        \n\t"
-      "subi %A[count], 1               \n\t"
-      "sbci %B[count], 0               \n\t"
-      "sbci %C[count], 0               \n\t"
-      "sbci %D[count], 0               \n\t"
-    "L%=end:                           \n\t"
-    :
-      [state] "=d" (state), // has to go into upper register because ANDI and SBR only operate on upper
-      [count] "=w" (axis_right.encoder_count)
-    :
-      "0" (state),
-      "1" (axis_right.encoder_count),
-      [in] "I" (_SFR_IO_ADDR(E2_PIN)),
-      [encA] "I" (E2A_BIT),
-      [encB] "I" (E2B_BIT)
-    : "r30", "r31"
-  );
-}
-
-void setPowerLeft(uint16_t power, bool reverse) {
-  OCR1A = power;
-
-  if (power < kMin_motor_threshold) {
-    M1_INA_PORT &= ~_BV(M1_INA_BIT);
-    M1_INB_PORT &= ~_BV(M1_INB_BIT);
-  } else if (reverse) {
-    M1_INA_PORT &= ~_BV(M1_INA_BIT);
-    M1_INB_PORT |= _BV(M1_INB_BIT);
-  } else {
-    M1_INA_PORT |= _BV(M1_INA_BIT);
-    M1_INB_PORT &= ~_BV(M1_INB_BIT);
-  }
-}
-
-void setPowerRight(uint16_t power, bool reverse) {
-  OCR1B = power;
-
-  if (power < kMin_motor_threshold) {
-    M2_INA_PORT &= ~_BV(M2_INA_BIT);
-    M2_INB_PORT &= ~_BV(M2_INB_BIT);
-  } else if (reverse) {
-    M2_INA_PORT &= ~_BV(M2_INA_BIT);
-    M2_INB_PORT |= _BV(M2_INB_BIT);
-  } else {
-    M2_INA_PORT |= _BV(M2_INA_BIT);
-    M2_INB_PORT &= ~_BV(M2_INB_BIT);
-  }
-}
 
 pid_state_t state_tl;
 void resetControllerState(pid_state_t *state, int32_t input) {
@@ -239,14 +87,27 @@ int16_t controllerObstacle(pid_state_t *state, uint16_t distance, uint16_t targe
   return power;
 }
 
+move_t buffered_moves[kMovement_buffer_size];
+uint8_t num_moves = 0;
+uint8_t pos_moves_start = 0;
+uint8_t pos_moves_end = 0;
+
 static state_t state = IDLE;
 static move_type_t move_type = DISTANCE;
-// depending on move_type, stores either target encoder ticks or target obstacle distance
-static int32_t target = 0;
+static motion_direction_t move_dir;
+
+static int32_t target_left = 0;
+static int32_t target_right = 0;
+static int16_t target_obstacle = 0;
 
 volatile int16_t base_left = 0;
 volatile int16_t base_right = 0;
 volatile int16_t correction = 0;
+
+// whether track left controller is enabled
+static bool straight_enabled = true;
+
+void combine_next_move();
 
 // triggers at 100Hz
 ISR(TIMER2_COMPA_vect) {
@@ -273,6 +134,9 @@ ISR(TIMER2_COMPA_vect) {
   pEncoder_left = encoder_left;
   pEncoder_right = encoder_right;
 
+  // whether the left motor has reached max power
+  static bool reached_max_power = false;
+
   // whether the encoder has changed from the last update
   bool has_encoder_delta = (delta_left < -kEncoder_move_threshold) || (delta_left > kEncoder_move_threshold) ||
                   (delta_right < -kEncoder_move_threshold) || (delta_right > kEncoder_move_threshold);
@@ -285,22 +149,28 @@ ISR(TIMER2_COMPA_vect) {
   if (state == MOVING && !has_encoder_delta) {
     // encoder delta has slowed to almost zero - lets check if we should finish the move
     int32_t diff_err = encoder_left - encoder_right;
-    if (diff_err > -kMax_encoder_diff_error && diff_err < kMax_encoder_diff_error) {
+    if (!straight_enabled || (diff_err > -kMax_encoder_diff_error && diff_err < kMax_encoder_diff_error)) {
       // if the error between both encoders are really similar, we can check for the
       // move-specific terminating condition
       if (move_type == DISTANCE) {
-        // DISTANCE terminates when the left encoder is really close to target
-        int32_t diff_left = encoder_left - target;
-        if (diff_left > -kMax_encoder_error && diff_left < kMax_encoder_error) {
+        // DISTANCE terminates when both encoders are close to target
+        int32_t diff_left = encoder_left - target_left;
+        int32_t diff_right = encoder_right - target_right;
+        if (
+          (diff_left > -kMax_encoder_error && diff_left < kMax_encoder_error) && 
+          (diff_right > -kMax_encoder_error && diff_right < kMax_encoder_error)
+        ) {
           Serial.println("move distance done");
           state = IDLE;
           axis_left.setPower(0);
           axis_right.setPower(0);
           return;
+        } else {
+          Serial.println("A");
         }
       } else if (move_type == OBSTACLE) {
         // OBSTACLE terminates when the sensor distance is really close to target
-        int16_t diff_err = sensor_distances[FRONT_FRONT_MID] - target;
+        int16_t diff_err = sensor_distances[FRONT_FRONT_MID] - target_obstacle;
         if (diff_err > -kMax_obstacle_error && diff_err < kMax_obstacle_error) {
           Serial.println("move obstacle done");
           state = IDLE;
@@ -320,18 +190,35 @@ ISR(TIMER2_COMPA_vect) {
     }
     state = MOVING;
     next_report_dist_base = 0;
+    reached_max_power = false;
+    straight_enabled = true;
   }
 
   int16_t power_left = 0, power_right = 0;
   if (move_type == DISTANCE) {
-    base_left = controllerStraight(&state_straight_left, encoder_left, target);
-    base_right = controllerStraight(&state_straight_right, encoder_right, target);
+    base_left = controllerStraight(&state_straight_left, encoder_left, target_left);
+    base_right = controllerStraight(&state_straight_right, encoder_right, target_right);
+
+    // crude way to determine if robot is decelerating:
+    // for most of the move, controllerStraight will be saturated
+    // when it starts to fall, we're nearing the end of the move
+    if (base_left >= kMS_max_output) {
+      reached_max_power = true;
+    } else if (reached_max_power) {
+      reached_max_power = false;
+      Serial.println("decelerating");
+      combine_next_move();
+    }
   } else if (move_type == OBSTACLE) {
-    base_left = controllerObstacle(&state_obstacle, sensor_distances[FRONT_FRONT_MID], target);
+    base_left = controllerObstacle(&state_obstacle, sensor_distances[FRONT_FRONT_MID], target_obstacle);
     base_right = base_left;
   }
 
-  correction = controllerTrackLeft(encoder_left, encoder_right);
+  if (straight_enabled) {
+    correction = controllerTrackLeft(encoder_left, encoder_right);
+  } else {
+    correction = 0;
+  }
 
   power_left = base_left - correction;
   power_right = base_right + correction;
@@ -353,7 +240,7 @@ ISR(TIMER2_COMPA_vect) {
     // until we move past it by kReport_distance_offset to get a more accurate reading
     uint16_t offset_target = next_report_dist_base + kReport_distance_offset;
 
-    if (offset_target < target) {
+    if (offset_target < target_left) {
       next_report_dist_actual = offset_target;
     } else {
       next_report_dist_actual = next_report_dist_base;
@@ -369,96 +256,185 @@ int32_t get_encoder_left() {
   return axis_left.getEncoder();
 }
 
-void setup_motion() {
-  // PCI2 (left encoder):
-  PCMSK2 |=  _BV(E1A_PCINT) | _BV(E1B_PCINT); // enable interrupt sources
-  PCIFR  &= ~_BV(PCIF2);                                       // clear interrupt flag of PCI2
-  PCICR  |=  _BV(PCIE2);                                       // enable PCI2
-
-  // PCI0 (right encoder):
-  PCMSK0 |=  _BV(E2A_PCINT) | _BV(E2B_PCINT); // enable interrupt sources
-  PCIFR  &= ~_BV(PCIF0);                                         // clear interrupt flag of PCI0
-  PCICR  |=  _BV(PCIE0);                                         // enable PCI0
-
-  // configure timer 2 for 100Hz
-  TCCR2A |= _BV(WGM21);                        // mode 2, CTC, top is OCRA
-  TCCR2B |= _BV(CS22) | _BV(CS21) | _BV(CS20); // clock/1024
-  OCR2A = 155;                                 // 16000000/1024/155 = 100Hz
-  TIFR2 &= ~_BV(OCF2A);                        // clear interrupt flag
-  TIMSK2 |= _BV(OCIE2A);                       // enable interrupt on compare match A
-
-  md.init();
-}
-
 void start_motion_unit(motion_direction_t _direction, uint8_t unit) {
-  switch (_direction) {
-    case FORWARD:
-    case REVERSE:
-      start_motion_distance(_direction, unit * kBlock_distance);
-      break;
-    case LEFT:
-    case RIGHT:
-      start_motion_distance(_direction, distanceToTicks(angleToDistance(unit * 45)));
-      break;
+  if (num_moves >= kMovement_buffer_size) {
+    Serial.println("movement buffer full");
+    return;
+  }
+
+  buffered_moves[pos_moves_end].type = DISTANCE;
+  buffered_moves[pos_moves_end].direction = _direction;
+  buffered_moves[pos_moves_end].unit = unit;
+
+  if (_direction == FORWARD || _direction == REVERSE) {
+    buffered_moves[pos_moves_end].target = unit * kBlock_distance;
+  } else if (_direction == LEFT || _direction == RIGHT) {
+    buffered_moves[pos_moves_end].target = unit * kTicks_per_45_degrees;
+  }
+
+  num_moves ++;
+  pos_moves_end ++;
+  if (pos_moves_end >= kMovement_buffer_size) {
+    pos_moves_end = 0;
   }
 }
 
 void start_motion_distance(motion_direction_t _direction, uint32_t distance) {
-  if (state != IDLE) {
-    Serial.println("Cannot start motion, movement in progress");
+  if (num_moves >= kMovement_buffer_size) {
+    Serial.println("movement buffer full");
     return;
   }
 
-  cli();
-  axis_left.resetEncoder();
-  axis_right.resetEncoder();
+  buffered_moves[pos_moves_end].type = DISTANCE;
+  buffered_moves[pos_moves_end].direction = _direction;
+  buffered_moves[pos_moves_end].target = distance;
+  buffered_moves[pos_moves_end].unit = 0;
 
-  state = MOVE_COMMANDED;
-  move_type = DISTANCE;
-  target = distance;
-
-  if (_direction == FORWARD) {
-    axis_left.setReverse(false);
-    axis_right.setReverse(false);
-    Serial.print("start forward - target=");
-    Serial.println(target);
-  } else if (_direction == REVERSE) {
-    axis_left.setReverse(true);
-    axis_right.setReverse(true);
-    Serial.print("start reverse - target=");
-    Serial.println(target);
-  } else if (_direction == LEFT) {
-    axis_left.setReverse(true);
-    axis_right.setReverse(false);
-    Serial.print("start left turn - target=");
-    Serial.println(target);
-  } else if (_direction == RIGHT) {
-    axis_left.setReverse(false);
-    axis_right.setReverse(true);
-    Serial.print("start right turn - target=");
-    Serial.println(target);
-  } else {
-    Serial.println("Not implemented");
+  num_moves ++;
+  pos_moves_end ++;
+  if (pos_moves_end >= kMovement_buffer_size) {
+    pos_moves_end = 0;
   }
-  sei();
 }
 
 void start_motion_obstacle(uint16_t distance) {
-  if (state != IDLE) {
-    Serial.println("Cannot start motion, movement in progress");
+  if (num_moves >= kMovement_buffer_size) {
+    Serial.println("movement buffer full");
     return;
   }
+
+  buffered_moves[pos_moves_end].type = OBSTACLE;
+  buffered_moves[pos_moves_end].target = distance;
+
+  num_moves ++;
+  pos_moves_end ++;
+  if (pos_moves_end >= kMovement_buffer_size) {
+    pos_moves_end = 0;
+  }
+}
+
+void parse_next_move() {
+  static state_t pState = IDLE;
+
+  if (pState != state) {
+    if (state == IDLE) {
+      Serial.println("move done");
+    }
+  }
+
+  if (num_moves == 0 || state != IDLE) {
+    return;
+  }
+
+  Serial.print("Parsing motion buffer index=");
+  Serial.println(pos_moves_start);
 
   cli();
   axis_left.resetEncoder();
   axis_right.resetEncoder();
-
   state = MOVE_COMMANDED;
-  move_type = OBSTACLE;
-  target = distance;
-  axis_left.setReverse(false);
-  axis_right.setReverse(false);
+
+  // track how many moves have been parsed
+  // this can be more than one when moves are combined, eg F1 + F1 = F2
+  uint8_t parsed_moves = 1;
+
+  switch (buffered_moves[pos_moves_start].type) {
+    case DISTANCE:
+      {
+        move_type = DISTANCE;
+        int32_t target = buffered_moves[pos_moves_start].target;
+        move_dir = buffered_moves[pos_moves_start].direction;
+
+        // parse the next moves to see if we can combine them together
+        for (uint8_t i = 1; i < num_moves; i++) {
+          uint8_t move_index = (pos_moves_start + i) % kMovement_buffer_size;
+
+          if (
+            buffered_moves[move_index].type != DISTANCE ||
+            buffered_moves[move_index].direction != move_dir
+          ) {
+            break;
+          }
+
+          Serial.print("Combining move index=");
+          Serial.println(move_index);
+
+          target += buffered_moves[move_index].target;
+          parsed_moves ++;
+        }
+
+        switch (move_dir) {
+          case FORWARD:
+            axis_left.setReverse(false);
+            axis_right.setReverse(false);
+            Serial.print("start forward - target=");
+            Serial.println(target);
+            break;
+          case REVERSE:
+            axis_left.setReverse(true);
+            axis_right.setReverse(true);
+            Serial.print("start reverse - target=");
+            Serial.println(target);
+            break;
+          case LEFT:
+            axis_left.setReverse(true);
+            axis_right.setReverse(false);
+            Serial.print("start left turn - target=");
+            Serial.println(target);
+            break;
+          case RIGHT:
+            axis_left.setReverse(false);
+            axis_right.setReverse(true);
+            Serial.print("start right turn - target=");
+            Serial.println(target);
+            break;
+        }
+        target_left = target;
+        target_right = target;
+        break;
+      }
+    case OBSTACLE:
+      move_type = OBSTACLE;
+      target_obstacle = buffered_moves[pos_moves_start].target;
+      axis_left.setReverse(false);
+      axis_right.setReverse(false);
+      Serial.println("start move to obstacle");
+      break;
+  }
   sei();
+
+  num_moves -= parsed_moves;
+  pos_moves_start = (pos_moves_start + parsed_moves) % kMovement_buffer_size;
+}
+
+void combine_next_move() {
+  if (num_moves == 0) {
+    return;
+  }
+
+  if (move_dir == FORWARD) {
+    if (
+      buffered_moves[pos_moves_start].type == DISTANCE &&
+      (
+        buffered_moves[pos_moves_start].direction == LEFT ||
+        buffered_moves[pos_moves_start].direction == RIGHT
+      )
+    ) {
+      if (buffered_moves[pos_moves_start].direction == LEFT) {
+        target_right += buffered_moves[pos_moves_start].unit * kTicks_per_45_degrees_combined;
+        Serial.println("Starting left turn early");
+      } else if (buffered_moves[pos_moves_start].direction == RIGHT) {
+        target_left += buffered_moves[pos_moves_start].unit * kTicks_per_45_degrees_combined;
+        Serial.println("Starting right turn early");
+      }
+
+      // disable straight controller since we will now intentionally move the axis asymmetrically
+      straight_enabled = false;
+
+      num_moves --;
+      pos_moves_start = (pos_moves_start + 1) % kMovement_buffer_size;
+    }
+  }
 }
 
 void start_align() {
@@ -477,14 +453,11 @@ void start_align() {
 }
 
 bool log_motion = false;
+bool parse_moves = true;
 
 void loop_motion() {
-  static state_t pState = IDLE;
-
-  if (pState != state) {
-    if (state == IDLE) {
-      Serial.println("done");
-    }
+  if (parse_moves) {
+    parse_next_move();
   }
 
   if (log_motion) {

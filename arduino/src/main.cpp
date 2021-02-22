@@ -2,9 +2,9 @@
 
 #include "board.h"
 #include "motion.h"
+#include "motion_init.h"
 #include "sensors.h"
 #include "parser.h"
-#include "checklist.h"
 
 void setup() {
   setup_motion();
@@ -19,5 +19,4 @@ void loop() {
   loop_motion();
   loop_sensors();
   loop_parser();
-  loop_checklist();
 }
