@@ -96,3 +96,13 @@ class Arena:
         for displacement in Arena.ADJACENCY:
             adj_coord = coord.add(displacement)
             self.get_cell_at_coord(adj_coord).set_is_dangerous(True)        
+
+    def get_coverage_percentage(self) -> int:
+        explored = 0
+        for y in range(MAP_ROW): 
+            for x in range(MAP_COL):
+                coord = Coord(x, y)
+                if self.get_cell_at_coord(coord).is_explored():
+                    explored = explored + 1
+
+        return round((explored / 300)*100)

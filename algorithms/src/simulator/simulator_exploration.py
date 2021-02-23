@@ -52,6 +52,10 @@ class Simulator:
         if move_command == None:
             self.quit()
 
+        if self.coverage == self.arena.get_coverage_percentage():
+            print("Coverage limit reached!")
+            self.quit()
+
         # update internal representation of robot
         new_orientation = OrientationTransform.calc_orientation_after_turn(self.robot_info.get_orientation(), move_command.get_turn_angle())
         
@@ -81,6 +85,11 @@ class Simulator:
 
     def run(self):
         self.speed = 1 / float(input("Enter robot speed (steps per second) (-1 for default): "))
+        self.coverage = int(input("Enter coverage limit (%) (-1 for default): "))
+
+        if self.coverage < 0:
+            self.coverage = 100
+
         if self.speed < 0:
             self.speed = 0.5
         i = 0
