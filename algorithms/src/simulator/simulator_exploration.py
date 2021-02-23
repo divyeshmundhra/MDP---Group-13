@@ -11,6 +11,7 @@ from src.dto.RobotInfo import RobotInfo
 from src.dto.OrientationTransform import OrientationTransform
 from src.agent.agent import Agent
 from src.simulator.SimulationDisplay import SimulationDisplay
+from threading import Timer
 
 class Simulator:
     def __init__(self):
@@ -80,12 +81,24 @@ class Simulator:
         move = unit_move # enable this if robot can move one square at a time
         self.robot_info.set_coord(self.robot_info.get_coord().add(move))
 
+        if self.time_ran_out:
+            print("Time's up!")
+            self.quit()
+
         # update pygame display
         self.update_display()
+
+    def timeout(self):
+        self.time_ran_out = True
 
     def run(self):
         self.speed = 1 / float(input("Enter robot speed (steps per second) (-1 for default): "))
         self.coverage = int(input("Enter coverage limit (%) (-1 for default): "))
+        self.timelimit = float(input("Enter time limit (sec) (-1 for default): "))
+
+        t = Timer(self.timelimit, self.timeout)
+        self.time_ran_out = False
+        t.start()
 
         if self.coverage < 0:
             self.coverage = 100
