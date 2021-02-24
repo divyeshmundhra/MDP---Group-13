@@ -77,11 +77,12 @@ class Simulator:
         self.update_display()
 
     def run(self):
-        self.speed = 1 / float(input("Enter robot speed (steps per second) (-1 for default): "))
+        self.speed = 1 / 20
+        #self.speed = 1 / float(input("Enter robot speed (steps per second) (-1 for default): "))
         if self.speed < 0:
             self.speed = 0.5
         i = 0
-        while i<99:
+        while i<200:
             self.events()
             self.step()
             time.sleep(self.speed)
@@ -109,19 +110,43 @@ class Simulator:
                 self.quit()
 
     def print_mdf(self):
+
+        explored_bin_str = "11"
+        obstacle_bin_str = ""
+
         for y in range(MAP_ROW):
             for x in range(MAP_COL):
-                pass
+                coord = Coord(x,y)
+                if self.arena.get_cell_at_coord(coord).is_explored():
+                    explored_bin_str += "1"
+                    if self.arena.get_cell_at_coord(coord).is_obstacle():
+                        obstacle_bin_str += "1"
+                    else:
+                        obstacle_bin_str += "0"
+                else:
+                    explored_bin_str += "0"
 
-        # with open("./algorithms/src/simulator/sample_arena.txt", "r") as f:
-        #     explored_binary = f.read().replace('\n','')
-            
-        #     hex_str = f"{int(explored_binary, 2):X}"
-        #     num_pad_bits = math.ceil(len(explored_binary) / 4) - len(hex_str)
-        #     print("0" * num_pad_bits + hex_str)
+        explored_bin_str += "11"
 
-def input_p2_string():
-    readmap = input("Enter p2 string: ")
+        if len(obstacle_bin_str) % 8 != 0:
+            num_pad_bits = 8 - len(obstacle_bin_str) % 8
+            obstacle_bin_str += "0" * num_pad_bits 
+
+        #print (explored_bin_str)
+        #print (obstacle_bin_str)
+
+        explored_hex_str = f"{int(explored_bin_str, 2):X}"
+        num_pad_bits = math.ceil(len(explored_bin_str) / 4) - len(explored_hex_str)
+        #print P1 string
+        print("0" * num_pad_bits + explored_hex_str)
+
+        obstacle_hex_str = f"{int(obstacle_bin_str, 2):X}"
+        num_pad_bits = math.ceil(len(obstacle_bin_str) / 4) - len(obstacle_hex_str)
+        #print P2 string
+        print("0" * num_pad_bits + obstacle_hex_str)
+
+def input_hex():
+    readmap = input("Enter hex sequence: ")
     bin_str = "{:b}".format(int(readmap, 16))
     num_pad_bits = len(readmap) * 4 - len(bin_str)
 
@@ -129,6 +154,6 @@ def input_p2_string():
 
 g = Simulator()
 # Read the arena text file and store it as a list ==========================================
-# f = open("./algorithms/src/simulator/sample_arena.txt", "r") #import the arena file (this is for testing, for the actual we will have to import from RPi)
-g.init(AgentTask.EXPLORE, input_p2_string(), WAYPOINT)
+f = open("./algorithms/src/simulator/Arena_1.txt", "r") #import the arena file (this is for testing, for the actual we will have to import from RPi)
+g.init(AgentTask.EXPLORE, f.read(), WAYPOINT)
 g.run()
