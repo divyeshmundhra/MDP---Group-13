@@ -135,14 +135,14 @@ class Simulator:
             num_pad_bits = math.ceil(len(str) / 4) - len(hex_str)
             print("0" * num_pad_bits + hex_str)
 
-def input_hex_arena():
+def input_p2_string():
     readmap = input("Enter p2 string: ")
     bin_str = "{:b}".format(int(readmap, 16))
     num_pad_bits = len(readmap) * 4 - len(bin_str)
 
     return "0" * num_pad_bits + bin_str
 
-p2_string = input_hex_arena()
+p2_string = input_p2_string()
 
 g = Simulator()
 # Read the arena text file and store it as a list ==========================================
