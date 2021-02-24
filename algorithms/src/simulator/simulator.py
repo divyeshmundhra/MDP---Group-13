@@ -128,12 +128,16 @@ class Simulator:
             #         print("move down")
 
     def print_mdf(self):
-        with open("./algorithms/src/simulator/sample_arena.txt", "r") as f:
-            str = f.read().replace('\n','')
+        for y in range(MAP_ROW):
+            for x in range(MAP_COL):
+                pass
+
+        # with open("./algorithms/src/simulator/sample_arena.txt", "r") as f:
+        #     explored_binary = f.read().replace('\n','')
             
-            hex_str = f"{int(str, 2):X}"
-            num_pad_bits = math.ceil(len(str) / 4) - len(hex_str)
-            print("0" * num_pad_bits + hex_str)
+        #     hex_str = f"{int(explored_binary, 2):X}"
+        #     num_pad_bits = math.ceil(len(explored_binary) / 4) - len(hex_str)
+        #     print("0" * num_pad_bits + hex_str)
 
 def input_p2_string():
     readmap = input("Enter p2 string: ")
@@ -142,10 +146,8 @@ def input_p2_string():
 
     return "0" * num_pad_bits + bin_str
 
-p2_string = input_p2_string()
-
 g = Simulator()
 # Read the arena text file and store it as a list ==========================================
 #f = open("./algorithms/src/simulator/sample_arena.txt", "r") #import the arena file (this is for testing, for the actual we will have to import from RPi)
-g.init(AgentTask.EXPLORE, p2_string, WAYPOINT)
+g.init(AgentTask.EXPLORE, input_p2_string(), WAYPOINT)
 g.run()
