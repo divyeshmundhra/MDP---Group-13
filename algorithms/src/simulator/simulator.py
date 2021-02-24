@@ -108,25 +108,6 @@ class Simulator:
             if event.type==pygame.QUIT:
                 self.quit()
 
-            # Control robot using arrow keys
-            # if event.type == pygame.KEYDOWN:
-            #     if event.key == pygame.K_LEFT:
-            #         new_coord = Coord(self.robot_info.get_coord().get_x() - 1, self.robot_info.get_coord().get_y())
-            #         self.move(new_coord, Orientation.WEST)
-            #         print("move left")
-            #     if event.key == pygame.K_RIGHT:
-            #         new_coord = Coord(self.robot_info.get_coord().get_x() + 1, self.robot_info.get_coord().get_y())
-            #         self.move(new_coord, Orientation.EAST)
-            #         print("move right")
-            #     if event.key == pygame.K_UP:
-            #         new_coord = Coord(self.robot_info.get_coord().get_x(), self.robot_info.get_coord().get_y()+1)
-            #         self.move(new_coord, Orientation.NORTH)
-            #         print("move up")
-            #     if event.key == pygame.K_DOWN:
-            #         new_coord = Coord(self.robot_info.get_coord().get_x(), self.robot_info.get_coord().get_y()-1)
-            #         self.move(new_coord, Orientation.SOUTH)
-            #         print("move down")
-
     def print_mdf(self):
         for y in range(MAP_ROW):
             for x in range(MAP_COL):
@@ -148,6 +129,6 @@ def input_p2_string():
 
 g = Simulator()
 # Read the arena text file and store it as a list ==========================================
-#f = open("./algorithms/src/simulator/sample_arena.txt", "r") #import the arena file (this is for testing, for the actual we will have to import from RPi)
+# f = open("./algorithms/src/simulator/sample_arena.txt", "r") #import the arena file (this is for testing, for the actual we will have to import from RPi)
 g.init(AgentTask.EXPLORE, input_p2_string(), WAYPOINT)
 g.run()
