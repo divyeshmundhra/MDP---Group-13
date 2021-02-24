@@ -1,4 +1,4 @@
-import sys, os, time
+import sys, os, time, math
 path_of_directory_head = os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))))
 sys.path.append(path_of_directory_head)
 from src.dto.ArenaStringParser import ArenaStringParser
@@ -12,6 +12,7 @@ from src.agent.agent import Agent
 from src.simulator.SimulationDisplay import SimulationDisplay
 
 class Simulator:
+
     def __init__(self):
         # display
         pygame.init()
@@ -45,6 +46,7 @@ class Simulator:
         print(agent_output.get_message())
         move_command = agent_output.get_move_command()
         if move_command == None:
+            self.print_mdf()
             self.quit()
 
         # update internal representation of robot
@@ -125,8 +127,25 @@ class Simulator:
             #         self.move(new_coord, Orientation.SOUTH)
             #         print("move down")
 
+    def print_mdf(self):
+        with open("./algorithms/src/simulator/sample_arena.txt", "r") as f:
+            str = f.read().replace('\n','')
+            
+            hex_str = f"{int(str, 2):X}"
+            num_pad_bits = math.ceil(len(str) / 4) - len(hex_str)
+            print("0" * num_pad_bits + hex_str)
+
+def input_hex_arena():
+    readmap = input("Enter p2 string: ")
+    bin_str = "{:b}".format(int(readmap, 16))
+    num_pad_bits = len(readmap) * 4 - len(bin_str)
+
+    return "0" * num_pad_bits + bin_str
+
+p2_string = input_hex_arena()
+
 g = Simulator()
 # Read the arena text file and store it as a list ==========================================
-f = open("./algorithms/src/simulator/sample_arena.txt", "r") #import the arena file (this is for testing, for the actual we will have to import from RPi)
-g.init(AgentTask.EXPLORE, f.read(), WAYPOINT)
+#f = open("./algorithms/src/simulator/sample_arena.txt", "r") #import the arena file (this is for testing, for the actual we will have to import from RPi)
+g.init(AgentTask.EXPLORE, p2_string, WAYPOINT)
 g.run()
