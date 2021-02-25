@@ -30,7 +30,8 @@ class Simulator:
         self.arena = ArenaStringParser.parse_arena_string(arena_string)
 
         # send copies of arena and robot info so that simulator and agent do not modify a mutual copy
-        self.agent = Agent(arena_string, self.robot_info.copy(), agent_task, END_COORD, waypoint)
+        empty_arena_string = open("./algorithms/src/simulator/empty_arena_string.txt", "r").read()
+        self.agent = Agent(empty_arena_string, self.robot_info.copy(), agent_task, END_COORD, waypoint)
 
     def step(self):
         # calculate agent percepts
@@ -127,6 +128,6 @@ class Simulator:
 
 g = Simulator()
 # Read the arena text file and store it as a list ==========================================
-f = open("./algorithms/src/simulator/sample_arena.txt", "r") #import the arena file (this is for testing, for the actual we will have to import from RPi)
+f = open("./algorithms/src/simulator/Arena_1.txt", "r") #import the arena file (this is for testing, for the actual we will have to import from RPi)
 g.init(AgentTask.EXPLORE, f.read(), WAYPOINT)
 g.run()
