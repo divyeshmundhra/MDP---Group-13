@@ -51,7 +51,6 @@ class Simulator:
         print(agent_output.get_message())
         move_command = agent_output.get_move_command()
         if move_command == None:
-            self.print_mdf()
             self.quit()
 
         if self.coverage == self.arena.get_coverage_percentage():
@@ -127,6 +126,11 @@ class Simulator:
         pygame.display.update() 
 
     def quit(self):
+        self.arena = self.agent.get_arena() # cheeky patch to let our agent fill in unexplored cells as obstacles
+        self.print_mdf()
+        self.update_display()
+        print('Quitting...')
+        time.sleep(5)
         pygame.quit()
         quit()
 

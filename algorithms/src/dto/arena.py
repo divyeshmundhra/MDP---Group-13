@@ -92,3 +92,12 @@ class Arena:
                     explored += 1
 
         return int((explored / 300)*100)
+    
+    def list_unexplored_cells(self) -> list:
+        # returns CELLS not coords
+        l = []
+        for row in self.cell_matrix:
+            for cell in row:
+                if not cell.is_explored():
+                    l.append(cell)
+        return l
