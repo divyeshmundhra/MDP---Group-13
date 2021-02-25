@@ -41,7 +41,7 @@ class Agent:
             move_command = None
         else:
             move_command = self.calculate_move(target_coord)
-            message = f'TURN: {move_command.get_turn_angle()} degs, then \
+            message = f'Target: {target_coord.get_x()}, {target_coord.get_y()}, TURN: {move_command.get_turn_angle()} degs, then \
                 MOVE: {move_command.get_cells_to_advance()} cells forwards'
         return AgentOutput(
             move_command,
