@@ -16,10 +16,10 @@ class FastestPathAlgo():
         start = robot_info.get_coord()
         current_orientation = robot_info.get_orientation()
         if not arena.coord_is_valid(end):
-            raise Exception('FastestPath: end coord out of arena')
+            raise Exception(f'FastestPath: end coord out of arena: {end.get_x()}, {end.get_y()}')
         end_cell = arena.get_cell_at_coord(end)
         if end_cell.is_obstacle() or end_cell.is_dangerous():
-            raise Exception('FastestPath: cannot move to dangerous cell')
+            raise Exception(f'FastestPath: cannot move to dangerous cell: {end.get_x()}, {end.get_y()}')
         if waypoint:
             # we haven't passed through it yet
             target = waypoint

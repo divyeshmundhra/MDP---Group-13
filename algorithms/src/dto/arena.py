@@ -95,4 +95,5 @@ class Arena:
     def mark_dangerous_cells_around_obstacle(self, coord):
         for displacement in Arena.ADJACENCY:
             adj_coord = coord.add(displacement)
-            self.get_cell_at_coord(adj_coord).set_is_dangerous(True)        
+            if self.coord_is_valid(adj_coord):
+                self.get_cell_at_coord(adj_coord).set_is_dangerous(True)    
