@@ -11,6 +11,7 @@ from src.dto.RobotInfo import RobotInfo
 from src.dto.OrientationTransform import OrientationTransform
 from src.agent.agent import Agent
 from src.simulator.SimulationDisplay import SimulationDisplay
+from src.dto.SensorInput import SensorInput
 from threading import Timer
 
 class Simulator:
@@ -29,14 +30,16 @@ class Simulator:
     def init(self, agent_task: AgentTask, arena_string: str, waypoint: Coord):
         self.robot_info = RobotInfo(START_COORD, Orientation.NORTH)
         self.sim_display = SimulationDisplay(self.robot_info)
-        self.known_arena = ArenaStringParser.parse_arena_string(arena_string) #used in line 100
+        self.known_arena = ArenaStringParser.parse_arena_string(arena_string) #used in line 34 and 100
         self.arena = Arena()
-
+        self.sensor_input = SensorInput(self.robot_info, self.known_arena, self.arena)
+        # self.update_display()
         # send copies of arena and robot info so that simulator and agent do not modify a mutual copy
         self.agent = Agent(arena_string, self.robot_info.copy(), agent_task, END_COORD, waypoint)
 
     def step(self):
         # calculate agent percepts
+        self.sensor_input = SensorInput(self.robot_info, self.known_arena, self.arena)
         obstacle_coord_list, no_obs_coord_list = self.calculate_percepts() 
         for coord in obstacle_coord_list:
             self.arena.get_cell_at_coord(coord).set_is_explored(True)
@@ -96,15 +99,19 @@ class Simulator:
         self.coverage = int(input("Enter coverage limit (%) (-1 for default): "))
         self.timelimit = float(input("Enter time limit (sec) (-1 for default): "))
 
-        t = Timer(self.timelimit, self.timeout)
-        self.time_ran_out = False
-        t.start()
-
         if self.coverage < 0:
             self.coverage = 100
 
         if self.speed < 0:
             self.speed = 0.5
+
+        if self.timelimit < 0:
+            self.timelimit = 600 #default: 10 mins
+
+        t = Timer(self.timelimit, self.timeout)
+        self.time_ran_out = False
+        t.start()
+
         i = 0
         while i<99:
             self.events()
@@ -121,8 +128,10 @@ class Simulator:
 
         # Retrieve data from the known arena map to identify obstacle cells at the explored cells (change this to sensor data for actual)
         coord = self.robot_info.get_coord()
-        obstacles_coord_list = self.known_arena.get_adjacent_blocked(coord)
-        no_obs_coord_list = self.known_arena.get_adjacent_unblocked(coord)
+        # obstacles_coord_list = self.known_arena.get_adjacent_blocked(coord)
+        # no_obs_coord_list = self.known_arena.get_adjacent_unblocked(coord)
+        obstacles_coord_list = self.sensor_input.get_adjacent_blocked(coord)
+        no_obs_coord_list = self.sensor_input.get_adjacent_unblocked(coord)
         return obstacles_coord_list, no_obs_coord_list
 
 

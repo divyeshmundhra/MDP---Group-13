@@ -52,7 +52,7 @@ class Arena:
                 adj.append(adj_coord)
         return adj
 
-    def get_seen_cells_at_coord(self, coord: Coord) -> list:
+    def get_seen_cells_at_coord(self, coord: Coord) -> list: #created a new class SensorInput for this because we need the robot direction to be able to get the seen cells
         seen_at_coord = []
         # you obviously have explored the cell you're standing on. This should be 3x3 around the robot in the actual run
         seen_at_coord.append(coord)
