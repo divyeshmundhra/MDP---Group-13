@@ -129,8 +129,6 @@ ISR(TIMER2_COMPA_vect) {
   static int32_t pEncoder_left = 0;
   static int32_t pEncoder_right = 0;
 
-  convert_sensor_data();
-
   if (state == IDLE) {
     axis_left.setPower(0);
     axis_right.setPower(0);

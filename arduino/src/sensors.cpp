@@ -7,6 +7,8 @@ volatile uint16_t adc_val[6] = {0};
 volatile int16_t sensor_distances[6] = {0};
 volatile int8_t sensor_obstacles[6] = {0};
 
+volatile bool has_new_val[6] = {0};
+
 ISR(ADC_vect) {
   // channel represents the channel of this conversion (the trigger for this ISR)
   static uint8_t channel = 0;
@@ -25,9 +27,11 @@ ISR(ADC_vect) {
 
   // we take 4^3 samples, giving us a 13 bit result
   if (sum_count[channel] >= 64) {
-    adc_val[channel] = adc_val[channel] = ((uint32_t) kSensor_filter_alpha * (sum[channel] >> 3) + (uint32_t) (255 - kSensor_filter_alpha) * adc_val[channel]) >> 8;;
+    adc_val[channel] = ((uint32_t) kSensor_filter_alpha * (sum[channel] >> 3) + (uint32_t) (255 - kSensor_filter_alpha) * adc_val[channel]) >> 8;
     sum[channel] = 0;
     sum_count[channel] = 0;
+
+    has_new_val[channel] = true;
   }
 
   channel = next_channel;
@@ -54,13 +58,22 @@ void setup_sensors() {
 
 void convert_sensor_data() {
   for(uint8_t i = 0; i < 6; i++) {
+    if (!has_new_val[i]) {
+      continue;
+    }
+
     if (adc_val[i] < kSensor_min_value) {
       sensor_distances[i] = INT16_MAX;
       sensor_obstacles[i] = -1;
       continue;
     }
 
-    sensor_distances[i] = (kSensor_constants[i][0] * adc_val[i] + kSensor_constants[i][1]) / (adc_val[i] + kSensor_constants[i][2]);
+    cli();
+    int16_t val = adc_val[i];
+    has_new_val[i] = false;
+    sei();
+
+    sensor_distances[i] = (kSensor_constants[i][0] * val + kSensor_constants[i][1]) / (val + kSensor_constants[i][2]);
     sensor_distances[i] += kSensor_offset[i];
 
     if (sensor_distances[i] < 0) {
@@ -84,6 +97,14 @@ void convert_sensor_data() {
 
 bool log_sensors = false;
 void loop_sensors() {
+  static uint32_t last_convert = 0;
+  uint32_t cur_time = millis();
+
+  if ((cur_time - last_convert) > 10) {
+    convert_sensor_data();
+    last_convert = cur_time;
+  }
+
   if (log_sensors) {
     static uint32_t last_log = 0;
     uint32_t cur_time = millis();
