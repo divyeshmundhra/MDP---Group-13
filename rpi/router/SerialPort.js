@@ -2,7 +2,7 @@ const { EventEmitter } = require("events");
 const sp = require("serialport");
 const Readline = require("@serialport/parser-readline");
 
-const PORT_OPEN_RETRY_INTERVAL = 1000;
+const config = require("./config.js");
 
 class SerialPort extends EventEmitter {
   constructor(path, baudRate) {
@@ -53,7 +53,7 @@ class SerialPort extends EventEmitter {
 
         clearInterval(interval);
       });
-    }, PORT_OPEN_RETRY_INTERVAL);
+    }, config.serialPorts.connectionRetry);
   }
 
   close() {
