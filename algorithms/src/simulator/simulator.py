@@ -130,11 +130,16 @@ class Simulator:
 
     def quit(self):
         self.arena = self.agent.get_arena() # cheeky patch to let our agent fill in unexplored cells as obstacles
+<<<<<<< HEAD
         print('debug number of unexplored cells: ', len(self.arena.list_unexplored_cells()))
         print('debug number of explored cells: ', 300-len(self.arena.list_unexplored_cells()))
         self.print_mdf()
         self.update_display()
         self.update_display()
+=======
+        self.print_mdf()
+        self.update_display()
+>>>>>>> 46085d4 (when finishing run, set unexplored as obstacles)
         print('Quitting...')
         time.sleep(5)
         pygame.quit()
