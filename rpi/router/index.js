@@ -1,35 +1,76 @@
-const SerialPort = require("./SerialPort.js");
-const { spawn } = require("child_process");
+const Comms = require("./Comms.js");
+const Controller = require("./Controller.js");
+const Robot = require("./Robot.js");
+const config = require("./config.js");
 
-const btPort = new SerialPort("/dev/rfcomm0");
-btPort.on("beforeopen", () => {
-  // the serial port opened by rfcomm does not close properly when the bluetooth connection terminates
-  // helpfully, since `rfcomm listen hci0` terminates when the bluetooth connection closes,
-  // we can kill the serial port when this process exits
-  const logger = require("./logger.js")("rfcomm");
-  // stdbuf to disable output buffering of rfcomm
-  // https://unix.stackexchange.com/a/25378
-  const rfcomm = spawn("sudo", "stdbuf -oL -eL rfcomm listen hci0".split(" "));
+const comms = new Comms(config.zmq.broadcastAddress, config.zmq.updateAddress);
+const controller = new Controller(config.serialPorts.btPort);
+const robot = new Robot(config.serialPorts.arduinoPort);
 
-  rfcomm.stdout.on("data", (data) => {
-    logger.info(data.toString().trim());
-  });
+const logger = require("./logger.js")("index");
 
-  rfcomm.stderr.on("data", (data) => {
-    logger.error(data.toString().trim());
-  });
-
-  rfcomm.on("error", (err) => {
-    logger.error(`process error: ${err}`);
-  });
-
-  rfcomm.on("close", (code) => {
-    if (code !== 0) {
-      logger.info(`process exit with code ${code}`);
-    }
-    btPort.close();
-  });
+controller.on("data", (data) => {
+  if (data === "START") {
+    comms.send({ type: "start" });
+  }
 });
-btPort.open();
 
-setInterval(() => {}, 10000);
+comms.on("data", ({ type, data }) => {
+  if (type === "move") {
+    if ("turn" in data) {
+      const DIRECTION_MAP = {
+        left: "L",
+        right: "R",
+      };
+
+      const { turn, direction } = data;
+
+      if (typeof turn !== "number") {
+        logger.warn(`Expected turn to be number but got ${typeof turn}`);
+        return;
+      }
+
+      if (!Object.keys(DIRECTION_MAP).includes(direction)) {
+        logger.warn(`Unexpected direction ${direction}`);
+        return;
+      }
+
+      if (turn % 90 != 0) {
+        logger.warn(`Expected turn angle to be multiple of 90 but got ${turn}`);
+        return;
+      }
+
+      // divide by 45 because the robot expects 45 degree multiples
+      robot.send(`${DIRECTION_MAP[direction]}${Math.floor(turn / 45)}`);
+    } else if ("advance" in data) {
+      const DIRECTION_MAP = {
+        forward: "F",
+        backward: "B",
+      };
+
+      const { advance, direction } = data;
+
+      if (typeof advance !== "number" || advance <= 0) {
+        logger.warn(
+          `Expected advance to be positive number but got ${typeof advance}`
+        );
+        return;
+      }
+
+      if (!Object.keys(DIRECTION_MAP).includes(direction)) {
+        logger.warn(`Unexpected direction ${direction}`);
+        return;
+      }
+
+      robot.send(`${DIRECTION_MAP[direction]}${advance}`);
+    }
+  }
+});
+
+robot.on("move", (direction) => {
+  comms.send({ type: "move", data: { direction } });
+});
+
+robot.on("sensors", (update) => {
+  comms.send({ type: "sensor", data: update });
+});

@@ -16,7 +16,7 @@ const logger = createLogger({
   ),
   transports: [
     new transports.File({ filename: config.logFileName, level: "verbose" }),
-    new transports.Console(),
+    new transports.Console({ level: "verbose" }),
   ],
 });
 

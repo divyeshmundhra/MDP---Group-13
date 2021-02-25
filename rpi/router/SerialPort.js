@@ -59,6 +59,11 @@ class SerialPort extends EventEmitter {
   close() {
     this.sp.close();
   }
+
+  send(data) {
+    this.logger.verbose(`Sending: ${data}`);
+    this.sp.write(data);
+  }
 }
 
 module.exports = SerialPort;
