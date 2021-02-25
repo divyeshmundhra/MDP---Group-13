@@ -26,6 +26,12 @@ WAYPOINT = Coord(2,2)
 # Define robot vision range (sensor range), we currently assume equal distances in each direction
 VIEW_RANGE = 2
 
+class ArenaDisplayMode(Enum):
+    OBSERVED = 0
+    TRUE = 1
+
+ARENA_DISPLAY_MODE = ArenaDisplayMode.OBSERVED
+
 class Orientation(Enum):
     NORTH = 0
     EAST = 1
@@ -41,13 +47,53 @@ class TimeCosts:
     MOVE_ONE_UNIT = 1
     # extendable: predefined times for larger turns and moves? linear equation to calculate time for larger turns and moves?
 
-class SensorRanges:
-    # (position on robot)_(direction)
-    # LEFT_FW means forward looking sensor on left side of robot (displaced by -1,0 from center of robot) 
-    LEFT_FW = 2
-    CENTER_FW = 1
-    RIGHT_FW = 2
-    FRONT_LEFT = 1
-    BACK_LEFT = 1
-    BACK_RIGHT = 1
+SENSOR_CONSTANTS = {
+    "left_forward": {
+        "range": 5,
+        "direction": 0, # degrees from forward face of robot
+        "displacement": Coord(-1, 1)
+    },
+    "center_forward": {
+        "range": 5,
+        "direction": 0,
+        "displacement": Coord(0, 1)
+    },
+    "right_forward": {
+        "range": 5,
+        "direction": 0,
+        "displacement": Coord(1, 1)
+    },
+    "front_left": {
+        "range": 5,
+        "direction": 270,
+        "displacement": Coord(-1, 1)
+    },
+    "back_left": {
+        "range": 5,
+        "direction": 270,
+        "displacement": Coord(-1, -1)
+    },
+    "front_right": {
+        "range": 5,
+        "direction": 90,
+        "displacement": Coord(1, 1)
+    }
+}
 
+# class SensorRanges:
+#     # (position on robot)_(direction)
+#     # LEFT_FW means forward looking sensor on left side of robot (displaced by -1,0 from center of robot)
+#     LEFT_FW = 5
+#     CENTER_FW = 5
+#     RIGHT_FW = 5
+#     FRONT_LEFT = 5
+#     BACK_LEFT = 5
+#     FRONT_RIGHT = 5
+
+# class SensorDisplacements:
+#     LEFT_FW = Coord(-1, 1)
+#     CENTER_FW = Coord(0, 1)
+#     RIGHT_FW = Coord(1, 1)
+#     FRONT_LEFT = Coord(-1, 1)
+#     BACK_LEFT = Coord(-1, -1)
+#     FRONT_RIGHT = Coord(1, 1)

@@ -52,24 +52,9 @@ class Arena:
                 adj.append(adj_coord)
         return adj
 
-    def get_seen_cells_at_coord(self, coord: Coord) -> list: #created a new class SensorInput for this because we need the robot direction to be able to get the seen cells
-        seen_at_coord = []
-        # you obviously have explored the cell you're standing on. This should be 3x3 around the robot in the actual run
-        seen_at_coord.append(coord)
-        for displacement in Arena.ADJACENCY:
-            for i in range(1, VIEW_RANGE+1): # add 1 to include cell just outside view range
-                adj_coord = coord.add(displacement.multiply(i))
-                if not 0 <= adj_coord.get_x() < MAP_COL or not 0 <= adj_coord.get_y() < MAP_ROW:
-                    break # out of range
-                seen_at_coord.append(adj_coord)
-                adj_cell = self.get_cell_at_coord(adj_coord)
-                if adj_cell.is_obstacle():
-                    break # we can't see behind obstacles
-        return seen_at_coord
-
     def calculate_adjacent_lists(self, coord) -> dict:
         adj_safe, adj_unb, adj_blocked = [], [], []
-        for adj_coord in self.get_seen_cells_at_coord(coord):
+        for adj_coord in self.get_four_adjacent_in_arena(coord):
             cell = self.get_cell_at_coord(adj_coord)
             if cell.is_obstacle():
                 adj_blocked.append(adj_coord)
@@ -83,14 +68,14 @@ class Arena:
             'blocked': adj_blocked
         }
     
-    def get_adjacent_blocked(self, coord) -> list:
-        return self.calculate_adjacent_lists(coord)['blocked']
+    # def get_adjacent_blocked(self, coord) -> list:
+    #     return self.calculate_adjacent_lists(coord)['blocked']
 
     def get_adjacent_safe(self, coord) -> list:
         return self.calculate_adjacent_lists(coord)['safe']
 
-    def get_adjacent_unblocked(self, coord) -> list:
-        return self.calculate_adjacent_lists(coord)['unblocked']
+    # def get_adjacent_unblocked(self, coord) -> list:
+    #     return self.calculate_adjacent_lists(coord)['unblocked']
     
     def mark_dangerous_cells_around_obstacle(self, coord):
         for displacement in Arena.ADJACENCY:
@@ -99,7 +84,7 @@ class Arena:
                 self.get_cell_at_coord(adj_coord).set_is_dangerous(True)        
 
     def get_coverage_percentage(self) -> int:
-        explored = 66 # walls of arena are always obstacles
+        explored = 0
         for y in range(MAP_ROW): 
             for x in range(MAP_COL):
                 coord = Coord(x, y)

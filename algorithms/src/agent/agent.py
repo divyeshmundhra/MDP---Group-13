@@ -80,3 +80,6 @@ class Agent:
             turn_angle,
             displacement.manhattan_distance()
         )
+    
+    def get_arena(self) -> Arena:
+        return self.arena

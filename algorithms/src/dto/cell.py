@@ -6,9 +6,6 @@ class Cell:
         self.obstacle = None
         self.danger = None # danger when too close to wall, thus danger of collision
 
-        if self.coord.get_x()==0 or self.coord.get_x()==14 or self.coord.get_y()==0 or self.coord.get_y()==19:
-            self.danger = True
-
     def get_coord(self):
         return self.coord
 
