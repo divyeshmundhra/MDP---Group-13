@@ -9,7 +9,7 @@ class Robot extends EventEmitter {
     this.sp = new SerialPort(serialPortPath, baudRate);
     this.sp.open();
 
-    this.sp.on("data", this._onSerialData);
+    this.sp.on("data", (line) => this._onSerialData(line));
   }
 
   _onSerialData(line) {
