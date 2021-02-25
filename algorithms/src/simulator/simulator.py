@@ -165,9 +165,8 @@ class Simulator:
         num_pad_bits = math.ceil(len(obstacle_bin_str) / 4) - len(obstacle_hex_str)
         print("0" * num_pad_bits + obstacle_hex_str)
 
-def input_hex():
+def input_hex(readmap):
     #input hex string
-    readmap = "01000000000000F00000000000400007E0000000000000001F80000780000000000004000800"
     bin_str = "{:b}".format(int(readmap, 16))
     num_pad_bits = len(readmap) * 4 - len(bin_str)
     readmap_bin = "0" * num_pad_bits + bin_str
@@ -185,7 +184,12 @@ def input_hex():
     
 g = Simulator()
 # Read the arena text file and store it as a list ==========================================
-#f = open("./algorithms/src/simulator/sample_arena.txt", "r") #import the arena file (this is for testing, for the actual we will have to import from RPi)
+#f = open("./algorithms/src/simulator/sample_arena.txt", "r")
+f = open("./algorithms/src/simulator/MDF_string_1.txt", "r")
+
+# load from binary
 #g.init(AgentTask.EXPLORE, f.read(), WAYPOINT)
-g.init(AgentTask.EXPLORE, input_hex(), WAYPOINT)
+
+# load from MDF
+g.init(AgentTask.EXPLORE, input_hex(f.read()), WAYPOINT)
 g.run()
