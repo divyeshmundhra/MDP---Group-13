@@ -24,9 +24,9 @@ class Robot extends EventEmitter {
       // sensor update
       const SENSOR_MAP = [
         "LEFT_FRONT",
-        "FRONT_FRONT_LEFT",
-        "FRONT_FRONT_MID",
-        "FRONT_FRONT_RIGHT",
+        "FORWARD_FRONT_LEFT",
+        "FORWARD_FRONT_MID",
+        "FORWARD_FRONT_RIGHT",
         "LEFT_REAR",
         "RIGHT_FRONT",
       ];
