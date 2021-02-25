@@ -130,16 +130,11 @@ class Simulator:
 
     def quit(self):
         self.arena = self.agent.get_arena() # cheeky patch to let our agent fill in unexplored cells as obstacles
-<<<<<<< HEAD
         print('debug number of unexplored cells: ', len(self.arena.list_unexplored_cells()))
         print('debug number of explored cells: ', 300-len(self.arena.list_unexplored_cells()))
         self.print_mdf()
         self.update_display()
         self.update_display()
-=======
-        self.print_mdf()
-        self.update_display()
->>>>>>> 46085d4 (when finishing run, set unexplored as obstacles)
         print('Quitting...')
         time.sleep(5)
         pygame.quit()
@@ -206,5 +201,10 @@ f = open("./algorithms/src/simulator/MDF_string_1.txt", "r")
 #g.init(AgentTask.EXPLORE, f.read(), WAYPOINT)
 
 # load from MDF
+<<<<<<< HEAD
 g.init(AgentTask.EXPLORE, input_hex(f.read()), WAYPOINT)
 g.run()
+=======
+g.init(AgentTask.FAST, input_hex(f.read()), WAYPOINT)
+g.run()
+>>>>>>> 09bb6cd (fix: restore fastest path functionality)
