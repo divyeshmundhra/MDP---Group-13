@@ -29,7 +29,7 @@ const uint16_t kTicks_per_45_degrees_combined = 1500;
 const uint16_t kSensor_side_front_rear_distance = 15 + 145 + 15;
 const uint16_t kSensor_side_center_distance = kSensor_side_front_rear_distance / 2;
 
-const uint16_t kBlock_distance = distanceToTicks(100);
+const uint16_t kBlock_distance = 1200;
 
 // distance of travel after which to report sensor values
 const uint16_t kReport_distance = 0.95 * kBlock_distance;
