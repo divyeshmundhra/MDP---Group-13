@@ -114,6 +114,16 @@ static bool parse_buf() {
     } else if (cmd1 == 'd') {
       kD_obstacle = val;
     }
+  } else if (cmd == 'p') {
+    if (cmd1 == 'a') {
+      kP_wall_diff = val;
+    } else if (cmd1 == 'b') {
+      kD_wall_diff = val;
+    } else if (cmd1 == 'c') {
+      kP_wall_offset = val;
+    } else if (cmd1 == 'd') {
+      kD_wall_offset = val;
+    }
   } else {
     Serial.println("Unknown cmd");
   }

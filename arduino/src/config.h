@@ -28,8 +28,6 @@ const int8_t kMax_encoder_error = 5;
 const int8_t kMax_obstacle_error = 5;
 // max difference between both axis for moves to be completed
 const int8_t kMax_encoder_diff_error = 5;
-// max error for wall align to be completed (mm)
-const int8_t kMax_align_error = 2;
 
 // time after a move to wait before reporting sensor values
 const int16_t kSensor_report_delay = 100;
@@ -39,6 +37,18 @@ const int16_t kMin_encoder_correction = -64;
 // parser buffer size
 // determines max length of command that can be sent
 const uint8_t kParser_buf_size = 16;
+
+// parameters for aligning the robot to the wall using LEFT_FRONT and LEFT_REAR sensors
+
+// align to wall only if both sensors see something within this distance (mm)
+const int16_t kWall_align_max_absolute_threshold = 400;
+// align to wall only if the abs difference between both sensors is less than this (mm)
+const int16_t kWall_align_max_absolute_difference = 50;
+// scale difference between sensors
+extern int16_t kP_wall_diff;
+extern int16_t kD_wall_diff;
+extern int16_t kP_wall_offset;
+extern int16_t kD_wall_offset;
 
 // controller parameters for offset (minimise error between encoder readings) controller
 extern int16_t kP_offset;
@@ -113,7 +123,7 @@ const int8_t kSensor_offset[6] = {
   0,
   0,
   0,
-  18,
+  10,
   0
 };
 

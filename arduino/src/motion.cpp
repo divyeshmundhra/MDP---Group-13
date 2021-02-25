@@ -232,7 +232,55 @@ ISR(TIMER2_COMPA_vect) {
     base_right = base_left;
   }
 
+  static uint8_t last_wall_align = 0;
+  static uint8_t isr_ticks = 0;
+
+  isr_ticks ++;
+
   if (straight_enabled) {
+    uint8_t ticks_since_last_update = isr_ticks - last_wall_align;
+
+    if (ticks_since_last_update > 4) {
+      if (move_dir == FORWARD) {
+        if (
+          sensor_distances[LEFT_FRONT] < kWall_align_max_absolute_threshold &&
+          sensor_distances[LEFT_REAR] < kWall_align_max_absolute_threshold
+        ) {
+          int16_t wall_diff = sensor_distances[LEFT_FRONT] - sensor_distances[LEFT_REAR];
+          int16_t wall_offset = sensor_distances[LEFT_FRONT] - 280;
+          if (wall_diff > - kWall_align_max_absolute_difference && wall_diff < kWall_align_max_absolute_difference) {
+            // if the two LEFT sensors see a difference, offset the encoder values
+            // so that controllerTrackLeft below will correct this offset and hopefully
+            // keep the robot moving straight. we offset the encoder values so that the course correction
+            // will persist even after the robot no longer has a near enough wall to align to.
+            static int16_t pWall_diff = 0;
+            static int16_t pWall_offset = 0;
+
+            // reset derivative term if too long since last valid wall
+            if (ticks_since_last_update > 10) {
+              pWall_diff = wall_diff;
+              pWall_offset = wall_offset;
+            }
+
+            int32_t wall_correction = (
+              (int32_t) kP_wall_diff * wall_diff + (int32_t) kD_wall_diff * (pWall_diff - wall_diff) +
+              (int32_t) kP_wall_offset * wall_offset + (int32_t) kD_wall_offset * (pWall_offset - wall_offset)
+            ) >> 8;
+
+            pWall_diff = wall_diff;
+            pWall_offset = wall_offset;
+
+            if (wall_correction > 0) {
+              axis_right.incrementEncoder(-wall_correction);
+            } else {
+              axis_left.incrementEncoder(wall_correction);
+            }
+          }
+        }
+      }
+
+      last_wall_align = isr_ticks;
+    }
     correction = controllerTrackLeft(encoder_left, encoder_right);
   } else {
     correction = 0;
@@ -473,19 +521,19 @@ void loop_motion() {
 
     if ((cur_time - last_print) > 10) {
       cli();
-      int32_t __encoder_left = axis_left.getEncoder();
-      int32_t __encoder_right = axis_right.getEncoder();
+      int32_t encoder_left = axis_left.getEncoder();
+      int32_t encoder_right = axis_right.getEncoder();
       int16_t power_left = axis_left.getPower();
       int16_t power_right = axis_right.getPower();
       // int16_t _base_power = base_power;
       int16_t _correction = correction;
-      int16_t _error = __encoder_left - __encoder_right;
+      int16_t _error = encoder_left - encoder_right;
       int16_t _sensor_front = sensor_distances[LEFT_FRONT];
       int16_t _sensor_rear = sensor_distances[LEFT_REAR];
       sei();
       Serial.print("SYNC");
-      Serial.write((char *) &__encoder_left, 4);
-      Serial.write((char *) &__encoder_right, 4);
+      Serial.write((char *) &encoder_left, 4);
+      Serial.write((char *) &encoder_right, 4);
       Serial.write((char *) &power_left, 2);
       Serial.write((char *) &power_right, 2);
       // Serial.write((char *) &_error, 2);
