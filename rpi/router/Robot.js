@@ -17,7 +17,7 @@ class Robot extends EventEmitter {
 
     if (
       (match = line.match(
-        /\$SENSOR ([0-9]+)\|([0-9]+)\|([0-9]+)\|([0-9]+)\|([0-9]+)\|([0-9]+)\|/
+        /\$SENSOR ([0-9i]+)\|([0-9i]+)\|([0-9i]+)\|([0-9i]+)\|([0-9i]+)\|([0-9i]+)\|/
       ))
     ) {
       // match `$SENSOR 0|1|2|3|4|5|`
