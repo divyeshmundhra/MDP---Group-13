@@ -68,7 +68,7 @@ comms.on("data", ({ type, data }) => {
 });
 
 robot.on("move", (direction) => {
-  comms.send({ type: "move", data: { direction } });
+  comms.send({ type: "move_done", data: { direction } });
 });
 
 robot.on("sensors", (update) => {
