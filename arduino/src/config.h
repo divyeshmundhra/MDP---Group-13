@@ -33,6 +33,8 @@ const int8_t kMax_align_error = 2;
 
 // time after a move to wait before reporting sensor values
 const int16_t kSensor_report_delay = 100;
+const int16_t kMax_encoder_correction = 64;
+const int16_t kMin_encoder_correction = -64;
 
 // parser buffer size
 // determines max length of command that can be sent
