@@ -192,11 +192,11 @@ def input_hex(readmap):
 g = Simulator()
 # Read the arena text file and store it as a list ==========================================
 # f = open("./algorithms/src/simulator/sample_arena.txt", "r")
-f = open("./algorithms/src/simulator/MDF_string_1.txt", "r")
+f = open("./algorithms/src/simulator/sample_arena.txt", "r")
 
 # load from binary
-#g.init(AgentTask.EXPLORE, f.read(), WAYPOINT)
+g.init(AgentTask.EXPLORE, f.read(), WAYPOINT)
 
 # load from MDF
-g.init(AgentTask.FAST, input_hex(f.read()), WAYPOINT)
+# g.init(AgentTask.FAST, input_hex(f.read()), WAYPOINT)
 g.run()

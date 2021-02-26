@@ -78,7 +78,7 @@ class Arena:
     #     return self.calculate_adjacent_lists(coord)['unblocked']
     
     def mark_dangerous_cells_around_obstacle(self, coord):
-        for displacement in Arena.ADJACENCY:
+        for displacement in Arena.EIGHT_ADJACENCY:
             adj_coord = coord.add(displacement)
             if self.coord_is_valid(adj_coord):
                 self.get_cell_at_coord(adj_coord).set_is_dangerous(True)        

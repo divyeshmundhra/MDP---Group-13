@@ -10,6 +10,7 @@ class ExplorationAlgo():
         self.arena = None
         self.cur_coord = None
         self.unexplored_stack = []
+        self.last_four = []
 
     def get_next_step(self, arena: Arena, robot_info: RobotInfo) -> Coord:
         # implement the flood fill algorithm using a stack
@@ -45,7 +46,7 @@ class ExplorationAlgo():
     #                 adj.append(adj_coord)
 
     def get_nearest_unexplored(self, root: Coord) -> list:
-        unexplored = [] 
+        unexplored = []
         # unexplored contains single non-dangerous node,
         # or contains closest dangerous node then a non-dangerous node (as backup)
 
@@ -59,8 +60,17 @@ class ExplorationAlgo():
 
             if not cell.is_explored():
                 if not cell.is_dangerous():
-                    unexplored.append(c)
-                    return unexplored
+                    # check for back tracking, if will backtrack, don't go to this cell
+                    back_tracked = False
+                    lf = self.last_four
+                    if len(lf) == 4 and lf[0].is_equal(lf[2]) and lf[1].is_equal(lf[3]) and c.is_equal(lf[2]):
+                        back_tracked = True
+                    if not back_tracked:
+                        unexplored.append(c)
+                        if len(self.last_four) >= 4:
+                            self.last_four.pop(0)
+                        self.last_four.append(c)
+                        return unexplored
                 # elif root.subtract(c).manhattan_distance() > 1:
                 #     unexplored.append(c)
 

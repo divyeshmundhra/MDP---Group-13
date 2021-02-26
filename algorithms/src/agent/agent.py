@@ -34,12 +34,14 @@ class Agent:
         self.update_arena(obstacles_coord_list, no_obs_coord_list)
         target_coord = self.think()
         if target_coord == None:
+            # debug code
             MAP_ROW = 20
             MAP_COL = 15
             for y in range(MAP_ROW):
                 for x in range(MAP_COL):
                     if not self.arena.get_cell_at_coord(Coord(x,y)).is_explored():
                         print(x,' ',y)
+            # /debug code
             if self.task == AgentTask.FAST:
                 message = f'No valid path!'
             else:
