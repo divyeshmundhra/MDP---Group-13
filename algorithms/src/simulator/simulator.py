@@ -191,20 +191,14 @@ def input_hex(readmap):
     reordered = lines[::-1]
     readmap_final = "\n".join(reordered)
     return readmap_final
-    
+
 g = Simulator()
 # Read the arena text file and store it as a list ==========================================
-# f = open("./algorithms/src/simulator/sample_arena.txt", "r")
-f = open("./algorithms/src/simulator/MDF_string_1.txt", "r")
+f = open("./algorithms/src/simulator/sample_arena.txt", "r")
 
 # load from binary
-#g.init(AgentTask.EXPLORE, f.read(), WAYPOINT)
+g.init(AgentTask.EXPLORE, f.read(), WAYPOINT)
 
 # load from MDF
-<<<<<<< HEAD
-g.init(AgentTask.EXPLORE, input_hex(f.read()), WAYPOINT)
+# g.init(AgentTask.FAST, input_hex(f.read()), WAYPOINT)
 g.run()
-=======
-g.init(AgentTask.FAST, input_hex(f.read()), WAYPOINT)
-g.run()
->>>>>>> 09bb6cd (fix: restore fastest path functionality)
