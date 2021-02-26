@@ -22,6 +22,8 @@ from tqdm import tqdm
 from utils.general import xyxy2xywh, xywh2xyxy
 from utils.torch_utils import torch_distributed_zero_first
 
+from utils.VideoStreamSubscriber import VideoStreamSubscriber
+
 # Parameters
 help_url = 'https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data'
 img_formats = ['bmp', 'jpg', 'jpeg', 'png', 'tif', 'tiff', 'dng']  # acceptable image suffixes
@@ -578,6 +580,27 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             l[:, 0] = i  # add target image index for build_targets()
         return torch.stack(img, 0), torch.cat(label, 0), path, shapes
 
+class LoadImagesZMQ:
+    def __init__(self, source, img_size=640):
+        self.receiver = VideoStreamSubscriber(source)
+        self.img_size = img_size
+        self.mode = 'images'
+
+    def __iter__(self):
+        self.count = 0
+        return self
+
+    def __next__(self):
+        # topic is some string sent by rpi to identify this image
+        topic, img0 = self.receiver.receive()  # BGR
+        # Padded resize
+        img = letterbox(img0, new_shape=self.img_size)[0]
+
+        # Convert
+        img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
+        img = np.ascontiguousarray(img)
+
+        return topic, img, img0, None
 
 # Ancillary functions --------------------------------------------------------------------------------------------------
 def load_image(self, index):
