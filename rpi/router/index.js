@@ -16,7 +16,10 @@ controller.on("data", (data) => {
 });
 
 comms.on("data", ({ type, data }) => {
-  if (type === "turn") {
+  if (type === "echo") {
+    logger.info(`echoing ${JSON.stringify(data)}`);
+    comms.send(data);
+  } else if (type === "turn") {
     const DIRECTION_MAP = {
       left: "L",
       right: "R",
