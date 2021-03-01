@@ -66,7 +66,7 @@ static bool parse_buf() {
       log_sensor(val);
     }
   } else if (cmd == 'A') {
-    start_align();
+    start_align(val);
   } else if (cmd == 'D') {
     state = DEBUG_IDLE;
   } else if (cmd == 'S') {
@@ -123,6 +123,14 @@ static bool parse_buf() {
       kP_wall_offset = val;
     } else if (cmd1 == 'd') {
       kD_wall_offset = val;
+    }
+  } else if (cmd == 'w') {
+    if (cmd1 == 'p') {
+      kP_align = val;
+    } else if (cmd1 == 'i') {
+      kI_align = val;
+    } else if (cmd1 == 'd') {
+      kD_align = val;
     }
   } else {
     Serial.println("Unknown cmd");

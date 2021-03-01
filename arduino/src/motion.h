@@ -39,7 +39,7 @@ void start_motion_obstacle(uint16_t distance);
  */
 void start_motion_unit(motion_direction_t _direction, uint8_t unit);
 
-void start_align();
+void start_align(uint8_t mode);
 
 bool get_motion_done();
 int32_t get_encoder_left();

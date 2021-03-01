@@ -80,6 +80,17 @@ const int16_t kMO_integral_max = 400;
 const int16_t kMO_max_output = 400;
 const int16_t kMO_min_output = -400;
 
+// controller parameters for align controller
+extern int16_t kP_align;
+extern int16_t kI_align;
+extern int16_t kD_align;
+
+const int16_t kA_integral_min = -100;
+const int16_t kA_integral_max = 100;
+
+const int16_t kA_max_output = 200;
+const int16_t kA_min_output = -200;
+
 // constants for sensor conversion
 // each array corresponds to the constants for one sensor
 // same order as sensor_position_t

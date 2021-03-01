@@ -17,7 +17,8 @@ typedef enum {
 
 typedef enum {
   DISTANCE,
-  OBSTACLE
+  OBSTACLE,
+  ALIGN_EQUAL
 } move_type_t;
 
 typedef struct {
@@ -97,6 +98,18 @@ int16_t controllerObstacle(pid_state_t *state, uint16_t distance, uint16_t targe
   }
 
   return power;
+}
+
+pid_state_t state_wall_align_equal;
+int16_t controllerWallAlignEqual(pid_state_t *state, int16_t sensor_slave, int16_t sensor_target) {
+  int16_t error = sensor_slave - sensor_target;
+
+  state->integral = constrain((int32_t) state->integral + error, kA_integral_min, kA_integral_max);
+  int16_t power = ((int32_t) kP_align * error + (int32_t) kI_align * state->integral + (int32_t) kD_align * (state->last_input - sensor_slave)) >> 8;
+
+  state->last_input = sensor_slave;
+
+  return constrain(power, kA_min_output, kA_max_output);
 }
 
 move_t buffered_moves[kMovement_buffer_size];
@@ -200,16 +213,22 @@ ISR(TIMER2_COMPA_vect) {
       }
     }
   } else if (state == MOVE_COMMANDED) {
-    resetControllerState(&state_tl, encoder_right);
-    if (move_type == DISTANCE) {
-      resetControllerState(&state_straight_left, encoder_left);
-      resetControllerState(&state_straight_right, encoder_right);
-    } else if (move_type == OBSTACLE) {
-      resetControllerState(&state_obstacle, sensor_distances[FRONT_FRONT_MID]);
+    if (move_type == ALIGN_EQUAL) {
+      state = MOVING;
+      straight_enabled = false;
+      resetControllerState(&state_wall_align_equal, sensor_distances[LEFT_FRONT]);
+    } else {
+      resetControllerState(&state_tl, encoder_right);
+      if (move_type == DISTANCE) {
+        resetControllerState(&state_straight_left, encoder_left);
+        resetControllerState(&state_straight_right, encoder_right);
+      } else if (move_type == OBSTACLE) {
+        resetControllerState(&state_obstacle, sensor_distances[FRONT_FRONT_MID]);
+      }
+      state = MOVING;
+      reached_max_power = false;
+      straight_enabled = true;
     }
-    state = MOVING;
-    reached_max_power = false;
-    straight_enabled = true;
   }
 
   int16_t power_left = 0, power_right = 0;
@@ -230,17 +249,26 @@ ISR(TIMER2_COMPA_vect) {
   } else if (move_type == OBSTACLE) {
     base_left = controllerObstacle(&state_obstacle, sensor_distances[FRONT_FRONT_MID], target_obstacle);
     base_right = base_left;
+  } else if (move_type == ALIGN_EQUAL) {
+    static uint8_t tick_count = 0;
+    tick_count ++;
+
+    if (tick_count > 4) {
+      tick_count = 0;
+
+      int16_t power = controllerWallAlignEqual(&state_wall_align_equal, sensor_distances[LEFT_FRONT], sensor_distances[LEFT_REAR]);
+      base_left = -power;
+      base_right = power;
+    }
   }
 
-  static uint8_t last_wall_align = 0;
-  static uint8_t isr_ticks = 0;
-
-  isr_ticks ++;
-
   if (straight_enabled) {
-    uint8_t ticks_since_last_update = isr_ticks - last_wall_align;
+    static uint8_t tick_count = 0;
+    tick_count ++;
 
-    if (ticks_since_last_update > 4) {
+    if (tick_count > 4) {
+      tick_count = 0;
+
       if (move_dir == FORWARD) {
         if (
           sensor_distances[LEFT_FRONT] < kWall_align_max_absolute_threshold &&
@@ -257,10 +285,10 @@ ISR(TIMER2_COMPA_vect) {
             static int16_t pWall_offset = 0;
 
             // reset derivative term if too long since last valid wall
-            if (ticks_since_last_update > 10) {
-              pWall_diff = wall_diff;
-              pWall_offset = wall_offset;
-            }
+            // if (ticks_since_last_update > 10) {
+            //   pWall_diff = wall_diff;
+            //   pWall_offset = wall_offset;
+            // }
 
             int32_t wall_correction = (
               (int32_t) kP_wall_diff * wall_diff + (int32_t) kD_wall_diff * (pWall_diff - wall_diff) +
@@ -278,8 +306,6 @@ ISR(TIMER2_COMPA_vect) {
           }
         }
       }
-
-      last_wall_align = isr_ticks;
     }
     correction = controllerTrackLeft(encoder_left, encoder_right);
   } else {
@@ -474,18 +500,29 @@ void combine_next_move() {
   }
 }
 
-void start_align() {
-  int16_t error_sensors = sensor_distances[LEFT_FRONT] - sensor_distances[LEFT_REAR];
+void start_align(uint8_t mode) {
+  if (mode == 0) {
+    int16_t error_sensors = sensor_distances[LEFT_FRONT] - sensor_distances[LEFT_REAR];
 
-  if (abs(error_sensors) >= align_LUT_len) {
-    Serial.println("Offset too much to correct");
-    return;
-  }
+    if (abs(error_sensors) >= align_LUT_len) {
+      Serial.println("Offset too much to correct");
+      return;
+    }
 
-  if (error_sensors > 0) {
-    start_motion_distance(LEFT, pgm_read_byte_near(align_LUT + error_sensors));
-  } else {
-    start_motion_distance(RIGHT, pgm_read_byte_near(align_LUT - error_sensors));
+    if (error_sensors > 0) {
+      start_motion_distance(LEFT, pgm_read_byte_near(align_LUT + error_sensors));
+    } else {
+      start_motion_distance(RIGHT, pgm_read_byte_near(align_LUT - error_sensors));
+    }
+  } else if (mode == 1) {
+    cli();
+    state = MOVE_COMMANDED;
+    move_type = ALIGN_EQUAL;
+    axis_left.setReverse(false);
+    axis_right.setReverse(false);
+    sei();
+
+    Serial.println("Start align equal");
   }
 }
 
@@ -541,6 +578,7 @@ void loop_motion() {
       Serial.write((char *) &_sensor_front, 2);
       Serial.write((char *) &_sensor_rear, 2);
       Serial.write((char *) &state, 1);
+      Serial.write((char *) &move_type, 1);
       Serial.println();
 
       last_print = cur_time;

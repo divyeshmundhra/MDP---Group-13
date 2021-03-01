@@ -17,3 +17,7 @@ int16_t kD_wall_diff = 128;
 
 int16_t kP_wall_offset = 200;
 int16_t kD_wall_offset = 128;
+
+int16_t kP_align = 512;
+int16_t kI_align = 64;
+int16_t kD_align = 64;
