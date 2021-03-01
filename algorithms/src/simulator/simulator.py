@@ -50,7 +50,7 @@ class Simulator:
             self.arena.get_cell_at_coord(coord).set_is_explored(True)
         self.arena.get_cell_at_coord(self.robot_info.get_coord()).set_is_visited(True)
         # get agent next move
-        agent_output = self.agent.step(obstacle_coord_list, no_obs_coord_list, self.robot_info)
+        agent_output = self.agent.step(obstacle_coord_list, no_obs_coord_list)
         print(agent_output.get_message())
         move_command = agent_output.get_move_command()
         if move_command == None:

@@ -101,3 +101,8 @@ class Arena:
                 if not cell.is_explored():
                     l.append(cell)
         return l
+    
+    def set_all_explored(self) -> None:
+        for row in self.cell_matrix:
+            for cell in row:
+                cell.set_is_explored(True)

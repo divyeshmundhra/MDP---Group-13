@@ -41,6 +41,7 @@ class Orientation(Enum):
     SOUTH = 2
     WEST = 3
 
+START_ORIENTATION = Orientation.NORTH
 
 class AgentTask(Enum):
     FAST = 0
