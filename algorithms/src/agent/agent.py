@@ -11,7 +11,8 @@ from src.dto.ArenaStringParser import ArenaStringParser
 from src.agent.FastestPathAlgo import FastestPathAlgo
 from src.agent.ExplorationAlgo import ExplorationAlgo
 
-from src.dto.constants import AgentTask
+from src.dto.constants import AgentTask, START_COORD
+
 
 class Agent:
     def __init__(self, arena_string: str, robot_info: RobotInfo, task: AgentTask, end_coord: Coord, waypoint_coord: Coord):
@@ -44,10 +45,13 @@ class Agent:
             # /debug code
             if self.task == AgentTask.FAST:
                 message = f'No valid path!'
+                move_command = None
             else:
                 message = f'Exploration complete!'
                 self.fill_remaining_unexplored_with_obstacles()
-            move_command = None
+                explorationDoneAlgo = FastestPathAlgo()
+                next_step = explorationDoneAlgo.get_next_step(self.arena,self.robot_info,START_COORD, None)
+                move_command = self.calculate_move(next_step)
         elif self.task == AgentTask.FAST and self.robot_info.get_coord().is_equal(self.end_coord):
             message = f'Fastest path complete!'
             move_command = None
@@ -98,7 +102,7 @@ class Agent:
         # they are thus probably obstacles
         for cell in self.arena.list_unexplored_cells():
             cell.set_is_explored(True)
-            cell.set_is_obstacle(True)
-
+            # cell.set_is_obstacle(True)
+            cell.set_is_dangerous(True)
     def get_arena(self) -> Arena:
         return self.arena
