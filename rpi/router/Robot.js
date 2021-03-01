@@ -23,18 +23,24 @@ class Robot extends EventEmitter {
       // match `$SENSOR 0|1|2|3|4|5|`
       // sensor update
       const SENSOR_MAP = [
-        "LEFT_FRONT",
-        "FORWARD_FRONT_LEFT",
         "FORWARD_FRONT_MID",
         "FORWARD_FRONT_RIGHT",
         "LEFT_REAR",
+        "FORWARD_FRONT_LEFT",
+        "LEFT_FRONT",
         "RIGHT_FRONT",
       ];
       const update = {};
       for (const i in SENSOR_MAP) {
         let val = false;
-        if (match[i] !== "i") {
-          val = parseInt(match[i], 10);
+
+        let offset = parseInt(i) + 1;
+        if (match[offset] !== "i") {
+          val = parseInt(match[offset], 10);
+        }
+        if (val > 6) {
+          val = 6;
+          this.logger.debug("throttling");
         }
         update[SENSOR_MAP[i]] = val;
       }
