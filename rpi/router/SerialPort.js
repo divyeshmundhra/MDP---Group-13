@@ -35,7 +35,7 @@ class SerialPort extends EventEmitter {
 
     const parser = this.sp.pipe(new Readline());
     parser.on("data", (line) => {
-      this.logger.verbose(`rx data: ${line}`);
+      this.logger.verbose(`RX: ${line}`);
       this.emit("data", line);
     });
   }
@@ -61,7 +61,7 @@ class SerialPort extends EventEmitter {
   }
 
   send(data) {
-    this.logger.verbose(`Sending: ${data}`);
+    this.logger.verbose(`TX: ${data}`);
     this.sp.write(data);
   }
 }

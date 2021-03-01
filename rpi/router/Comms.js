@@ -19,14 +19,14 @@ class Comms extends EventEmitter {
     await this.tx.bind(txAddress);
     await this.rx.bind(rxAddress);
 
-    logger.info(`tx: ${txAddress}, rx: ${rxAddress}`);
+    logger.info(`init with tx: ${txAddress}, rx: ${rxAddress}`);
     this._receiverTask();
   }
 
   async _receiverTask() {
     for await (const [msg] of this.rx) {
       try {
-        logger.verbose(msg);
+        logger.verbose(`RX: ${msg}`);
         this.emit("data", JSON.parse(msg));
       } catch (err) {
         logger.warn(err);
@@ -35,7 +35,7 @@ class Comms extends EventEmitter {
   }
 
   async send(data) {
-    logger.verbose(JSON.stringify(data));
+    logger.verbose(`TX: ${JSON.stringify(data)}`);
     await this.tx.send(JSON.stringify(data));
   }
 }

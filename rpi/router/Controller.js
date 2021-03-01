@@ -47,7 +47,6 @@ class Controller extends EventEmitter {
   }
 
   _onSerialData(line) {
-    this.logger.verbose(line);
     this.emit("data", line.trim());
   }
 
