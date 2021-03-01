@@ -1,9 +1,8 @@
-# from src.dto import Coord, MoveCommand, AgentOutput, Arena, RobotInfo, OrientationTransform
 from src.dto.coord import Coord
 from src.dto.MoveCommand import MoveCommand
 from src.dto.AgentOutput import AgentOutput
 from src.dto.RobotInfo import RobotInfo
-from src.dto.OrientationTransform import OrientationTransform
+from src.dto.OrientationTransform import OrientationTransform as OT
 from src.dto.arena import Arena
 from src.dto.ArenaStringParser import ArenaStringParser
 
@@ -23,16 +22,20 @@ class Agent:
         self.waypoint_coord = waypoint_coord
         self.reached_waypoint = False
         self.algo = None # initialized 3 lines below
-        
+
         if self.task == AgentTask.FAST:
             self.algo = FastestPathAlgo()
+            self.arena.set_all_explored()
         else:
             self.algo = ExplorationAlgo()
             self.reached_waypoint = True
-    
-    def step(self, obstacles_coord_list: list, no_obs_coord_list: list, robot_info: RobotInfo) -> AgentOutput:
-        self.robot_info = robot_info
-        self.update_arena(obstacles_coord_list, no_obs_coord_list)
+
+    def step(self, obstacles_coord_list: list, no_obs_coord_list: list) -> AgentOutput:
+        if self.task == AgentTask.EXPLORE:
+            self.update_arena(obstacles_coord_list, no_obs_coord_list)
+        elif not self.reached_waypoint and self.robot_info.get_coord().is_equal(self.waypoint_coord):
+            self.reached_waypoint = True
+
         target_coord = self.think()
         if target_coord == None:
             # debug code
@@ -59,13 +62,13 @@ class Agent:
             move_command = self.calculate_move(target_coord)
             message = f'Target: {target_coord.get_x()}, {target_coord.get_y()}, TURN: {move_command.get_turn_angle()} degs, then \
                 MOVE: {move_command.get_cells_to_advance()} cells forwards'
+        
         return AgentOutput(
             move_command,
             message
         )
 
     def update_arena(self, obstacles_coord_list: list, no_obs_coord_list: list) -> None:
-        # self.arena.get_cell_at_coord(self.robot_info.get_coord()).set_is_visited(True)
         self.mark_robot_visisted_cells(self.robot_info.get_coord)
         for coord in obstacles_coord_list:
             # mark seen obstacles as explored
@@ -76,8 +79,6 @@ class Agent:
         for coord in no_obs_coord_list:
             # mark seen clear cells as explored
             self.arena.get_cell_at_coord(coord).set_is_explored(True)
-        if not self.reached_waypoint and self.robot_info.get_coord().is_equal(self.waypoint_coord):
-            self.reached_waypoint = True
 
     def think(self) -> Coord:
         if self.task == AgentTask.FAST:
@@ -90,9 +91,13 @@ class Agent:
     def calculate_move(self, target_coord) -> MoveCommand:
         current_coord = self.robot_info.get_coord()
         displacement = target_coord.subtract(current_coord)
-        target_orientation = OrientationTransform.displacement_to_orientation(displacement)
-        turn_angle = OrientationTransform.calc_degree_of_turn(self.robot_info.get_orientation(), target_orientation)
-        
+        target_orientation = OT.displacement_to_orientation(displacement)
+        turn_angle = OT.calc_degree_of_turn(self.robot_info.get_orientation(), target_orientation)
+            
+        # update internal robot info
+        self.robot_info.set_coord(target_coord)
+        self.robot_info.set_orientation(target_orientation)
+
         return MoveCommand(
             turn_angle,
             displacement.manhattan_distance()
@@ -105,10 +110,15 @@ class Agent:
             cell.set_is_explored(True)
             # cell.set_is_obstacle(True)
             cell.set_is_dangerous(True)
+
+    def mark_robot_visisted_cells(self,center_value):
+        self.arena.get_cell_at_coord(center_value).set_is_visited(True)
+        adj8 = self.arena.get_eight_adjacent_in_arena(center_value)
+        for cd in adj8:
+            self.arena.get_cell_at_coord(cd).set_is_visited(True)
+
     def get_arena(self) -> Arena:
         return self.arena
 
-    def mark_robot_visisted_cells(self,center_value):
-        adj8 = self.arena.get_eight_adjacent_in_arena(center_value)
-        for cd in adj8:
-            self.arena.set_is_visited(cd)
+    def get_robot_info(self) -> RobotInfo:
+        return self.robot_info

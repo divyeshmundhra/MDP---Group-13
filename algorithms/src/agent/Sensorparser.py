@@ -7,7 +7,9 @@ from src.dto.arena import Arena
 from src.dto.OrientationTransform import OrientationTransform as OT
 
 class SensorParser():
-    def main_sensor_parser(self, sensorString, robot_info):
+    @staticmethod
+    def main_sensor_parser(sensor_dict, robot_info):
+        sensor_data = sensor_dict['data']
         cur_coord = robot_info.get_coord()
         orientation = robot_info.get_orientation()
         # cur_coord = Coord(6, 6)
@@ -22,10 +24,10 @@ class SensorParser():
             string1 = 'displacement_'+str(orientation.value)
             displacement_per_step = OT.orientation_to_unit_displacement(
                 OT.degree_to_orientation[sensor_abs_degree])
-            obstacleList.append(self.individual_sensor_parser(
-                cur_coord, val[string1], displacement_per_step, sensorString[key], val['range'])[0])
-            exploredList.append(self.individual_sensor_parser(
-                cur_coord, val[string1], displacement_per_step, sensorString[key], val['range'])[1])
+            obstacleList.append(SensorParser.individual_sensor_parser(
+                cur_coord, val[string1], displacement_per_step, sensor_data[key], val['range'])[0])
+            exploredList.append(SensorParser.individual_sensor_parser(
+                cur_coord, val[string1], displacement_per_step, sensor_data[key], val['range'])[1])
             i += 1
         # for item in obstacleList:
         #     for j in item:
@@ -35,7 +37,9 @@ class SensorParser():
         #     for z in i:
         #         print(z.get_x(), z.get_y())
         return obstacleList, exploredList
-    def individual_sensor_parser(self,currentPos,sensor_displacement,displacement_per_step,sensor_value,view_range):
+
+    @staticmethod
+    def individual_sensor_parser(currentPos,sensor_displacement,displacement_per_step,sensor_value,view_range):
         obstacle = []
         empty = []
         arena = Arena()
