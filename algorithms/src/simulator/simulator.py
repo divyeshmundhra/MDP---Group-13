@@ -1,4 +1,4 @@
-import sys, os, time
+import sys, os, time, math
 path_of_directory_head = os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))))
 sys.path.append(path_of_directory_head)
 from src.dto.ArenaStringParser import ArenaStringParser
@@ -15,6 +15,7 @@ from src.simulator.SensorInputSimulation import SensorInputSimulation
 from threading import Timer
 
 class Simulator:
+
     def __init__(self):
         # display
         pygame.init()
@@ -50,6 +51,7 @@ class Simulator:
         print(agent_output.get_message())
         move_command = agent_output.get_move_command()
         if move_command == None:
+            self.print_mdf()
             self.quit()
 
         if self.coverage == self.arena.get_coverage_percentage():
@@ -109,7 +111,7 @@ class Simulator:
         t.start()
 
         i = 0
-        while i<99:
+        while i<200:
             self.events()
             self.step()
             time.sleep(self.speed)
@@ -134,8 +136,60 @@ class Simulator:
             if event.type==pygame.QUIT:
                 self.quit()
 
+    def print_mdf(self):
+        explored_bin_str = "11"
+        obstacle_bin_str = ""
+
+        for y in range(MAP_ROW):
+            for x in range(MAP_COL):
+                coord = Coord(x,y)
+                if self.arena.get_cell_at_coord(coord).is_explored():
+                    explored_bin_str += "1"
+                    if self.arena.get_cell_at_coord(coord).is_obstacle():
+                        obstacle_bin_str += "1"
+                    else:
+                        obstacle_bin_str += "0"
+                else:
+                    explored_bin_str += "0"
+
+        explored_bin_str += "11"
+
+        if len(obstacle_bin_str) % 8 != 0:
+            num_pad_bits = 8 - len(obstacle_bin_str) % 8
+            obstacle_bin_str += "0" * num_pad_bits 
+
+        explored_hex_str = f"{int(explored_bin_str, 2):X}"
+        print(explored_hex_str)
+
+        obstacle_hex_str = f"{int(obstacle_bin_str, 2):X}"
+        num_pad_bits = math.ceil(len(obstacle_bin_str) / 4) - len(obstacle_hex_str)
+        print("0" * num_pad_bits + obstacle_hex_str)
+
+def input_hex(readmap):
+    #input hex string
+    bin_str = "{:b}".format(int(readmap, 16))
+    num_pad_bits = len(readmap) * 4 - len(bin_str)
+    readmap_bin = "0" * num_pad_bits + bin_str
+    
+    #remove the last padding 4 binary bits
+    readmap_bin = readmap_bin[:-4]
+
+    #mirror the binary string so that the map will generate correctly
+    readmap_bin_1 = [readmap_bin[i:i+15] + '\n' for i in range(0, len(readmap_bin), 15)]
+    readmap_bin_2 = ''.join(readmap_bin_1)
+    lines = readmap_bin_2.split("\n")
+    reordered = lines[::-1]
+    readmap_final = "\n".join(reordered)
+    return readmap_final
+    
 g = Simulator()
 # Read the arena text file and store it as a list ==========================================
-f = open("./algorithms/src/simulator/sample_arena.txt", "r") #import the arena file (this is for testing, for the actual we will have to import from RPi)
-g.init(AgentTask.EXPLORE, f.read(), WAYPOINT)
+#f = open("./algorithms/src/simulator/sample_arena.txt", "r")
+f = open("./algorithms/src/simulator/MDF_string_1.txt", "r")
+
+# load from binary
+#g.init(AgentTask.EXPLORE, f.read(), WAYPOINT)
+
+# load from MDF
+g.init(AgentTask.EXPLORE, input_hex(f.read()), WAYPOINT)
 g.run()
