@@ -91,7 +91,7 @@ class Arena:
                 if self.get_cell_at_coord(coord).is_explored():
                     explored += 1
 
-        return int((explored / 300)*100)
+        return explored / 300 * 100
     
     def list_unexplored_cells(self) -> list:
         # returns CELLS not coords

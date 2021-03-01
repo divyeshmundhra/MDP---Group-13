@@ -56,7 +56,7 @@ class Simulator:
         if move_command == None:
             self.quit()
 
-        if self.coverage == self.arena.get_coverage_percentage():
+        if self.coverage <= self.arena.get_coverage_percentage():
             print("Coverage limit reached!")
             self.quit()
 
@@ -130,7 +130,10 @@ class Simulator:
 
     def quit(self):
         self.arena = self.agent.get_arena() # cheeky patch to let our agent fill in unexplored cells as obstacles
+        print('debug number of unexplored cells: ', len(self.arena.list_unexplored_cells()))
+        print('debug number of explored cells: ', 300-len(self.arena.list_unexplored_cells()))
         self.print_mdf()
+        self.update_display()
         self.update_display()
         print('Quitting...')
         time.sleep(5)
@@ -192,11 +195,11 @@ def input_hex(readmap):
 g = Simulator()
 # Read the arena text file and store it as a list ==========================================
 # f = open("./algorithms/src/simulator/sample_arena.txt", "r")
-f = open("./algorithms/src/simulator/sample_arena.txt", "r")
+f = open("./algorithms/src/simulator/MDF_string_1.txt", "r")
 
 # load from binary
-g.init(AgentTask.EXPLORE, f.read(), WAYPOINT)
+#g.init(AgentTask.EXPLORE, f.read(), WAYPOINT)
 
 # load from MDF
-# g.init(AgentTask.FAST, input_hex(f.read()), WAYPOINT)
+g.init(AgentTask.EXPLORE, input_hex(f.read()), WAYPOINT)
 g.run()

@@ -61,6 +61,7 @@ class ExplorationAlgo():
             if not cell.is_explored():
                 if not cell.is_dangerous():
                     # check for back tracking, if will backtrack, don't go to this cell
+                    # ugly code, maybe refactor?
                     back_tracked = False
                     lf = self.last_four
                     if len(lf) == 4 and lf[0].is_equal(lf[2]) and lf[1].is_equal(lf[3]) and c.is_equal(lf[2]):
@@ -71,6 +72,7 @@ class ExplorationAlgo():
                             self.last_four.pop(0)
                         self.last_four.append(c)
                         return unexplored
+                # the following allows navigation towards dangerous cells
                 # elif root.subtract(c).manhattan_distance() > 1:
                 #     unexplored.append(c)
 
