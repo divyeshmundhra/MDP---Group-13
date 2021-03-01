@@ -13,6 +13,7 @@ class Controller extends EventEmitter {
       // helpfully, since `rfcomm listen hci0` terminates when the bluetooth connection closes,
       // we can kill the serial port when this process exits
       const logger = require("./logger.js")("rfcomm");
+      this.logger = logger;
       // stdbuf to disable output buffering of rfcomm
       // https://unix.stackexchange.com/a/25378
       const rfcomm = spawn(
@@ -46,6 +47,7 @@ class Controller extends EventEmitter {
   }
 
   _onSerialData(line) {
+    this.logger.verbose(line);
     this.emit("data", line.trim());
   }
 

@@ -35,6 +35,7 @@ class Comms extends EventEmitter {
   }
 
   async send(data) {
+    logger.verbose(JSON.stringify(data));
     await this.tx.send(JSON.stringify(data));
   }
 }
