@@ -65,6 +65,8 @@ comms.on("data", ({ type, data }) => {
     }
 
     robot.send(`${DIRECTION_MAP[direction]}${advance}`);
+  } else if (type === "logsensors") {
+    robot.send("QA");
   }
 });
 
