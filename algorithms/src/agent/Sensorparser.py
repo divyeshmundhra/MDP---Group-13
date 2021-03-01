@@ -6,58 +6,57 @@ from src.dto.coord import Coord
 from src.dto.arena import Arena
 from src.dto.OrientationTransform import OrientationTransform as OT
 
-class Sensorparser():
-    def mainSensorParser(self, sensorString):
-        
-            def individualSensorParser(self,currentPos,sensor_displacement,displacement_per_step,sensor_value,view_range):
-                obstacle = []
-                empty = []
-                arena = Arena()
+class SensorParser():
+    def main_sensor_parser(self, sensorString, robot_info):
+        cur_coord = robot_info.get_coord()
+        orientation = robot_info.get_orientation()
+        # cur_coord = Coord(6, 6)
+        # orientation = Orientation.EAST
+        obstacleList = []
+        exploredList = []
+        i = 0
+        for key, val in SENSOR_CONSTANTS.items():
+            sensor_abs_degree = (
+                val['direction'] + OT.orientation_to_degree[orientation]
+            ) % 360
+            string1 = 'displacement_'+str(orientation.value)
+            displacement_per_step = OT.orientation_to_unit_displacement(
+                OT.degree_to_orientation[sensor_abs_degree])
+            obstacleList.append(self.individual_sensor_parser(
+                cur_coord, val[string1], displacement_per_step, sensorString[key], val['range'])[0])
+            exploredList.append(self.individual_sensor_parser(
+                cur_coord, val[string1], displacement_per_step, sensorString[key], val['range'])[1])
+            i += 1
+        # for item in obstacleList:
+        #     for j in item:
+        #         print(j.get_x(), j.get_y())
+        # print("Break")
+        # for i in exploredList:
+        #     for z in i:
+        #         print(z.get_x(), z.get_y())
+        return obstacleList, exploredList
+    def individual_sensor_parser(self,currentPos,sensor_displacement,displacement_per_step,sensor_value,view_range):
+        obstacle = []
+        empty = []
+        arena = Arena()
 
-                # 1 if robot doesn't see any obstacle
-                flag=0
+        # 1 if robot doesn't see any obstacle
+        flag=0
 
-                # if the sensor sees no obstacle
-                if sensor_value == False:
-                    sensor_value = view_range
-                    flag=1
+        # if the sensor sees no obstacle
+        if not sensor_value:
+            sensor_value = view_range
+            flag=1
 
-                for i in range(1,sensor_value-1):
-                    cd = currentPos.add(sensor_displacement).add(
-                        displacement_per_step.multiply(i))
-                    if(arena.coord_is_valid(cd)):
-                        empty.append(cd)
-                if (flag==0):
-                    detectedobstacle = currentPos.add(sensor_displacement).add(
-                        displacement_per_step.multiply(sensor_value-1))
-                    if(arena.coord_is_valid(detectedobstacle)):
-                        obstacle.append(detectedobstacle)
+        for i in range(1,sensor_value-1):
+            cd = currentPos.add(sensor_displacement).add(
+                displacement_per_step.multiply(i))
+            if(arena.coord_is_valid(cd)):
+                empty.append(cd)
+        if (flag==0):
+            detectedobstacle = currentPos.add(sensor_displacement).add(
+                displacement_per_step.multiply(sensor_value-1))
+            if(arena.coord_is_valid(detectedobstacle)):
+                obstacle.append(detectedobstacle)
 
-                return obstacle, empty
-
-            cur_coord = self.robot_info.get_coord
-            orientation = self.robot_info.get_orientation()
-            # cur_coord = Coord(6, 6)
-            # orientation = Orientation.EAST
-            obstacleList = []
-            exploredList = []
-            i = 0
-            for key, val in SENSOR_CONSTANTS.items():
-                sensor_abs_degree = (
-                    val['direction'] + OT.orientation_to_degree[orientation]) % 360
-                string1 = 'displacement_'+str(orientation.value)
-                displacement_per_step = OT.orientation_to_unit_displacement(
-                    OT.degree_to_orientation[sensor_abs_degree])
-                obstacleList.append(individualSensorParser(
-                    cur_coord, val[string1], displacement_per_step, sensorString[key], val['range'])[0])
-                exploredList.append(individualSensorParser(
-                    cur_coord, val[string1], displacement_per_step, sensorString[key], val['range'])[1])
-                i += 1
-            # for item in obstacleList:
-            #     for j in item:
-            #         print(j.get_x(), j.get_y())
-            # print("Break")
-            # for i in exploredList:
-            #     for z in i:
-            #         print(z.get_x(), z.get_y())
-            return obstacleList, exploredList
+        return obstacle, empty
