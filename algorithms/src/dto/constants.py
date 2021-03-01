@@ -1,15 +1,15 @@
 from enum import Enum
 from src.dto.coord import Coord
 # Defining colours
-blue=[0,0,255]
+blue = [0, 0, 255]
 white = [255, 255, 255]
-black = [0,0,0]
-light_grey = [170,170,170]
-grey = [100,100,100]
-red = [255,0,0]
-green = [0,255,0]
-yellow = [255,255,0]
-purple = [138,43,226]
+black = [0, 0, 0]
+light_grey = [170, 170, 170]
+grey = [100, 100, 100]
+red = [255, 0, 0]
+green = [0, 255, 0]
+yellow = [255, 255, 0]
+purple = [138, 43, 226]
 
 # Defining map dimensions
 MAP_ROW = 20
@@ -19,18 +19,21 @@ DIS_X = 300
 DIS_Y = 400
 
 # Defining start, end and waypoint coord
-START_COORD = Coord(1,1)
-END_COORD = Coord(13,18)
-WAYPOINT = Coord(2,2)
+START_COORD = Coord(1, 1)
+END_COORD = Coord(13, 18)
+WAYPOINT = Coord(2, 2)
 
 # Define robot vision range (sensor range), we currently assume equal distances in each direction
 VIEW_RANGE = 2
+
 
 class ArenaDisplayMode(Enum):
     OBSERVED = 0
     TRUE = 1
 
+
 ARENA_DISPLAY_MODE = ArenaDisplayMode.OBSERVED
+
 
 class Orientation(Enum):
     NORTH = 0
@@ -38,45 +41,66 @@ class Orientation(Enum):
     SOUTH = 2
     WEST = 3
 
+
 class AgentTask(Enum):
     FAST = 0
     EXPLORE = 1
+
 
 class TimeCosts:
     QUARTER_TURN = 1
     MOVE_ONE_UNIT = 1
     # extendable: predefined times for larger turns and moves? linear equation to calculate time for larger turns and moves?
 
+
 SENSOR_CONSTANTS = {
-    "left_forward": {
+    "FORWARD_FRONT_LEFT": {
         "range": 5,
-        "direction": 0, # degrees from forward face of robot
-        "displacement": Coord(-1, 1)
+        "direction": 0,  # degrees from forward face of robot
+        "displacement_0": Coord(-1, 1),
+        "displacement_1": Coord(1, 1),
+        "displacement_2": Coord(1, -1),
+        "displacement_3": Coord(-1, -1),
     },
-    "center_forward": {
-        "range": 5,
-        "direction": 0,
-        "displacement": Coord(0, 1)
-    },
-    "right_forward": {
+    "FORWARD_FRONT_MID": {
         "range": 5,
         "direction": 0,
-        "displacement": Coord(1, 1)
+        "displacement_0": Coord(0, 1),
+        "displacement_1": Coord(1, 0),
+        "displacement_2": Coord(0, -1),
+        "displacement_3": Coord(-1, 0)
     },
-    "front_left": {
+    "FORWARD_FRONT_RIGHT": {
+        "range": 5,
+        "direction": 0,
+        "displacement_0": Coord(1, 1),
+        "displacement_1": Coord(1, -1),
+        "displacement_2": Coord(-1, -1),
+        "displacement_3": Coord(-1, 1)
+    },
+    "LEFT_FRONT": {
         "range": 5,
         "direction": 270,
-        "displacement": Coord(-1, 1)
+        "displacement_0": Coord(-1, 1),
+        "displacement_1": Coord(1, 1),
+        "displacement_2": Coord(1, -1),
+        "displacement_3": Coord(-1, -1)
     },
-    "back_left": {
-        "range": 5,
-        "direction": 270,
-        "displacement": Coord(-1, -1)
-    },
-    "front_right": {
+    "RIGHT_FRONT": {
         "range": 5,
         "direction": 90,
-        "displacement": Coord(1, 1)
+        "displacement_0": Coord(1, 1),
+        "displacement_1": Coord(1, -1),
+        "displacement_2": Coord(-1, -1),
+        "displacement_3": Coord(-1, 1)
+    },
+    "LEFT_REAR": {
+        "range": 5,
+        "direction": 270,
+        "displacement_0": Coord(-1, -1),
+        "displacement_1": Coord(-1, 1),
+        "displacement_2": Coord(1, 1),
+        "displacement_3": Coord(1, -1)
     }
 }
 
