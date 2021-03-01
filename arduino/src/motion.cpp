@@ -257,13 +257,13 @@ ISR(TIMER2_COMPA_vect) {
     // if we will eventually travel fully past this block, delay logging the sensors
     // until we move past it by kReport_distance_offset to get a more accurate reading
     // use the previous threshold value if already initialised, else freshly initialised value
-    uint16_t offset_target = (pReport_block_threshold > 0 ? pReport_block_threshold : report_block_threshold) +
-                                kReport_distance_offset;
+    uint16_t base_threshold = pReport_block_threshold > 0 ? pReport_block_threshold : report_block_threshold;
+    uint16_t offset_target = base_threshold + kReport_distance_offset;
 
     if (offset_target < target_left) {
       report_sensor_threshold = offset_target;
     } else {
-      report_sensor_threshold = pReport_block_threshold;
+      report_sensor_threshold = base_threshold;
     }
     has_reported_sensors = false;
   }
