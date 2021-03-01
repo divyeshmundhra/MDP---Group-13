@@ -34,8 +34,11 @@ class Simulator:
         self.arena = ArenaStringParser.parse_arena_string(arena_string) #used in line 34 and 100
         # self.update_display()
         # arena and robot info are separate so that simulator and agent do not modify a mutual copy
-        empty_arena_string = open("./algorithms/src/simulator/empty_arena_string.txt", "r").read()
-        self.agent = Agent(empty_arena_string, self.robot_info.copy(), agent_task, END_COORD, waypoint)
+        if agent_task == AgentTask.FAST:
+            self.agent = Agent(arena_string, self.robot_info.copy(), agent_task, END_COORD, waypoint)
+        else:
+            empty_arena_string = open("./algorithms/src/simulator/empty_arena_string.txt", "r").read()
+            self.agent = Agent(empty_arena_string, self.robot_info.copy(), agent_task, END_COORD, waypoint)
 
     def step(self):
         # calculate agent percepts
@@ -51,10 +54,9 @@ class Simulator:
         print(agent_output.get_message())
         move_command = agent_output.get_move_command()
         if move_command == None:
-            self.print_mdf()
             self.quit()
 
-        if self.coverage == self.arena.get_coverage_percentage():
+        if self.coverage <= self.arena.get_coverage_percentage():
             print("Coverage limit reached!")
             self.quit()
 
@@ -127,6 +129,14 @@ class Simulator:
         pygame.display.update() 
 
     def quit(self):
+        self.arena = self.agent.get_arena() # cheeky patch to let our agent fill in unexplored cells as obstacles
+        print('debug number of unexplored cells: ', len(self.arena.list_unexplored_cells()))
+        print('debug number of explored cells: ', 300-len(self.arena.list_unexplored_cells()))
+        self.print_mdf()
+        self.update_display()
+        self.update_display()
+        print('Quitting...')
+        time.sleep(5)
         pygame.quit()
         quit()
 
@@ -181,10 +191,10 @@ def input_hex(readmap):
     reordered = lines[::-1]
     readmap_final = "\n".join(reordered)
     return readmap_final
-    
+
 g = Simulator()
 # Read the arena text file and store it as a list ==========================================
-#f = open("./algorithms/src/simulator/sample_arena.txt", "r")
+# f = open("./algorithms/src/simulator/sample_arena.txt", "r")
 f = open("./algorithms/src/simulator/MDF_string_1.txt", "r")
 
 # load from binary

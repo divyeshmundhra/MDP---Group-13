@@ -18,8 +18,9 @@ class FastestPathAlgo():
         if not arena.coord_is_valid(end):
             raise Exception(f'FastestPath: end coord out of arena: {end.get_x()}, {end.get_y()}')
         end_cell = arena.get_cell_at_coord(end)
-        if end_cell.is_obstacle() or end_cell.is_dangerous():
-            raise Exception(f'FastestPath: cannot move to dangerous cell: {end.get_x()}, {end.get_y()}')
+        if end_cell.is_obstacle():
+            raise Exception(f'FastestPath: cannot move to obstacle cell: {end.get_x()}, {end.get_y()}')
+
         if waypoint:
             # we haven't passed through it yet
             target = waypoint
@@ -37,8 +38,24 @@ class FastestPathAlgo():
         examined = [[False for y in range(MAP_ROW)] for x in range(MAP_COL)]
 
         cur = fringe_nodes.get()[-1]
-        while not cur.get_coord().is_equal(target):
+        while True:
+            # two conditions to exit loop, one may or may not be enabled
             cur_coord = cur.get_coord()
+            if not end_cell.is_dangerous():
+                # normally exit when target is found
+                if cur_coord.is_equal(target):
+                    # found target so break and find first step
+                    break
+            else:
+                # if cell is dangerous, move to any adjacent cell to it \
+                # (some cells, surrounded by danger, will be left out, but they are likely to be obstacles)
+                if cur_coord.subtract(target).manhattan_distance() <= 1 \
+                    and cur_coord.subtract(start).manhattan_distance() > 0:
+                    # target not found so return None
+                    return None
+                if fringe_nodes.qsize() >= 3000:
+                    # if we've got such a long queue, there's probably no way to the target
+                    return None
             examined[cur_coord.get_x()][cur_coord.get_y()] = True
             adjacent_coords = arena.get_adjacent_safe(cur_coord)
             for coord in adjacent_coords:

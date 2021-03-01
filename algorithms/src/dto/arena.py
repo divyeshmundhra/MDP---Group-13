@@ -78,7 +78,7 @@ class Arena:
     #     return self.calculate_adjacent_lists(coord)['unblocked']
     
     def mark_dangerous_cells_around_obstacle(self, coord):
-        for displacement in Arena.ADJACENCY:
+        for displacement in Arena.EIGHT_ADJACENCY:
             adj_coord = coord.add(displacement)
             if self.coord_is_valid(adj_coord):
                 self.get_cell_at_coord(adj_coord).set_is_dangerous(True)        
@@ -91,4 +91,13 @@ class Arena:
                 if self.get_cell_at_coord(coord).is_explored():
                     explored += 1
 
-        return int((explored / 300)*100)
+        return explored / 300 * 100
+    
+    def list_unexplored_cells(self) -> list:
+        # returns CELLS not coords
+        l = []
+        for row in self.cell_matrix:
+            for cell in row:
+                if not cell.is_explored():
+                    l.append(cell)
+        return l

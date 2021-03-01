@@ -34,7 +34,19 @@ class Agent:
         self.update_arena(obstacles_coord_list, no_obs_coord_list)
         target_coord = self.think()
         if target_coord == None:
-            message = f'No valid path!' if self.task == AgentTask.FAST else f'Exploration complete!'
+            # debug code
+            # MAP_ROW = 20
+            # MAP_COL = 15
+            # for y in range(MAP_ROW):
+            #     for x in range(MAP_COL):
+            #         if not self.arena.get_cell_at_coord(Coord(x,y)).is_explored():
+            #             print(x,' ',y)
+            # /debug code
+            if self.task == AgentTask.FAST:
+                message = f'No valid path!'
+            else:
+                message = f'Exploration complete!'
+                self.fill_remaining_unexplored_with_obstacles()
             move_command = None
         elif self.task == AgentTask.FAST and self.robot_info.get_coord().is_equal(self.end_coord):
             message = f'Fastest path complete!'
@@ -80,6 +92,13 @@ class Agent:
             turn_angle,
             displacement.manhattan_distance()
         )
-    
+
+    def fill_remaining_unexplored_with_obstacles(self):
+        # rationale, these unexplored cells are dangerous and are trapped by dangerous cells
+        # they are thus probably obstacles
+        for cell in self.arena.list_unexplored_cells():
+            cell.set_is_explored(True)
+            cell.set_is_obstacle(True)
+
     def get_arena(self) -> Arena:
         return self.arena
