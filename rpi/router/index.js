@@ -80,6 +80,9 @@ comms.on("data", ({ type, data }) => {
     robot.send(`${DIRECTION_MAP[direction]}${advance}`);
   } else if (type === "logsensors") {
     robot.send("QA");
+  } else if (type === "status") {
+    const { x, y, orientation } = data["robot_info"];
+    controller.send(`RobotPosition:${x},${y},${orientation}`);
   }
 });
 
