@@ -12,6 +12,19 @@ const logger = require("./logger.js")("index");
 controller.on("data", (data) => {
   if (data === "START") {
     comms.send({ type: "start" });
+  } else if (data === "FP" || data === "EX") {
+    comms.send({ type: "start" });
+  } else if (data.startsWith("WP:")) {
+    const match = data.match(/WP:(\d+),(\d+)/);
+    if (!match) {
+      logger.error(`Malformed WP: ${data}`);
+      return;
+    }
+
+    const x = parseInt(match[1], 10);
+    const y = parseInt(match[2], 10);
+
+    comms.send({ type: "waypoint", data: { x, y } });
   }
 });
 
