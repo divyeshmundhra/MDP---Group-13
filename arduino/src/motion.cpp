@@ -11,7 +11,8 @@
 typedef enum {
   IDLE,
   MOVE_COMMANDED,
-  MOVING
+  MOVING,
+  REPORT_SENSOR
 } state_t;
 
 typedef enum {
@@ -40,7 +41,6 @@ struct {
   uint16_t update_b : 1;
   uint16_t update_l : 1;
   uint16_t update_r : 1;
-  uint16_t update_sensors : 1;
 } display;
 
 pid_state_t state_tl;
@@ -155,9 +155,6 @@ ISR(TIMER2_COMPA_vect) {
 
   // distance travelled after which the robot will report it has moved a tile
   static uint16_t report_block_threshold;
-  // distance travelled after which the robot will report sensor data
-  static uint16_t report_sensor_threshold;
-  static bool has_reported_sensors = true;
 
   if (state == MOVING && !has_encoder_delta) {
     // encoder delta has slowed to almost zero - lets check if we should finish the move
@@ -174,7 +171,7 @@ ISR(TIMER2_COMPA_vect) {
           (diff_right > -kMax_encoder_error && diff_right < kMax_encoder_error)
         ) {
           display.move_distance_done = 1;
-          state = IDLE;
+          state = REPORT_SENSOR;
           axis_left.setPower(0);
           axis_right.setPower(0);
           return;
@@ -201,7 +198,6 @@ ISR(TIMER2_COMPA_vect) {
     }
     state = MOVING;
     report_block_threshold = 0;
-    has_reported_sensors = true;
     reached_max_power = false;
     straight_enabled = true;
   }
@@ -241,8 +237,6 @@ ISR(TIMER2_COMPA_vect) {
   // we treat report_block_threshold == 0 as a "initialise the value" condition
   // so that we don't have to duplicate the logic for incrementing dist_actual into the MOVE_COMMANDED handler
   if (encoder_left > report_block_threshold || report_block_threshold == 0) {
-    uint16_t pReport_block_threshold = report_block_threshold;
-
     if (report_block_threshold > 0) {
       switch(move_dir) {
         case FORWARD:
@@ -265,24 +259,6 @@ ISR(TIMER2_COMPA_vect) {
     } else {
       report_block_threshold = kReport_distance;
     }
-
-    // if we will eventually travel fully past this block, delay logging the sensors
-    // until we move past it by kReport_distance_offset to get a more accurate reading
-    // use the previous threshold value if already initialised, else freshly initialised value
-    uint16_t base_threshold = pReport_block_threshold > 0 ? pReport_block_threshold : report_block_threshold;
-    uint16_t offset_target = base_threshold + kReport_distance_offset;
-
-    if (offset_target < target_left) {
-      report_sensor_threshold = offset_target;
-    } else {
-      report_sensor_threshold = base_threshold;
-    }
-    has_reported_sensors = false;
-  }
-
-  if (!has_reported_sensors && encoder_left > report_sensor_threshold) {
-    display.update_sensors = 1;
-    has_reported_sensors = true;
   }
 }
 
@@ -352,14 +328,6 @@ void start_motion_obstacle(uint16_t distance) {
 }
 
 void parse_next_move() {
-  static state_t pState = IDLE;
-
-  if (pState != state) {
-    if (state == IDLE) {
-      Serial.println("move done");
-    }
-  }
-
   if (num_moves == 0 || state != IDLE) {
     return;
   }
@@ -494,8 +462,26 @@ bool log_motion = false;
 bool parse_moves = true;
 
 void loop_motion() {
+  static state_t pState = IDLE;
+  static uint32_t report_delay_start = 0;
+
+  if (pState != state) {
+    if (state == IDLE) {
+      Serial.println("move done");
+    } else if (state == REPORT_SENSOR) {
+      report_delay_start = millis();
+    }
+
+    pState = state;
+  }
+
   if (parse_moves) {
     parse_next_move();
+  }
+
+  if (state == REPORT_SENSOR && (millis() - report_delay_start) > kSensor_report_delay) {
+    log_all_sensors();
+    state = IDLE;
   }
 
   if (log_motion) {
@@ -557,9 +543,5 @@ void loop_motion() {
   if (display.update_r) {
     Serial.println(F("$UR"));
     display.update_r = 0;
-  }
-  if (display.update_sensors) {
-    log_all_sensors();
-    display.update_sensors = 0;
   }
 }

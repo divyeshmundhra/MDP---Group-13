@@ -60,6 +60,8 @@ static bool parse_buf() {
   } else if (cmd == 'Q') {
     if (cmd1 == 'A') {
       log_all_sensors_art();
+    } else if (cmd1 == 'a') {
+      log_all_sensors();
     } else {
       log_sensor(val);
     }
