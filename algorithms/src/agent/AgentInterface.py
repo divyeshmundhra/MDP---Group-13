@@ -76,8 +76,6 @@ class AgentInterface:
             self.tx.send_json(turn_json)
         if advance_json:
             self.tx.send_json(advance_json)
-        
-        # self.update_simulation_display()
 
     def parse_init_data(self, init_data):
         assert(init_data['type'] == 'init')
@@ -196,17 +194,14 @@ class AgentInterface:
             num_pad_bits = 8 - len(obstacle_bin_str) % 8
             obstacle_bin_str += "0" * num_pad_bits 
 
-        if explored_bin_str:
-            explored_hex_str = f"{int(explored_bin_str, 2):X}"
-        else:
-            explored_hex_str = "0" * 76
+        explored_hex_str = f"{int(explored_bin_str, 2):X}" # explored bin string is never empty (only 0s)
 
         if obstacle_bin_str:
             obstacle_hex_str = f"{int(obstacle_bin_str, 2):X}"
             num_pad_bits = math.ceil(len(obstacle_bin_str) / 4) - len(obstacle_hex_str)
             padded_obstacle_hex_str = "0" * num_pad_bits + obstacle_hex_str
         else:
-            padded_obstacle_hex_str = "0" * len(explored_hex_str)
+            padded_obstacle_hex_str = ""
 
         return explored_hex_str, padded_obstacle_hex_str
     
