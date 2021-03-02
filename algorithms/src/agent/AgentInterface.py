@@ -2,9 +2,11 @@ import sys, os, time, json, math
 import zmq
 path_of_directory_head = os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))))
 sys.path.append(path_of_directory_head)
+import pygame
 from src.agent.SensorParser import SensorParser
 from src.agent.agent import Agent
 from src.agent.agent import AgentOutput
+from src.simulator.SimulationDisplay import SimulationDisplay
 from src.dto.RobotInfo import RobotInfo
 from src.dto.coord import Coord
 from src.dto.constants import AgentTask, START_COORD, END_COORD, WAYPOINT, START_ORIENTATION, MAP_COL, MAP_ROW
@@ -13,6 +15,12 @@ from src.dto.MoveCommand import MoveCommand
 class AgentInterface:
     def __init__(self):
         self.agent = None
+        # display robot internal representation of arena
+        pygame.init()
+        self.sim_display = None
+        pygame.display.set_caption('arena simulator')
+        self.robot_sprite = None
+        # connection to rpi
         self.context = zmq.Context()
         self.rx = self.context.socket(zmq.SUB) # pylint: disable=no-member
         self.rx.connect("tcp://192.168.13.1:3000")
@@ -32,12 +40,14 @@ class AgentInterface:
                 self.step(None) # start signal doesn't come with sensor data
             elif data['type'] == 'init':
                 self.init(data)
-            print('loop ', i)
+            print('received message ', i)
             i += 1
 
     def init(self, init_data):
         arena_string, robot_info, agent_task, end_coord, waypoint = self.parse_init_data(init_data)
         self.agent = Agent(arena_string, robot_info, agent_task, end_coord, waypoint)
+        self.sim_display = SimulationDisplay(robot_info)
+        self.update_simulation_display()
 
     def step(self, step_data):
         # feed agent percepts
@@ -45,15 +55,17 @@ class AgentInterface:
         print(f'{coord.get_x()}, {coord.get_y()}, {self.agent.get_robot_info().get_orientation().name}')
         robot_info = self.agent.get_robot_info()
         if step_data:
-            obstacles_coord_list, no_obs_coord_list = SensorParser.main_sensor_parser(step_data, robot_info)
+            obstacle_coord_list, no_obs_coord_list = SensorParser.main_sensor_parser(step_data, robot_info)
         else:
-            obstacles_coord_list, no_obs_coord_list = [], []
+            obstacle_coord_list, no_obs_coord_list = [], []
+        self.agent.calc_percepts(obstacle_coord_list, no_obs_coord_list)
+        self.update_simulation_display()
 
         # serialize agent status
         agent_status = self.serialize_agent_status(self.agent.get_robot_info(), self.agent.get_arena())
 
         # get agent output
-        agent_output = self.agent.step(obstacles_coord_list, no_obs_coord_list)
+        agent_output = self.agent.step()
 
         # parse agent output
         message, turn_json, advance_json = self.serialize_agent_output(agent_output)
@@ -66,11 +78,13 @@ class AgentInterface:
         if advance_json:
             self.tx.send_json(advance_json)
         
+        # self.update_simulation_display()
+
     def parse_init_data(self, init_data):
         assert(init_data['type'] == 'init')
         # arena string
         mdf_string = init_data['data']['arena']['P2'] # p1 string ignored since always FFFF..
-        arena_string = self.convert_mdf_to_binary(mdf_string)
+        arena_string = self.convert_mdf_to_binary(mdf_string) if init_data['data']['task'] == 'EX' else None
 
         # robot info
         robot_info = RobotInfo(START_COORD, START_ORIENTATION)
@@ -183,11 +197,17 @@ class AgentInterface:
             num_pad_bits = 8 - len(obstacle_bin_str) % 8
             obstacle_bin_str += "0" * num_pad_bits 
 
-        explored_hex_str = f"{int(explored_bin_str, 2):X}"
+        if explored_bin_str:
+            explored_hex_str = f"{int(explored_bin_str, 2):X}"
+        else:
+            explored_hex_str = "0" * 76
 
-        obstacle_hex_str = f"{int(obstacle_bin_str, 2):X}"
-        num_pad_bits = math.ceil(len(obstacle_bin_str) / 4) - len(obstacle_hex_str)
-        padded_obstacle_hex_str = "0" * num_pad_bits + obstacle_hex_str
+        if obstacle_bin_str:
+            obstacle_hex_str = f"{int(obstacle_bin_str, 2):X}"
+            num_pad_bits = math.ceil(len(obstacle_bin_str) / 4) - len(obstacle_hex_str)
+            padded_obstacle_hex_str = "0" * num_pad_bits + obstacle_hex_str
+        else:
+            padded_obstacle_hex_str = "0" * len(explored_hex_str)
 
         return explored_hex_str, padded_obstacle_hex_str
     
@@ -207,5 +227,10 @@ class AgentInterface:
         reordered = lines[::-1]
         readmap_final = "\n".join(reordered)
         return readmap_final
+
+    def update_simulation_display(self):
+        seen_arena = self.agent.get_arena()
+        self.sim_display.draw(seen_arena, self.agent.get_robot_info())
+        pygame.display.update()
 
 AgentInterface().main()
