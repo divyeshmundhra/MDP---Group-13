@@ -97,7 +97,12 @@ void loop_sensors() {
 }
 
 void log_sensor(uint8_t i) {
-  if (i == 0 || i > 6) {
+  if (i == 0 || i > 16) {
+    return;
+  }
+
+  if (i >= 11 && i <= 16) {
+    Serial.println(adc_val[i - 10 - 1]);
     return;
   }
 
