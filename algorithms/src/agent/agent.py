@@ -52,9 +52,12 @@ class Agent:
             else:
                 message = f'Exploration complete!'
                 self.fill_remaining_unexplored_with_obstacles()
-                explorationDoneAlgo = FastestPathAlgo()
-                next_step = explorationDoneAlgo.get_next_step(self.arena,self.robot_info,START_COORD, None)
-                move_command = self.calculate_move(next_step)
+                if self.robot_info.get_coord().is_equal(START_COORD):
+                    # avoid navigating to same square (and crash program) when already at start coord
+                    move_command = None
+                else:
+                    next_step = FastestPathAlgo().get_next_step(self.arena,self.robot_info,START_COORD, None)
+                    move_command = self.calculate_move(next_step)
         elif self.task == AgentTask.FAST and self.robot_info.get_coord().is_equal(self.end_coord):
             message = f'Fastest path complete!'
             move_command = None
@@ -69,7 +72,7 @@ class Agent:
         )
 
     def update_arena(self, obstacles_coord_list: list, no_obs_coord_list: list) -> None:
-        self.mark_robot_visisted_cells(self.robot_info.get_coord)
+        self.mark_robot_visisted_cells(self.robot_info.get_coord())
         for coord in obstacles_coord_list:
             # mark seen obstacles as explored
             cell = self.arena.get_cell_at_coord(coord)
