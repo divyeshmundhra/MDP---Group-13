@@ -25,8 +25,8 @@ class SensorInputSimulation:
         for sensor in SENSOR_CONSTANTS.values():
             sensor_abs_degree = (sensor['direction'] + OT.orientation_to_degree[orientation]) % 360
             displacement_per_step = OT.orientation_to_unit_displacement(OT.degree_to_orientation[sensor_abs_degree])
-            
-            cil = self.get_coords_in_line(sensor['displacement'], displacement_per_step, sensor['range'])
+            sensor_displacement_key = 'displacement_'+str(orientation.value) # key changes based on orientation of robot
+            cil = self.get_coords_in_line(sensor[sensor_displacement_key], displacement_per_step, sensor['range'])
             self.update_explored_coord_lists(cil)
 
         return self.obstacles_coord_list, self.no_obs_coord_list
