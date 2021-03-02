@@ -76,8 +76,6 @@ class AgentInterface:
             self.tx.send_json(turn_json)
         if advance_json:
             self.tx.send_json(advance_json)
-        
-        # self.update_simulation_display()
 
     def parse_init_data(self, init_data):
         assert(init_data['type'] == 'init')
