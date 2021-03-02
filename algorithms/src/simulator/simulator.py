@@ -3,7 +3,6 @@ path_of_directory_head = os.path.abspath(os.path.dirname(os.path.abspath(os.path
 sys.path.append(path_of_directory_head)
 from src.dto.ArenaStringParser import ArenaStringParser
 from src.dto.arena import Arena
-from src.simulator.robot_sprite import RobotSprite
 import pygame
 from src.dto.constants import *
 from src.dto.coord import Coord
@@ -24,7 +23,6 @@ class Simulator:
 
         # data
         self.robot_info = None
-        self.robot_sprite = None
         self.agent = None
         self.arena = None
     

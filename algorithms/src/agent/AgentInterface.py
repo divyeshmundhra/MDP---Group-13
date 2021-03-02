@@ -19,7 +19,6 @@ class AgentInterface:
         pygame.init()
         self.sim_display = None
         pygame.display.set_caption('arena simulator')
-        self.robot_sprite = None
         # connection to rpi
         self.context = zmq.Context()
         self.rx = self.context.socket(zmq.SUB) # pylint: disable=no-member
