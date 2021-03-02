@@ -24,9 +24,9 @@ class SensorParser():
             string1 = 'displacement_'+str(orientation.value)
             displacement_per_step = OT.orientation_to_unit_displacement(
                 OT.degree_to_orientation[sensor_abs_degree])
-            obstacleList.append(SensorParser.individual_sensor_parser(
+            obstacleList.extend(SensorParser.individual_sensor_parser(
                 cur_coord, val[string1], displacement_per_step, sensor_data[key], val['range'])[0])
-            exploredList.append(SensorParser.individual_sensor_parser(
+            exploredList.extend(SensorParser.individual_sensor_parser(
                 cur_coord, val[string1], displacement_per_step, sensor_data[key], val['range'])[1])
             i += 1
         # for item in obstacleList:

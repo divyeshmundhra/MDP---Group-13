@@ -10,12 +10,11 @@ from src.dto.ArenaStringParser import ArenaStringParser
 from src.agent.FastestPathAlgo import FastestPathAlgo
 from src.agent.ExplorationAlgo import ExplorationAlgo
 
-from src.dto.constants import AgentTask, START_COORD
+from src.dto.constants import AgentTask, START_COORD, Orientation
 
 
 class Agent:
     def __init__(self, arena_string: str, robot_info: RobotInfo, task: AgentTask, end_coord: Coord, waypoint_coord: Coord):
-        self.arena = ArenaStringParser.parse_arena_string(arena_string)
         self.robot_info = robot_info
         self.task = task # task = enum: fastest path or exploration
         self.end_coord = end_coord
@@ -24,18 +23,20 @@ class Agent:
         self.algo = None # initialized 3 lines below
 
         if self.task == AgentTask.FAST:
+            self.arena = ArenaStringParser.parse_arena_string(arena_string)
             self.algo = FastestPathAlgo()
             self.arena.set_all_explored()
         else:
+            self.arena = Arena()
             self.algo = ExplorationAlgo()
             self.reached_waypoint = True
-
-    def step(self, obstacles_coord_list: list, no_obs_coord_list: list) -> AgentOutput:
+    def calc_percepts(self, obstacles_coord_list: list, no_obs_coord_list: list) -> None:
         if self.task == AgentTask.EXPLORE:
             self.update_arena(obstacles_coord_list, no_obs_coord_list)
         elif not self.reached_waypoint and self.robot_info.get_coord().is_equal(self.waypoint_coord):
             self.reached_waypoint = True
 
+    def step(self) -> AgentOutput:
         target_coord = self.think()
         if target_coord == None:
             # debug code
@@ -115,10 +116,11 @@ class Agent:
             cell.set_is_dangerous(True)
 
     def mark_robot_visisted_cells(self,center_value):
-        self.arena.get_cell_at_coord(center_value).set_is_visited(True)
-        adj8 = self.arena.get_eight_adjacent_in_arena(center_value)
-        for cd in adj8:
+        adj = self.arena.get_eight_adjacent_in_arena(center_value)
+        adj.append(center_value)
+        for cd in adj:
             self.arena.get_cell_at_coord(cd).set_is_visited(True)
+            self.arena.get_cell_at_coord(cd).set_is_explored(True)
 
     def get_arena(self) -> Arena:
         return self.arena

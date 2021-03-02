@@ -52,7 +52,7 @@ class TimeCosts:
 
 SENSOR_CONSTANTS = {
     "FORWARD_FRONT_LEFT": {
-        "range": 3,
+        "range": 6,
         "direction": 0,  # degrees from forward face of robot
         "displacement_0": Coord(-1, 1),
         "displacement_1": Coord(1, 1),
@@ -60,7 +60,7 @@ SENSOR_CONSTANTS = {
         "displacement_3": Coord(-1, -1),
     },
     "FORWARD_FRONT_MID": {
-        "range": 3,
+        "range": 6,
         "direction": 0,
         "displacement_0": Coord(0, 1),
         "displacement_1": Coord(1, 0),
@@ -68,7 +68,7 @@ SENSOR_CONSTANTS = {
         "displacement_3": Coord(-1, 0)
     },
     "FORWARD_FRONT_RIGHT": {
-        "range": 3,
+        "range": 6,
         "direction": 0,
         "displacement_0": Coord(1, 1),
         "displacement_1": Coord(1, -1),
@@ -76,7 +76,7 @@ SENSOR_CONSTANTS = {
         "displacement_3": Coord(-1, 1)
     },
     "LEFT_FRONT": {
-        "range": 3,
+        "range": 6,
         "direction": 270,
         "displacement_0": Coord(-1, 1),
         "displacement_1": Coord(1, 1),
@@ -84,7 +84,7 @@ SENSOR_CONSTANTS = {
         "displacement_3": Coord(-1, -1)
     },
     "RIGHT_FRONT": {
-        "range": 3,
+        "range": 6,
         "direction": 90,
         "displacement_0": Coord(1, 1),
         "displacement_1": Coord(1, -1),
@@ -92,7 +92,7 @@ SENSOR_CONSTANTS = {
         "displacement_3": Coord(-1, 1)
     },
     "LEFT_REAR": {
-        "range": 3,
+        "range": 6,
         "direction": 270,
         "displacement_0": Coord(-1, -1),
         "displacement_1": Coord(-1, 1),
