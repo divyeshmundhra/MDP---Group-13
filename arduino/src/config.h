@@ -67,20 +67,20 @@ const int16_t kMO_min_output = -400;
 // same order as sensor_position_t
 const double kSensor_constants[6][3] = {
   {-108.795, 1030808.35, 627.38},  // FRONT_FRONT_MID
-  {-1589, 3420000, 408.6}, // FRONT_FRONT_RIGHT
-  {-177.4, 1130000, 647.2},   // LEFT_REAR
-  {-1450, 3169000, 389.3},  // FRONT_FRONT_LEFT
-  {-227.2, 1336000, 674.2},   // LEFT_FRONT
+  {-253.4, 2186000, 455.2}, // FRONT_FRONT_RIGHT
+  {-104.83, 797470.16, -44.35},   // LEFT_REAR
+  {-253.4, 2186000, 455.2},  // FRONT_FRONT_LEFT
+  {-104.83, 797470.16, -44.35},   // LEFT_FRONT
   {-180.8, 1222000, 874.4}      // RIGHT_FRONT
 };
 
 // maximum valid distance reportable by each sensor
 const int16_t kSensor_max[6] = {
-  800,
-  650,
-  600,
   700,
+  900,
   600,
+  900,
+  650,
   600
 };
 
@@ -92,11 +92,11 @@ const int16_t kSensor_max[6] = {
 */
 const int16_t kSensor_thresholds[6][kSensor_threshold_count] = {
   // 0    1    2    3    4    5    6    7    8    9
-  { 100, 200, 300, 400, 800, INT16_MAX, INT16_MAX, INT16_MAX, INT16_MAX, INT16_MAX },
-  { 100, 200, 300, 400, 450, 550, 700, 800, 900, 1000 },
+  { 100, 200, 300, 400, 550, INT16_MAX, INT16_MAX, INT16_MAX, INT16_MAX, INT16_MAX },
+  { 80, 180, 300, 400, 500, 600, 700, 800, 900, 1000 },
   { 100, 200, 300, 400, 500, 650, 700, 800, 900, 1000 },
-  { 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 },
-  { 100, 200, 300, 400, 500, 650, 700, 800, 900, 1000 },
+  { 80, 180, 300, 400, 500, 600, 700, 800, 900, 1000 },
+  { 120, 250, 350, 450, 550, 630, INT16_MAX, INT16_MAX, INT16_MAX, INT16_MAX },
   { 100, 200, 300, 400, 500, 650, 750, 800, 900, 1000 },
 };
 
