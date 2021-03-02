@@ -31,6 +31,18 @@ typedef struct {
   int32_t last_input = 0;
 } pid_state_t;
 
+// stores flags for printing of a particular log statement
+struct {
+  uint16_t move_distance_done : 1;
+  uint16_t move_obstacle_done : 1;
+  uint16_t decelerating : 1;
+  uint16_t update_f : 1;
+  uint16_t update_b : 1;
+  uint16_t update_l : 1;
+  uint16_t update_r : 1;
+  uint16_t update_sensors : 1;
+} display;
+
 pid_state_t state_tl;
 void resetControllerState(pid_state_t *state, int32_t input) {
   state->integral = 0;
@@ -161,7 +173,7 @@ ISR(TIMER2_COMPA_vect) {
           (diff_left > -kMax_encoder_error && diff_left < kMax_encoder_error) && 
           (diff_right > -kMax_encoder_error && diff_right < kMax_encoder_error)
         ) {
-          Serial.println("move distance done");
+          display.move_distance_done = 1;
           state = IDLE;
           axis_left.setPower(0);
           axis_right.setPower(0);
@@ -171,7 +183,7 @@ ISR(TIMER2_COMPA_vect) {
         // OBSTACLE terminates when the sensor distance is really close to target
         int16_t diff_err = sensor_distances[FRONT_FRONT_MID] - target_obstacle;
         if (diff_err > -kMax_obstacle_error && diff_err < kMax_obstacle_error) {
-          Serial.println("move obstacle done");
+          display.move_obstacle_done = 1;
           state = IDLE;
           axis_left.setPower(0);
           axis_right.setPower(0);
@@ -206,7 +218,7 @@ ISR(TIMER2_COMPA_vect) {
       reached_max_power = true;
     } else if (reached_max_power) {
       reached_max_power = false;
-      Serial.println("decelerating");
+      display.decelerating = 1;
       // combine_next_move();
     }
   } else if (move_type == OBSTACLE) {
@@ -234,19 +246,19 @@ ISR(TIMER2_COMPA_vect) {
     if (report_block_threshold > 0) {
       switch(move_dir) {
         case FORWARD:
-          Serial.println("$UF");
+          display.update_f = 1;
           report_block_threshold += kBlock_distance;
           break;
         case REVERSE:
-          Serial.println("$UB");
+          display.update_b = 1;
           report_block_threshold += kBlock_distance;
           break;
         case LEFT:
-          Serial.println("$UL");
+          display.update_l = 1;
           report_block_threshold += kTicks_per_45_degrees * 2;
           break;
         case RIGHT:
-          Serial.println("$UR");
+          display.update_r = 1;
           report_block_threshold += kTicks_per_45_degrees * 2;
           break;
       }
@@ -269,8 +281,7 @@ ISR(TIMER2_COMPA_vect) {
   }
 
   if (!has_reported_sensors && encoder_left > report_sensor_threshold) {
-    log_all_sensors();
-    log_all_sensors_art();
+    display.update_sensors = 1;
     has_reported_sensors = true;
   }
 }
@@ -517,5 +528,38 @@ void loop_motion() {
 
       last_print = cur_time;
     }
+  }
+
+  if (display.move_distance_done) {
+    Serial.println(F("move distance done"));
+    display.move_distance_done = 0;
+  }
+  if (display.move_obstacle_done) {
+    Serial.println(F("move obstacle done"));
+    display.move_obstacle_done = 0;
+  }
+  if (display.decelerating) {
+    Serial.println(F("decelerating"));
+    display.decelerating = 0;
+  }
+  if (display.update_f) {
+    Serial.println(F("$UF"));
+    display.update_f = 0;
+  }
+  if (display.update_b) {
+    Serial.println(F("$UB"));
+    display.update_b = 0;
+  }
+  if (display.update_l) {
+    Serial.println(F("$UL"));
+    display.update_l = 0;
+  }
+  if (display.update_r) {
+    Serial.println(F("$UR"));
+    display.update_r = 0;
+  }
+  if (display.update_sensors) {
+    log_all_sensors();
+    display.update_sensors = 0;
   }
 }
