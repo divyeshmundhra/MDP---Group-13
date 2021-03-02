@@ -10,9 +10,9 @@ from src.agent import DecisionNode
 
 class FastestPathAlgo():
     def __init__(self):
-        pass
+        self.full_path = False
 
-    def get_next_step(self, arena: Arena, robot_info: RobotInfo, end: Coord, waypoint: Coord) -> Coord:
+    def get_next_step(self, arena: Arena, robot_info: RobotInfo, end: Coord, waypoint: Coord):
         start = robot_info.get_coord()
         current_orientation = robot_info.get_orientation()
         if not arena.coord_is_valid(end):
@@ -80,11 +80,25 @@ class FastestPathAlgo():
                 return None
             cur = fringe_nodes.get()[-1]
 
+        cur_list = []
         while cur.get_parent() and not cur.get_parent().get_coord().is_equal(start):
+            cur_list.append(cur.get_coord())
             cur = cur.get_parent()
+        cur_list.append(cur.get_coord())
 
-        return cur.get_coord()
+        if self.full_path:
+            cur_list.reverse()
+            return cur_list
+        else:
+            return cur.get_coord()
 
     @staticmethod
     def heuristic(cur: Coord, target: Coord) -> int:
         return target.subtract(cur).manhattan_distance()
+
+
+    def get_path_coords_list(self, arena: Arena, robot_info: RobotInfo, end: Coord, waypoint: Coord) -> list:
+        self.full_path = True
+        cur_list = self.get_next_step(arena, robot_info, end, waypoint)
+        
+        return cur_list

@@ -25,6 +25,7 @@ class Simulator:
         self.robot_info = None
         self.agent = None
         self.arena = None
+        self.count = 0
     
     def init(self, agent_task: AgentTask, arena_string: str, waypoint: Coord):
         self.robot_info = RobotInfo(START_COORD, Orientation.NORTH)
@@ -47,11 +48,22 @@ class Simulator:
         for coord in no_obs_coord_list:
             self.arena.get_cell_at_coord(coord).set_is_explored(True)
         self.arena.get_cell_at_coord(self.robot_info.get_coord()).set_is_visited(True)
-        # get agent next move
-        self.agent.calc_percepts(obstacle_coord_list, no_obs_coord_list)
-        agent_output = self.agent.step()
-        print(agent_output.get_message())
-        move_command = agent_output.get_move_command()
+        
+        if self.fullpath == -1:
+            # get agent next move
+            self.agent.calc_percepts(obstacle_coord_list, no_obs_coord_list)
+            agent_output = self.agent.step(obstacle_coord_list, no_obs_coord_list)
+            print(agent_output.get_message())
+            move_command = agent_output.get_move_command()
+        else:
+            if self.count >= len(self.agent_output_list):
+                move_command = None
+            else:
+                agent_output = self.agent_output_list[self.count]
+                print(agent_output.get_message())
+                move_command = agent_output.get_move_command()
+                self.count += 1
+
         if move_command == None:
             self.quit()
 
@@ -75,6 +87,7 @@ class Simulator:
         self.speed = 1 / float(input("Enter robot speed (steps per second) (-1 for default): "))
         self.coverage = int(input("Enter coverage limit (%) (-1 for default): "))
         self.timelimit = float(input("Enter time limit (sec) (-1 for default): "))
+        self.fullpath = int(input("Full path? (-1 for step, 0 for full path): "))
 
         if self.coverage < 0:
             self.coverage = 100
@@ -88,6 +101,9 @@ class Simulator:
         t = Timer(self.timelimit, self.timeout)
         self.time_ran_out = False
         t.start()
+
+        if self.fullpath == 0:
+            self.agent_output_list = self.agent.get_move_command_as_list()
 
         i = 0
         while i<200:
