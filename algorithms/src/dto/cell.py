@@ -11,27 +11,32 @@ class Cell:
 
     def set_coord(self, coord):
         self.coord = coord
+        return self
 
     def is_explored(self):
         return self.explored
 
     def set_is_explored(self, explored):
         self.explored = explored
+        return self
 
     def is_visited(self):
         return self.visited
 
     def set_is_visited(self, visited):
         self.visited = visited
+        return self
 
     def is_obstacle(self):
         return self.obstacle
 
     def set_is_obstacle(self, obstacle):
         self.obstacle = obstacle
+        return self
 
     def is_dangerous(self):
         return self.danger
 
     def set_is_dangerous(self, danger):
         self.danger = danger
+        return self
