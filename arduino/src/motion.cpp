@@ -270,6 +270,7 @@ ISR(TIMER2_COMPA_vect) {
 
   if (!has_reported_sensors && encoder_left > report_sensor_threshold) {
     log_all_sensors();
+    log_all_sensors_art();
     has_reported_sensors = true;
   }
 }

@@ -4,6 +4,7 @@
 #include "physical.h"
 #include "sensors.h"
 #include "config.h"
+#include "board.h"
 
 static char buf[kParser_buf_size + 1]; // + 1 for NULL character
 static uint8_t buf_count = 0;
@@ -55,6 +56,12 @@ static bool parse_buf() {
       start_motion_distance(RIGHT, val);
     } else {
       start_motion_distance(RIGHT, angleToTicks(val));
+    }
+  } else if (cmd == 'Q') {
+    if (cmd1 == 'A') {
+      log_all_sensors_art();
+    } else {
+      log_sensor(val);
     }
   } else if (cmd == 'A') {
     start_align();

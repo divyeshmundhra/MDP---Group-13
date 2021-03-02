@@ -130,3 +130,35 @@ void log_all_sensors() {
   }
   Serial.println();
 }
+
+void log_sensor_nicely(int16_t i) {
+  if (i != -1) {
+    Serial.print(i, HEX);
+  } else {
+    Serial.print("i");
+  }
+}
+
+void log_all_sensors_art() {
+  /*
+    logs sensors relative to their physical position like
+    1a5
+    2 5
+       
+    2
+  */
+  Serial.println("Sensors:");
+
+  log_sensor_nicely(sensor_obstacles[FRONT_FRONT_LEFT]);
+  log_sensor_nicely(sensor_obstacles[FRONT_FRONT_MID]);
+  log_sensor_nicely(sensor_obstacles[FRONT_FRONT_RIGHT]);
+  Serial.println();
+
+  log_sensor_nicely(sensor_obstacles[LEFT_FRONT]);
+  Serial.print(" ");
+  log_sensor_nicely(sensor_obstacles[RIGHT_FRONT]);
+
+  Serial.println("   ");
+  log_sensor_nicely(sensor_obstacles[LEFT_REAR]);
+  Serial.println();
+}
