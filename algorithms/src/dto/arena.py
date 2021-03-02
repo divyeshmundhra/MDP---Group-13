@@ -30,6 +30,8 @@ class Arena:
                 coord = Coord(x, y)
                 self.cell_matrix[coord.get_x()][coord.get_y()] = Cell(coord)
 
+        self.mark_border_cells_dangerous()
+
     def coord_is_valid(self, coord: Coord) -> bool:
         return coord.get_x() in range(MAP_COL) and coord.get_y() in range(MAP_ROW)
 
@@ -101,8 +103,15 @@ class Arena:
                 if not cell.is_explored():
                     l.append(cell)
         return l
-    
+
     def set_all_explored(self) -> None:
         for row in self.cell_matrix:
             for cell in row:
                 cell.set_is_explored(True)
+
+    def mark_border_cells_dangerous(self) -> None:
+        for y in range(MAP_ROW):
+            for x in range(MAP_COL):
+                if y in [0,MAP_ROW-1] or x in [0,MAP_COL-1]:
+                    # cells at edge of arena are too close to the walls
+                    self.get_cell_at_coord(Coord(x,y)).set_is_dangerous(True)
