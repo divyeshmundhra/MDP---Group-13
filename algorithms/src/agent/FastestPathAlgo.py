@@ -98,5 +98,4 @@ class FastestPathAlgo():
 
     def get_path_coords_list(self, arena: Arena, robot_info: RobotInfo, end: Coord, waypoint: Coord) -> list:
         cur_list = self.get_next_step(arena, robot_info, end, waypoint, full_path=True)
-
         return cur_list

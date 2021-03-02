@@ -15,6 +15,7 @@ from src.dto.MoveCommand import MoveCommand
 class AgentInterface:
     def __init__(self):
         self.agent = None
+        self.q_size = 0 # queue of sent moves pending sensor response
         # display robot internal representation of arena
         pygame.init()
         self.sim_display = None
@@ -33,49 +34,85 @@ class AgentInterface:
         while True:
             data = self.rx.recv_json()
             # print(data)
+
+            print('qsize ', self.q_size)
             if data['type'] == 'sensor':
-                self.step(data)
+                self.process_percepts(data)
+                if self.q_size == 0:
+                    self.step()
+                print('got sensor data')
+            elif data['type'] == 'move_done':
+                self.q_size -= 1
+                print('got move_done')
             elif data['type'] == 'start':
-                self.step(None) # start signal doesn't come with sensor data
+                self.q_size = 0
+                self.step()
+                print('got start')
             elif data['type'] == 'init':
                 self.init(data)
+                self.q_size = 1
+                print('got init')
             print('received message ', i)
             i += 1
 
     def init(self, init_data):
         arena_string, robot_info, agent_task, end_coord, waypoint = self.parse_init_data(init_data)
         self.agent = Agent(arena_string, robot_info, agent_task, end_coord, waypoint)
+        self.agent.mark_robot_visisted_cells(self.agent.get_robot_info().get_coord()) # temp solution
         self.sim_display = SimulationDisplay(robot_info)
         self.update_simulation_display()
-
-    def step(self, step_data):
+    
+    def process_percepts(self, percept_data):
         # feed agent percepts
-        coord = self.agent.get_robot_info().get_coord()
-        print(f'{coord.get_x()}, {coord.get_y()}, {self.agent.get_robot_info().get_orientation().name}')
-        robot_info = self.agent.get_robot_info()
-        if step_data:
-            obstacle_coord_list, no_obs_coord_list = SensorParser.main_sensor_parser(step_data, robot_info)
+        print('\n\nprocessing percepts')
+        if self.q_size == 0:
+            robot_info = self.agent.get_expected_robot_info()
+        elif self.q_size == 1:
+            ri_old = self.agent.get_robot_info()
+            ri_new = self.agent.get_expected_robot_info()
+            robot_info = RobotInfo(ri_old.get_coord(), ri_new.get_orientation() if ri_new else ri_old.get_orientation())
+        else:
+            raise Exception(f'move q-size: {self.q_size}\n2 last moves were not executed yet! \
+                Is there desync between bot and algo?')
+
+        if percept_data:
+            obstacle_coord_list, no_obs_coord_list = SensorParser.main_sensor_parser(percept_data, robot_info)
         else:
             obstacle_coord_list, no_obs_coord_list = [], []
-        self.agent.calc_percepts(obstacle_coord_list, no_obs_coord_list)
+        print('obstacle list: ')
+        obstacle_str = ''
+        for coord in obstacle_coord_list:
+            obstacle_str += f'({coord.get_x()}, {coord.get_y()}), '
+        print(obstacle_str)
+        self.agent.calc_percepts(obstacle_coord_list, no_obs_coord_list, self.q_size)
         self.update_simulation_display()
 
         # serialize agent status
         agent_status = self.serialize_agent_status(self.agent.get_robot_info(), self.agent.get_arena())
+        self.tx.send_json(agent_status)
 
+    def step(self):
         # get agent output
         agent_output = self.agent.step()
+        if not agent_output.get_move_command().get_turn_angle() == 0: # NONE TYPE HAS NO ATTRIBUTE GET TURN ANGLE
+            self.q_size += 2
+        else:
+            self.q_size += 1
+        self.log_agent_expected_move()
 
         # parse agent output
         message, turn_json, advance_json = self.serialize_agent_output(agent_output)
 
         # send messages
         self.tx.send_json(message)
-        self.tx.send_json(agent_status)
         if turn_json:
             self.tx.send_json(turn_json)
         if advance_json:
             self.tx.send_json(advance_json)
+
+    def log_agent_expected_move(self):
+        coord = self.agent.get_expected_robot_info().get_coord()
+        print(f'Go to {coord.get_x()}, {coord.get_y()}, facing {self.agent.get_expected_robot_info().get_orientation().name}')
 
     def parse_init_data(self, init_data):
         assert(init_data['type'] == 'init')
