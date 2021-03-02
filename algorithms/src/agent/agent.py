@@ -16,6 +16,7 @@ from src.dto.constants import AgentTask, START_COORD
 class Agent:
     def __init__(self, arena_string: str, robot_info: RobotInfo, task: AgentTask, end_coord: Coord, waypoint_coord: Coord):
         self.robot_info = robot_info
+        self.expected_robot_info = None # expected robot info after move if move succeeds
         self.task = task # task = enum: fastest path or exploration
         self.end_coord = end_coord
         self.waypoint_coord = waypoint_coord
@@ -30,23 +31,15 @@ class Agent:
             self.arena = Arena()
             self.algo = ExplorationAlgo()
             self.reached_waypoint = True
-    def calc_percepts(self, obstacles_coord_list: list, no_obs_coord_list: list) -> None:
+    def calc_percepts(self, obstacles_coord_list: list, no_obs_coord_list: list, move_q_size: int = 0) -> None:
         if self.task == AgentTask.EXPLORE:
-            self.update_arena(obstacles_coord_list, no_obs_coord_list)
+            self.update_arena(obstacles_coord_list, no_obs_coord_list, move_q_size)
         elif not self.reached_waypoint and self.robot_info.get_coord().is_equal(self.waypoint_coord):
             self.reached_waypoint = True
 
     def step(self) -> AgentOutput:
         target_coord = self.think()
         if target_coord == None:
-            # debug code
-            # MAP_ROW = 20
-            # MAP_COL = 15
-            # for y in range(MAP_ROW):
-            #     for x in range(MAP_COL):
-            #         if not self.arena.get_cell_at_coord(Coord(x,y)).is_explored():
-            #             print(x,' ',y)
-            # /debug code
             if self.task == AgentTask.FAST:
                 message = f'No valid path!'
                 move_command = None
@@ -66,13 +59,20 @@ class Agent:
             move_command = self.calculate_move(target_coord)
             message = f'Target: {target_coord.get_x()}, {target_coord.get_y()}, TURN: {move_command.get_turn_angle()} degs, then \
                 MOVE: {move_command.get_cells_to_advance()} cells forwards'
-        
+
         return AgentOutput(
             move_command,
             message
         )
 
-    def update_arena(self, obstacles_coord_list: list, no_obs_coord_list: list) -> None:
+    def update_arena(self, obstacles_coord_list: list, no_obs_coord_list: list, move_q_size: int) -> None:
+        # update real robot info
+        if self.expected_robot_info:
+            if move_q_size == 0:
+                # robot has finished move, set position to expected position after move
+                self.robot_info.set_coord(self.expected_robot_info.get_coord())
+            self.robot_info.set_orientation(self.expected_robot_info.get_orientation())
+
         self.mark_robot_visisted_cells(self.robot_info.get_coord())
         for coord in obstacles_coord_list:
             # mark seen obstacles as explored
@@ -98,9 +98,8 @@ class Agent:
         target_orientation = OT.displacement_to_orientation(displacement)
         turn_angle = OT.calc_degree_of_turn(self.robot_info.get_orientation(), target_orientation)
             
-        # update internal robot info
-        self.robot_info.set_coord(target_coord)
-        self.robot_info.set_orientation(target_orientation)
+        # update expected robot info
+        self.expected_robot_info = RobotInfo(target_coord, target_orientation)
 
         return MoveCommand(
             turn_angle,
@@ -127,3 +126,6 @@ class Agent:
 
     def get_robot_info(self) -> RobotInfo:
         return self.robot_info
+    
+    def get_expected_robot_info(self) -> RobotInfo:
+        return self.expected_robot_info
