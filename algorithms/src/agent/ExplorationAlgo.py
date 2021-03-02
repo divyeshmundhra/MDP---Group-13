@@ -27,7 +27,7 @@ class ExplorationAlgo():
             next_step = fp_algo.get_next_step(arena, robot_info, end=next_target, waypoint=None)
             if next_step:
                 break
-        
+
         if not next_step:
             # unexplored cells are inaccessible, probably an obstacle is falsely set
             raise Exception('ExplorationAlgo: unexplored cell(s) are inacessible')
@@ -85,7 +85,7 @@ class ExplorationAlgo():
                         break
                 if not seen:
                     q.append(adj)
-        
+
         return unexplored
 
     # def add_cardinal_unexplored_cells_to_stack(self) -> None:
