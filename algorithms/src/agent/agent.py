@@ -10,7 +10,7 @@ from src.dto.ArenaStringParser import ArenaStringParser
 from src.agent.FastestPathAlgo import FastestPathAlgo
 from src.agent.ExplorationAlgo import ExplorationAlgo
 
-from src.dto.constants import AgentTask, START_COORD, Orientation
+from src.dto.constants import AgentTask, START_COORD
 
 
 class Agent:
