@@ -131,11 +131,15 @@ void log_all_sensors() {
   Serial.println();
 }
 
-void log_sensor_nicely(int16_t i) {
-  if (i != -1) {
-    Serial.print(i, HEX);
+void log_sensor_nicely(uint8_t i) {
+  if (i == -1) {
+    Serial.write('i');
+  } else if (i < 10) {
+    Serial.write(0x30 + i);
   } else {
-    Serial.print("i");
+    // print as hex
+    // 55 + 10 corresponds to A, 55 + 11 = B, ...
+    Serial.write(55 + i);
   }
 }
 
@@ -152,13 +156,13 @@ void log_all_sensors_art() {
   log_sensor_nicely(sensor_obstacles[FRONT_FRONT_LEFT]);
   log_sensor_nicely(sensor_obstacles[FRONT_FRONT_MID]);
   log_sensor_nicely(sensor_obstacles[FRONT_FRONT_RIGHT]);
-  Serial.println();
+  Serial.write('\n');
 
   log_sensor_nicely(sensor_obstacles[LEFT_FRONT]);
-  Serial.print(" ");
+  Serial.write(' ');
   log_sensor_nicely(sensor_obstacles[RIGHT_FRONT]);
 
   Serial.println("   ");
   log_sensor_nicely(sensor_obstacles[LEFT_REAR]);
-  Serial.println();
+  Serial.write('\n');
 }
