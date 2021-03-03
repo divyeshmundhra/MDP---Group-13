@@ -62,7 +62,7 @@ class Robot extends EventEmitter {
   }
 
   send(data) {
-    this.sp.send(data.trim() + ":");
+    this.sp.send(data.trim() + "\n");
   }
 }
 
