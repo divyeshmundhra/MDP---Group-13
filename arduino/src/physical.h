@@ -19,7 +19,7 @@ const uint16_t kRobot_circumference = 3.14159 * kWheel_distance;
 #define angleToTicks(angle) (((uint32_t) angle) * kWheel_distance * kCount_per_rev / (360 * kWheel_diameter))
 
 // hardcode ticks per 45 degree rotation to allow for tuning
-const uint16_t kTicks_per_45_degrees = 772;
+const uint16_t kTicks_per_45_degrees = 765;
 
 // ticks to turn 45 degrees when F is combined with L/R
 const uint16_t kTicks_per_45_degrees_combined = 1500;
@@ -29,7 +29,7 @@ const uint16_t kTicks_per_45_degrees_combined = 1500;
 const uint16_t kSensor_side_front_rear_distance = 15 + 145 + 15;
 const uint16_t kSensor_side_center_distance = kSensor_side_front_rear_distance / 2;
 
-const uint16_t kBlock_distance = distanceToTicks(100);
+const uint16_t kBlock_distance = 1150;
 
 // distance of travel after which to report sensor values
 const uint16_t kReport_distance = 0.95 * kBlock_distance;

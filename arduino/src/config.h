@@ -8,7 +8,7 @@ const uint8_t kMin_motor_threshold = 16;
 
 // alpha for exponential filter used to smooth sensor data
 // [0-255], lower for more filtering
-const uint8_t kSensor_filter_alpha = 127;
+const uint8_t kSensor_filter_alpha = 180;
 
 // max axis acceleration/deceleration
 const int16_t kMax_axis_accel = 64;
@@ -27,6 +27,9 @@ const int8_t kMax_obstacle_error = 5;
 const int8_t kMax_encoder_diff_error = 5;
 // max error for wall align to be completed (mm)
 const int8_t kMax_align_error = 2;
+
+// time after a move to wait before reporting sensor values
+const int16_t kSensor_report_delay = 100;
 
 // parser buffer size
 // determines max length of command that can be sent
@@ -66,21 +69,21 @@ const int16_t kMO_min_output = -400;
 // each array corresponds to the constants for one sensor
 // same order as sensor_position_t
 const double kSensor_constants[6][3] = {
-  {-94.94, 748500, -19.02},  // FRONT_FRONT_MID
-  {-141.4, 1559000, -114.8}, // FRONT_FRONT_RIGHT
-  {-123.3, 707900, 11.64},   // LEFT_REAR
-  {-170.8, 1789000, 114.5},  // FRONT_FRONT_LEFT
-  {-123.3, 707900, 11.64},   // LEFT_FRONT
-  {-131, 821700, 137.6}      // RIGHT_FRONT
+  {-108.795, 1030808.35, 627.38},  // FRONT_FRONT_MID
+  {-253.4, 2186000, 455.2}, // FRONT_FRONT_RIGHT
+  {-104.83, 797470.16, -44.35},   // LEFT_REAR
+  {-253.4, 2186000, 455.2},  // FRONT_FRONT_LEFT
+  {-104.83, 797470.16, -44.35},   // LEFT_FRONT
+  {-180.8, 1222000, 874.4}      // RIGHT_FRONT
 };
 
 // maximum valid distance reportable by each sensor
 const int16_t kSensor_max[6] = {
-  600,
-  650,
-  600,
   700,
+  900,
   600,
+  900,
+  650,
   600
 };
 
@@ -92,14 +95,23 @@ const int16_t kSensor_max[6] = {
 */
 const int16_t kSensor_thresholds[6][kSensor_threshold_count] = {
   // 0    1    2    3    4    5    6    7    8    9
-  { 100, 200, 300, 400, 470, 550, 700, 800, 900, 1000 },
-  { 100, 200, 300, 400, 450, 550, 700, 800, 900, 1000 },
+  { 100, 200, 300, 400, 550, INT16_MAX, INT16_MAX, INT16_MAX, INT16_MAX, INT16_MAX },
+  { 80, 180, 300, 400, 500, 600, 700, 800, 900, 1000 },
   { 100, 200, 300, 400, 500, 650, 700, 800, 900, 1000 },
-  { 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 },
-  { 100, 200, 300, 400, 500, 650, 700, 800, 900, 1000 },
+  { 80, 180, 300, 400, 500, 600, 700, 800, 900, 1000 },
+  { 120, 250, 350, 450, 550, 630, INT16_MAX, INT16_MAX, INT16_MAX, INT16_MAX },
   { 100, 200, 300, 400, 500, 650, 750, 800, 900, 1000 },
 };
 
-const uint8_t kMovement_buffer_size = 8;
+const int8_t kSensor_offset[6] = {
+  0,
+  0,
+  0,
+  0,
+  18,
+  0
+};
+
+const uint8_t kMovement_buffer_size = 64;
 
 #endif

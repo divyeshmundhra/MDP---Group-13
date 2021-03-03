@@ -55,6 +55,8 @@ void setup_sensors() {
 void convert_sensor_data() {
   for(uint8_t i = 0; i < 6; i++) {
     sensor_distances[i] = (kSensor_constants[i][0] * adc_val[i] + kSensor_constants[i][1]) / (adc_val[i] + kSensor_constants[i][2]);
+    sensor_distances[i] += kSensor_offset[i];
+
     if (sensor_distances[i] < 0) {
       sensor_distances[i] = 0;
     }
@@ -67,7 +69,7 @@ void convert_sensor_data() {
 
     for (uint8_t u = 0; u < kSensor_threshold_count; u++) {
       if (sensor_distances[i] < kSensor_thresholds[i][u]) {
-        sensor_obstacles[i] = u;
+        sensor_obstacles[i] = 2 + u;
         break;
       }
     }
@@ -95,7 +97,12 @@ void loop_sensors() {
 }
 
 void log_sensor(uint8_t i) {
-  if (i == 0 || i > 6) {
+  if (i == 0 || i > 16) {
+    return;
+  }
+
+  if (i >= 11 && i <= 16) {
+    Serial.println(adc_val[i - 10 - 1]);
     return;
   }
 
@@ -112,13 +119,50 @@ void log_sensor(uint8_t i) {
 }
 
 void log_all_sensors() {
-  Serial.print("SENSOR ");
+  Serial.print("$SENSOR ");
   for(uint8_t i = 0; i < 6; i++) {
     if (sensor_obstacles[i] == -1) {
       Serial.print("i");
     } else {
       Serial.print(sensor_obstacles[i]);
     }
+    Serial.print("|");
   }
   Serial.println();
+}
+
+void log_sensor_nicely(int8_t i) {
+  if (i == -1) {
+    Serial.write('i');
+  } else if (i < 10) {
+    Serial.write(0x30 + i);
+  } else {
+    // print as hex
+    // 55 + 10 corresponds to A, 55 + 11 = B, ...
+    Serial.write(55 + i);
+  }
+}
+
+void log_all_sensors_art() {
+  /*
+    logs sensors relative to their physical position like
+    1a5
+    2 5
+       
+    2
+  */
+  Serial.println("Sensors:");
+
+  log_sensor_nicely(sensor_obstacles[FRONT_FRONT_LEFT]);
+  log_sensor_nicely(sensor_obstacles[FRONT_FRONT_MID]);
+  log_sensor_nicely(sensor_obstacles[FRONT_FRONT_RIGHT]);
+  Serial.write('\n');
+
+  log_sensor_nicely(sensor_obstacles[LEFT_FRONT]);
+  Serial.write(' ');
+  log_sensor_nicely(sensor_obstacles[RIGHT_FRONT]);
+
+  Serial.println("   ");
+  log_sensor_nicely(sensor_obstacles[LEFT_REAR]);
+  Serial.write('\n');
 }
