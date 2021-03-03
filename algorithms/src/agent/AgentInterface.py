@@ -16,6 +16,7 @@ class AgentInterface:
     def __init__(self):
         self.agent = None
         self.agent_task = None
+        self.waypoint = None
         self.q_size = 0 # queue of sent moves pending sensor response
         # display robot internal representation of arena
         pygame.init()
@@ -59,13 +60,16 @@ class AgentInterface:
                 self.init(data)
                 self.q_size = 1
                 print('got init')
+            elif data['type'] == 'waypoint':
+                self.waypoint = Coord(data['data']['x'], data['data']['y'])
+            
             print('received message ', i)
             i += 1
 
     def init(self, init_data):
-        arena_string, robot_info, agent_task, end_coord, waypoint = self.parse_init_data(init_data)
+        arena_string, robot_info, agent_task, end_coord = self.parse_init_data(init_data)
         self.agent_task = agent_task
-        self.agent = Agent(arena_string, robot_info, agent_task, end_coord, waypoint)
+        self.agent = Agent(arena_string, robot_info, agent_task, end_coord, self.waypoint)
         self.agent.mark_robot_visisted_cells(self.agent.get_robot_info().get_coord()) # temp solution
         self.sim_display = SimulationDisplay(robot_info)
         self.update_simulation_display()
@@ -149,11 +153,7 @@ class AgentInterface:
         # end_coord
         end_coord = END_COORD
 
-        # waypoint
-        waypoint_json = init_data['data']['waypoint']
-        waypoint = Coord(waypoint_json['x'], waypoint_json['y'])
-
-        return arena_string, robot_info, agent_task, end_coord, waypoint
+        return arena_string, robot_info, agent_task, end_coord
 
     def serialize_agent_status(self, robot_info, arena):
         p1, p2 = self.convert_arena_to_mdf(arena)
