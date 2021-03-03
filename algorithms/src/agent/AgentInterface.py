@@ -150,7 +150,8 @@ class AgentInterface:
         end_coord = END_COORD
 
         # waypoint
-        waypoint = WAYPOINT
+        waypoint_json = init_data['data']['waypoint']
+        waypoint = Coord(waypoint_json['x'], waypoint_json['y'])
 
         return arena_string, robot_info, agent_task, end_coord, waypoint
 
