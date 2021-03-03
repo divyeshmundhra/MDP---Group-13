@@ -112,6 +112,6 @@ const int8_t kSensor_offset[6] = {
   0
 };
 
-const uint8_t kMovement_buffer_size = 8;
+const uint8_t kMovement_buffer_size = 64;
 
 #endif
