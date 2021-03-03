@@ -131,7 +131,7 @@ void log_all_sensors() {
   Serial.println();
 }
 
-void log_sensor_nicely(uint8_t i) {
+void log_sensor_nicely(int8_t i) {
   if (i == -1) {
     Serial.write('i');
   } else if (i < 10) {
