@@ -32,6 +32,12 @@ class Agent:
             self.algo = ExplorationAlgo()
             self.reached_waypoint = True
     def calc_percepts(self, obstacles_coord_list: list, no_obs_coord_list: list, move_q_size: int = 0) -> None:
+        # update real robot info
+        if self.expected_robot_info:
+            if move_q_size == 0:
+                # robot has finished move, set position to expected position after move
+                self.robot_info.set_coord(self.expected_robot_info.get_coord())
+            self.robot_info.set_orientation(self.expected_robot_info.get_orientation())
         if self.task == AgentTask.EXPLORE:
             self.update_arena(obstacles_coord_list, no_obs_coord_list, move_q_size)
         elif not self.reached_waypoint and self.robot_info.get_coord().is_equal(self.waypoint_coord):
@@ -66,13 +72,6 @@ class Agent:
         )
 
     def update_arena(self, obstacles_coord_list: list, no_obs_coord_list: list, move_q_size: int) -> None:
-        # update real robot info
-        if self.expected_robot_info:
-            if move_q_size == 0:
-                # robot has finished move, set position to expected position after move
-                self.robot_info.set_coord(self.expected_robot_info.get_coord())
-            self.robot_info.set_orientation(self.expected_robot_info.get_orientation())
-
         self.mark_robot_visisted_cells(self.robot_info.get_coord())
         for coord in obstacles_coord_list:
             # mark seen obstacles as explored
