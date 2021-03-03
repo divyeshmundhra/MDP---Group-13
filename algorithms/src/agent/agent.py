@@ -45,6 +45,7 @@ class Agent:
 
     def step(self) -> AgentOutput:
         target_coord = self.think()
+        cur_coord = self.robot_info.get_coord()
         if target_coord == None:
             if self.task == AgentTask.FAST:
                 message = f'No valid path!'
@@ -57,12 +58,12 @@ class Agent:
                     move_command = None
                 else:
                     next_step = FastestPathAlgo().get_next_step(self.arena,self.robot_info,START_COORD, None)
-                    move_command = self.calculate_move(next_step)
+                    move_command = self.calculate_move(cur_coord, next_step)
         elif self.task == AgentTask.FAST and self.robot_info.get_coord().is_equal(self.end_coord):
             message = f'Fastest path complete!'
             move_command = None
         else:
-            move_command = self.calculate_move(target_coord)
+            move_command = self.calculate_move(cur_coord, target_coord)
             message = f'Target: {target_coord.get_x()}, {target_coord.get_y()}, TURN: {move_command.get_turn_angle()} degs, then \
                 MOVE: {move_command.get_cells_to_advance()} cells forwards'
 
@@ -91,8 +92,7 @@ class Agent:
             next_step = self.algo.get_next_step(self.arena, self.robot_info) # pylint: disable=no-value-for-parameter
         return next_step
 
-    def calculate_move(self, target_coord) -> MoveCommand:
-        current_coord = self.robot_info.get_coord()
+    def calculate_move(self, current_coord, target_coord) -> MoveCommand:
         displacement = target_coord.subtract(current_coord)
         target_orientation = OT.displacement_to_orientation(displacement)
         turn_angle = OT.calc_degree_of_turn(self.robot_info.get_orientation(), target_orientation)
@@ -126,21 +126,23 @@ class Agent:
     def get_robot_info(self) -> RobotInfo:
         return self.robot_info
 
-    def get_move_command_as_list(self) -> list:
+    def get_agent_output_list(self) -> list:
+        # Calculate fastest path of coords
+        coords_list = []        
+        cl_to_waypoint = self.algo.get_next_step(self.arena, self.robot_info, self.end_coord, self.waypoint_coord, full_path=True)
+        last_displacement = cl_to_waypoint[-1].subtract(cl_to_waypoint[-2])
+        last_orientation = OT.displacement_to_orientation(last_displacement)
+        robot_info_at_waypoint = RobotInfo(cl_to_waypoint[-1], last_orientation)
+        cl_to_end = self.algo.get_next_step(self.arena, robot_info_at_waypoint, self.end_coord, None, full_path=True)
+        coords_list.extend(cl_to_waypoint)
+        coords_list.extend(cl_to_end)
+
+        return self.calc_agent_output_full_path(coords_list)
+
+    def calc_agent_output_full_path(self, coords_list: list):
+        
+        # Calculate output list
         agent_output_list = []
-
-        # # Get fastest path from start to waypoint
-        coords_list = self.algo.get_path_coords_list(
-            self.arena, self.robot_info, self.end_coord, self.waypoint_coord)
-        self.get_and_append_agent_output(coords_list, agent_output_list)
-
-        # # Get fastest path from waypoint to end (pass in the updated robot_info)
-        coords_list = self.algo.get_path_coords_list(self.arena, self.robot_info, self.end_coord, None)
-        self.get_and_append_agent_output(coords_list, agent_output_list)
-
-        return agent_output_list
-
-    def get_and_append_agent_output(self, coords_list: list, agent_output_list: list):
         for target_coord in coords_list:
             if target_coord == None:
                 message = f'No valid path!'
@@ -149,11 +151,39 @@ class Agent:
                 message = f'Fastest path complete!'
                 move_command = None
             else:
-                move_command = self.calculate_move(target_coord)
+                robot_info = self.expected_robot_info if self.expected_robot_info else self.robot_info # no eri at first step
+                move_command = self.calculate_move(robot_info.get_coord(), target_coord)
                 message = f'Target: {target_coord.get_x()}, {target_coord.get_y()}, TURN: {move_command.get_turn_angle()} degs, then \
                 MOVE: {move_command.get_cells_to_advance()} cells forwards'
             
             agent_output_list.append(AgentOutput(move_command, message))
+        
+        # merge move_commands in same direction
+        shortened_agent_output_list = []
+        if len(agent_output_list) >= 2:
+            i, j = 0, 1
+            while i < len(agent_output_list)-2:
+                cur = agent_output_list[i].get_move_command()
+                for j in range(i, len(agent_output_list)-1):
+                    print('i ', i)
+                    next_cmd = agent_output_list[j].get_move_command()
+                    if not next_cmd:
+                        break
+                    if next_cmd.get_turn_angle() == 0:
+                        # if same direction, merge move commands
+                        cur.set_cells_to_advance(cur.get_cells_to_advance() + next_cmd.get_cells_to_advance())
+                        print(cur.get_turn_angle(), cur.get_cells_to_advance())
+                    else:
+                        # if not same direction, append move command
+                        shortened_agent_output_list.append(cur)
+                        print('appended cur', cur.get_turn_angle(), cur.get_cells_to_advance())
+                        i = j + 1
+                        break
+                i += 1
+            shortened_agent_output_list.append(cur)
+            print('appended cur', cur.get_turn_angle(), cur.get_cells_to_advance())
+
+        return shortened_agent_output_list
 
     def get_expected_robot_info(self) -> RobotInfo:
         return self.expected_robot_info

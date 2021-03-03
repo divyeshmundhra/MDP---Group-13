@@ -9,9 +9,6 @@ from src.dto.constants import TimeCosts, MAP_ROW, MAP_COL
 from src.agent import DecisionNode
 
 class FastestPathAlgo():
-    def __init__(self):
-        self.full_path = False
-
     def get_next_step(self, arena: Arena, robot_info: RobotInfo, end: Coord, waypoint: Coord, full_path = False):
         start = robot_info.get_coord()
         current_orientation = robot_info.get_orientation()
@@ -95,7 +92,3 @@ class FastestPathAlgo():
     @staticmethod
     def heuristic(cur: Coord, target: Coord) -> int:
         return target.subtract(cur).manhattan_distance()
-
-    def get_path_coords_list(self, arena: Arena, robot_info: RobotInfo, end: Coord, waypoint: Coord) -> list:
-        cur_list = self.get_next_step(arena, robot_info, end, waypoint, full_path=True)
-        return cur_list

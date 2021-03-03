@@ -52,7 +52,7 @@ class Simulator:
         if ALGO_RETURNS_FULL_PATH:
             # get agent next move
             self.agent.calc_percepts(obstacle_coord_list, no_obs_coord_list)
-            agent_output = self.agent.step(obstacle_coord_list, no_obs_coord_list)
+            agent_output = self.agent.step()
             print(agent_output.get_message())
             move_command = agent_output.get_move_command()
         else:
@@ -102,7 +102,7 @@ class Simulator:
         t.start()
 
         if ALGO_RETURNS_FULL_PATH:
-            self.agent_output_full_path = self.agent.get_move_command_as_list()
+            self.agent_output_full_path = self.agent.get_agent_output_list()
 
         i = 0
         while i<200:
@@ -215,5 +215,5 @@ f = open("./algorithms/src/simulator/MDF_string_3.txt", "r")
 # g.init(AgentTask.EXPLORE, f.read(), WAYPOINT)
 
 # load from MDF
-g.init(AgentTask.EXPLORE, input_hex(f.read()), WAYPOINT)
+g.init(AgentTask.FAST, input_hex(f.read()), WAYPOINT)
 g.run()
