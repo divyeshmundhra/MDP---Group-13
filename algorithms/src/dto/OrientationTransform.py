@@ -45,4 +45,4 @@ class OrientationTransform:
         elif orientation == Orientation.WEST: return Coord(-1, 0)
         elif orientation == Orientation.NORTH: return Coord(0, 1)
         elif orientation == Orientation.SOUTH: return Coord(0, -1)
-        else: raise Exception(f'Invalid orientation: tried moving {x}, {y}. orientation_to_unit_displacement only implemented for cardinal directions')
+        else: raise Exception(f'Invalid orientation: tried moving {orientation.name}. orientation_to_unit_displacement only implemented for cardinal directions')

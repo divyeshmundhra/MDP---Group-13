@@ -163,7 +163,8 @@ class Agent:
         if len(agent_output_list) >= 2:
             i, j = 0, 1
             while i < len(agent_output_list)-2:
-                cur = agent_output_list[i].get_move_command()
+                cur = agent_output_list[i]
+                cur_cmd = cur.get_move_command()
                 for j in range(i, len(agent_output_list)-1):
                     print('i ', i)
                     next_cmd = agent_output_list[j].get_move_command()
@@ -171,17 +172,18 @@ class Agent:
                         break
                     if next_cmd.get_turn_angle() == 0:
                         # if same direction, merge move commands
-                        cur.set_cells_to_advance(cur.get_cells_to_advance() + next_cmd.get_cells_to_advance())
-                        print(cur.get_turn_angle(), cur.get_cells_to_advance())
+                        cur_cmd.set_cells_to_advance(cur_cmd.get_cells_to_advance() + next_cmd.get_cells_to_advance())
+                        cur.set_message(agent_output_list[j].get_message())
+                        print(cur_cmd.get_turn_angle(), cur_cmd.get_cells_to_advance())
                     else:
                         # if not same direction, append move command
                         shortened_agent_output_list.append(cur)
-                        print('appended cur', cur.get_turn_angle(), cur.get_cells_to_advance())
+                        print('appended cur', cur_cmd.get_turn_angle(), cur_cmd.get_cells_to_advance())
                         i = j + 1
                         break
                 i += 1
             shortened_agent_output_list.append(cur)
-            print('appended cur', cur.get_turn_angle(), cur.get_cells_to_advance())
+            print('appended cur', cur_cmd.get_turn_angle(), cur_cmd.get_cells_to_advance())
 
         return shortened_agent_output_list
 
