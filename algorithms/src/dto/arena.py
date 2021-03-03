@@ -79,11 +79,25 @@ class Arena:
     # def get_adjacent_unblocked(self, coord) -> list:
     #     return self.calculate_adjacent_lists(coord)['unblocked']
     
-    def mark_dangerous_cells_around_obstacle(self, coord):
-        for displacement in Arena.EIGHT_ADJACENCY:
-            adj_coord = coord.add(displacement)
-            if self.coord_is_valid(adj_coord):
-                self.get_cell_at_coord(adj_coord).set_is_dangerous(True)        
+    # def mark_dangerous_cells_around_obstacle(self, coord, is_dangerous):
+    #     for displacement in Arena.EIGHT_ADJACENCY:
+    #         adj_coord = coord.add(displacement)
+    #         if self.coord_is_valid(adj_coord):
+    #             self.get_cell_at_coord(adj_coord).set_is_dangerous(is_dangerous)
+
+    def update_dangerous_cells(self) -> None:
+        for y in range(MAP_ROW):
+            for x in range(MAP_COL):
+                cur = Coord(x, y)
+                self.get_cell_at_coord(cur).set_is_dangerous(False)
+                for displacement in Arena.EIGHT_ADJACENCY:
+                    adj = cur.add(displacement)
+                    if not self.coord_is_valid(adj):
+                        continue
+                    if self.get_cell_at_coord(adj).is_obstacle():
+                        self.get_cell_at_coord(cur).set_is_dangerous(True)
+                        break
+        self.mark_border_cells_dangerous()
 
     def get_coverage_percentage(self) -> int:
         explored = 0

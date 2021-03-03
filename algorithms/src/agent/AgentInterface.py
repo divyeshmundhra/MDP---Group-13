@@ -40,7 +40,7 @@ class AgentInterface:
             print('qsize ', self.q_size)
             if data['type'] == 'sensor':
                 if self.agent_task == AgentTask.EXPLORE:
-                    self.process_percepts(data)
+                    self.update_percepts(data)
                 if self.q_size == 0:
                     self.step()
                 print('got sensor data')
@@ -84,6 +84,8 @@ class AgentInterface:
             ri_old = self.agent.get_robot_info()
             ri_new = self.agent.get_expected_robot_info()
             robot_info = RobotInfo(ri_old.get_coord(), ri_new.get_orientation() if ri_new else ri_old.get_orientation())
+        elif self.q_size < 0:
+            raise Exception(f'move q-size: {self.q_size}\nreceived extra move done before sensor data!')
         else:
             raise Exception(f'move q-size: {self.q_size}\n2 last moves were not executed yet! \
                 Is there desync between bot and algo?')

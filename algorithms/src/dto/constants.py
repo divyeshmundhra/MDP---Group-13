@@ -23,7 +23,7 @@ START_COORD = Coord(1, 1)
 END_COORD = Coord(13, 18)
 WAYPOINT = Coord(4, 4)
 
-ALGO_RETURNS_FULL_PATH = True
+ALGO_RETURNS_FULL_PATH = False
 
 class ArenaDisplayMode(Enum):
     OBSERVED = 0

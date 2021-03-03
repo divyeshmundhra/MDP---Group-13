@@ -39,7 +39,7 @@ class Agent:
                 self.robot_info.set_coord(self.expected_robot_info.get_coord())
             self.robot_info.set_orientation(self.expected_robot_info.get_orientation())
         if self.task == AgentTask.EXPLORE:
-            self.update_arena(obstacles_coord_list, no_obs_coord_list, move_q_size)
+            self.update_arena(obstacles_coord_list, no_obs_coord_list)
         elif not self.reached_waypoint and self.robot_info.get_coord().is_equal(self.waypoint_coord):
             self.reached_waypoint = True
 
@@ -72,17 +72,17 @@ class Agent:
             message
         )
 
-    def update_arena(self, obstacles_coord_list: list, no_obs_coord_list: list, move_q_size: int) -> None:
+    def update_arena(self, obstacles_coord_list: list, no_obs_coord_list: list) -> None:
         self.mark_robot_visisted_cells(self.robot_info.get_coord())
+        
+        for coord in no_obs_coord_list:
+            # mark seen clear cells as explored
+            self.arena.get_cell_at_coord(coord).set_is_explored(True).decrement_is_obstacle()
         for coord in obstacles_coord_list:
             # mark seen obstacles as explored
             cell = self.arena.get_cell_at_coord(coord)
-            cell.set_is_obstacle(True)
-            self.arena.mark_dangerous_cells_around_obstacle(coord)
-            self.arena.get_cell_at_coord(coord).set_is_explored(True)
-        for coord in no_obs_coord_list:
-            # mark seen clear cells as explored
-            self.arena.get_cell_at_coord(coord).set_is_explored(True)
+            cell.increment_is_obstacle().set_is_explored(True)
+        self.arena.update_dangerous_cells()
 
     def think(self) -> Coord:
         if self.task == AgentTask.FAST:
@@ -110,7 +110,7 @@ class Agent:
         # they are thus probably obstacles
         for cell in self.arena.list_unexplored_cells():
             cell.set_is_explored(True)
-            # cell.set_is_obstacle(True)
+            # cell.increment_is_obstacle()
             cell.set_is_dangerous(True)
 
     def mark_robot_visisted_cells(self,center_value):

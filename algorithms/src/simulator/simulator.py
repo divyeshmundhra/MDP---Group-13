@@ -216,5 +216,5 @@ f = open("./algorithms/src/simulator/MDF_string_3.txt", "r")
 # g.init(AgentTask.EXPLORE, f.read(), WAYPOINT)
 
 # load from MDF
-g.init(AgentTask.FAST, input_hex(f.read()), WAYPOINT)
+g.init(AgentTask.EXPLORE, input_hex(f.read()), WAYPOINT)
 g.run()
