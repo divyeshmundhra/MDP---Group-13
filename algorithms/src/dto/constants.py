@@ -21,7 +21,9 @@ DIS_Y = 400
 # Defining start, end and waypoint coord
 START_COORD = Coord(1, 1)
 END_COORD = Coord(13, 18)
-WAYPOINT = Coord(2, 2)
+WAYPOINT = Coord(4, 4)
+
+ALGO_RETURNS_FULL_PATH = True
 
 class ArenaDisplayMode(Enum):
     OBSERVED = 0

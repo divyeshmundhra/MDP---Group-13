@@ -127,3 +127,32 @@ class Agent:
 
     def get_robot_info(self) -> RobotInfo:
         return self.robot_info
+
+    def get_move_command_as_list(self) -> list:
+        self.agent_output_list = []
+
+        # # Get fastest path from start to waypoint
+        coords_list = self.algo.get_path_coords_list(
+            self.arena, self.robot_info, self.end_coord, self.waypoint_coord)
+        self.get_and_append_agent_output(coords_list)
+
+        # # Get fastest path from waypoint to end (pass in the updated robot_info)
+        coords_list = self.algo.get_path_coords_list(self.arena, self.robot_info, self.end_coord, None)
+        self.get_and_append_agent_output(coords_list)
+
+        return self.agent_output_list
+
+    def get_and_append_agent_output(self, coords_list: list):
+        for target_coord in coords_list:
+            if target_coord == None:
+                message = f'No valid path!'
+                move_command = None
+            elif self.task == AgentTask.FAST and self.robot_info.get_coord().is_equal(self.end_coord):
+                message = f'Fastest path complete!'
+                move_command = None
+            else:
+                move_command = self.calculate_move(target_coord)
+                message = f'Target: {target_coord.get_x()}, {target_coord.get_y()}, TURN: {move_command.get_turn_angle()} degs, then \
+                MOVE: {move_command.get_cells_to_advance()} cells forwards'
+            
+            self.agent_output_list.append(AgentOutput(move_command, message))

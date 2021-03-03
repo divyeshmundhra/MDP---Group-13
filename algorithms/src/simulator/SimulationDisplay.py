@@ -27,6 +27,9 @@ class SimulationDisplay:
                 if cell.is_dangerous() and not cell.is_obstacle():
                     pygame.draw.rect(self.dis, grey, [col*TILE_SIZE, graph_row*TILE_SIZE, TILE_SIZE, TILE_SIZE])
 
+                if not cell.is_explored():
+                    pygame.draw.rect(self.dis, white, [col*TILE_SIZE, graph_row*TILE_SIZE, TILE_SIZE, TILE_SIZE])
+
                 if 0<=row<=2 and 0<=col<=2:
                     pygame.draw.rect(self.dis, red, [col*TILE_SIZE, graph_row*TILE_SIZE, TILE_SIZE, TILE_SIZE])
 

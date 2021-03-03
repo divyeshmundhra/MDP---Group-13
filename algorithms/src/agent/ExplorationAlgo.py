@@ -64,11 +64,11 @@ class ExplorationAlgo():
                     # ugly code, maybe refactor?
                     back_tracked = False
                     lf = self.last_four
-                    if len(lf) == 4 and lf[0].is_equal(lf[2]) and lf[1].is_equal(lf[3]) and c.is_equal(lf[2]):
+                    if len(lf) == 3 and lf[0].is_equal(lf[2]) and c.is_equal(lf[1]):
                         back_tracked = True
                     if not back_tracked:
                         unexplored.append(c)
-                        if len(self.last_four) >= 4:
+                        if len(self.last_four) >= 3:
                             self.last_four.pop(0)
                         self.last_four.append(c)
                         return unexplored
