@@ -82,7 +82,10 @@ class Agent:
             # mark seen obstacles as explored
             cell = self.arena.get_cell_at_coord(coord)
             cell.increment_is_obstacle().set_is_explored(True)
-        self.arena.update_dangerous_cells()
+            self.arena.mark_dangerous_cells_around_obstacle(coord)
+        for coord in no_obs_coord_list:
+            # mark seen clear cells as explored
+            self.arena.get_cell_at_coord(coord).set_is_explored(True).decrement_is_obstacle()
 
     def think(self) -> Coord:
         if self.task == AgentTask.FAST:
