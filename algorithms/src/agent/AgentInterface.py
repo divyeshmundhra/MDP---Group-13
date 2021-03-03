@@ -15,6 +15,7 @@ from src.dto.MoveCommand import MoveCommand
 class AgentInterface:
     def __init__(self):
         self.agent = None
+        self.agent_task = None
         self.q_size = 0 # queue of sent moves pending sensor response
         # display robot internal representation of arena
         pygame.init()
@@ -37,7 +38,8 @@ class AgentInterface:
 
             print('qsize ', self.q_size)
             if data['type'] == 'sensor':
-                self.process_percepts(data)
+                if self.agent_task == AgentTask.EXPLORE:
+                    self.process_percepts(data)
                 if self.q_size == 0:
                     self.step()
                 print('got sensor data')
@@ -46,7 +48,12 @@ class AgentInterface:
                 print('got move_done')
             elif data['type'] == 'start':
                 self.q_size = 0
-                self.step()
+                if self.agent_task == AgentTask.FAST:
+                    while not self.agent.get_robot_info().get_coord().is_equal(Coord(13, 18)):
+                        self.update_percepts(None)
+                        self.step()
+                else:
+                    self.step()
                 print('got start')
             elif data['type'] == 'init':
                 self.init(data)
@@ -57,12 +64,13 @@ class AgentInterface:
 
     def init(self, init_data):
         arena_string, robot_info, agent_task, end_coord, waypoint = self.parse_init_data(init_data)
+        self.agent_task = agent_task
         self.agent = Agent(arena_string, robot_info, agent_task, end_coord, waypoint)
         self.agent.mark_robot_visisted_cells(self.agent.get_robot_info().get_coord()) # temp solution
         self.sim_display = SimulationDisplay(robot_info)
         self.update_simulation_display()
     
-    def process_percepts(self, percept_data):
+    def process_sensor_data(self, percept_data):
         # feed agent percepts
         print('\n\nprocessing percepts')
         if self.q_size == 0:
@@ -84,6 +92,13 @@ class AgentInterface:
         for coord in obstacle_coord_list:
             obstacle_str += f'({coord.get_x()}, {coord.get_y()}), '
         print(obstacle_str)
+        return obstacle_coord_list, no_obs_coord_list
+    
+    def update_percepts(self, data):
+        if data:
+            obstacle_coord_list, no_obs_coord_list = self.process_sensor_data(data)
+        else:
+            obstacle_coord_list, no_obs_coord_list = [], []
         self.agent.calc_percepts(obstacle_coord_list, no_obs_coord_list, self.q_size)
         self.update_simulation_display()
 
@@ -94,10 +109,11 @@ class AgentInterface:
     def step(self):
         # get agent output
         agent_output = self.agent.step()
-        if not agent_output.get_move_command().get_turn_angle() == 0: # NONE TYPE HAS NO ATTRIBUTE GET TURN ANGLE
-            self.q_size += 2
-        else:
-            self.q_size += 1
+        if self.agent_task == AgentTask.EXPLORE:
+            if not agent_output.get_move_command().get_turn_angle() == 0: # NONE TYPE HAS NO ATTRIBUTE GET TURN ANGLE
+                self.q_size += 2
+            else:
+                self.q_size += 1
         self.log_agent_expected_move()
 
         # parse agent output
@@ -118,7 +134,7 @@ class AgentInterface:
         assert(init_data['type'] == 'init')
         # arena string
         mdf_string = init_data['data']['arena']['P2'] # p1 string ignored since always FFFF..
-        arena_string = self.convert_mdf_to_binary(mdf_string) if init_data['data']['task'] == 'EX' else None
+        arena_string = self.convert_mdf_to_binary(mdf_string) if init_data['data']['task'] == 'FP' else None
 
         # robot info
         robot_info = RobotInfo(START_COORD, START_ORIENTATION)
