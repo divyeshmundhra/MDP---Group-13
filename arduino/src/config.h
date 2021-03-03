@@ -9,6 +9,9 @@ const uint8_t kMin_motor_threshold = 16;
 // alpha for exponential filter used to smooth sensor data
 // [0-255], lower for more filtering
 const uint8_t kSensor_filter_alpha = 180;
+// if the raw ADC values are below this threshold, we treat it as no obstacle found
+// without even trying to convert. This handles a potential int16_t overflow
+const uint16_t kSensor_min_value = 300;
 
 // max axis acceleration/deceleration
 const int16_t kMax_axis_accel = 64;
