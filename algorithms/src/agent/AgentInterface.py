@@ -40,7 +40,7 @@ class AgentInterface:
             print('qsize ', self.q_size)
             if data['type'] == 'sensor':
                 if self.agent_task == AgentTask.EXPLORE:
-                    self.process_percepts(data)
+                    self.update_percepts(data)
                 if self.q_size == 0:
                     self.step()
                 print('got sensor data')
