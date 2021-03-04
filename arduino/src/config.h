@@ -44,6 +44,9 @@ const uint8_t kParser_buf_size = 16;
 const int16_t kWall_align_max_absolute_threshold = 400;
 // align to wall only if the abs difference between both sensors is less than this (mm)
 const int16_t kWall_align_max_absolute_difference = 150;
+// align to wall only if the main controller outputs more than this power
+// this prevents the align controller from slowly turning at the end of a move
+const int16_t kWall_align_min_power = 100;
 // scale difference between sensors
 extern int16_t kP_wall_diff_left;
 extern int16_t kP_wall_offset_left;

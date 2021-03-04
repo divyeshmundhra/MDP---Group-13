@@ -319,7 +319,7 @@ ISR(TIMER2_COMPA_vect) {
     static uint8_t tick_count = 0;
     tick_count ++;
 
-    if (tick_count > 4) {
+    if (tick_count > 4 && (base_left > kWall_align_min_power) && (base_right > kWall_align_min_power)) {
       tick_count = 0;
 
       if (move_dir == FORWARD) {
@@ -625,19 +625,16 @@ void loop_motion() {
       cli();
       int32_t encoder_left = axis_left.getEncoder();
       int32_t encoder_right = axis_right.getEncoder();
-      int16_t power_left = axis_left.getPower();
-      int16_t power_right = axis_right.getPower();
-      // int16_t _base_power = base_power;
-      // int16_t _correction = correction;
-      // int16_t _error = encoder_left - encoder_right;
+      int16_t _base_left = base_left;
+      int16_t _base_right = base_right;
       int16_t _sensor_front = sensor_distances[LEFT_FRONT];
       int16_t _sensor_rear = sensor_distances[LEFT_REAR];
       sei();
       Serial.print("SYNC");
       Serial.write((char *) &encoder_left, 4);
       Serial.write((char *) &encoder_right, 4);
-      Serial.write((char *) &power_left, 2);
-      Serial.write((char *) &power_right, 2);
+      Serial.write((char *) &_base_left, 2);
+      Serial.write((char *) &_base_right, 2);
       // Serial.write((char *) &_error, 2);
       // Serial.write((char *) &_correction, 2);
       Serial.write((char *) &_sensor_front, 2);
