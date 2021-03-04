@@ -22,7 +22,7 @@ typedef enum {
 } move_type_t;
 
 typedef enum {
-  ALIGN_UNSET,
+  ALIGN_IDLE,
   ALIGN_LEFT,
   ALIGN_RIGHT,
   ALIGN_FORWARD
@@ -148,6 +148,10 @@ bool is_valid_align_target(align_type_t type) {
   switch (type) {
     case ALIGN_LEFT:
       {
+        if (!sensor_stable[LEFT_FRONT] || !sensor_stable[LEFT_REAR]) {
+          return false;
+        }
+
         if (
             sensor_distances[LEFT_FRONT] > kWall_align_max_absolute_threshold ||
             sensor_distances[LEFT_REAR] > kWall_align_max_absolute_threshold
@@ -163,6 +167,10 @@ bool is_valid_align_target(align_type_t type) {
         return true;
       }
     case ALIGN_RIGHT:
+      if (!sensor_stable[RIGHT_FRONT]) {
+        return false;
+      }
+
       if (sensor_distances[RIGHT_FRONT] > kWall_align_max_absolute_threshold) {
         return false;
       }
@@ -170,6 +178,10 @@ bool is_valid_align_target(align_type_t type) {
       return true;
     case ALIGN_FORWARD:
       {
+        if (!sensor_stable[FRONT_FRONT_LEFT] || !sensor_stable[FRONT_FRONT_RIGHT]) {
+          return false;
+        }
+
         if (
             sensor_distances[FRONT_FRONT_RIGHT] > kWall_align_max_absolute_threshold ||
             sensor_distances[FRONT_FRONT_LEFT] > kWall_align_max_absolute_threshold
@@ -361,6 +373,8 @@ ISR(TIMER2_COMPA_vect) {
           } else {
             axis_right.incrementEncoder(wall_correction);
           }
+        } else {
+          align_type = ALIGN_IDLE;
         }
       }
     }
@@ -588,7 +602,7 @@ bool parse_moves = true;
 
 void loop_motion() {
   static state_t pState = IDLE;
-  static align_type_t pAlign_type = ALIGN_UNSET;
+  static align_type_t pAlign_type = ALIGN_IDLE;
   static uint32_t report_delay_start = 0;
 
   if (pState != state) {
