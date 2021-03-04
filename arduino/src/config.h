@@ -8,7 +8,7 @@ const uint8_t kMin_motor_threshold = 16;
 
 // alpha for exponential filter used to smooth sensor data
 // [0-255], lower for more filtering
-const uint8_t kSensor_filter_alpha = 180;
+const uint8_t kSensor_filter_alpha = 120;
 // if the raw ADC values are below this threshold, we treat it as no obstacle found
 // without even trying to convert. This handles a potential int16_t overflow
 const uint16_t kSensor_min_value = 300;
@@ -105,12 +105,12 @@ const double kSensor_constants[6][3] = {
 
 // maximum valid distance reportable by each sensor
 const int16_t kSensor_max[6] = {
-  700,
-  900,
-  600,
-  900,
   650,
-  600
+  950,
+  550,
+  950,
+  600,
+  550
 };
 
 #define kSensor_threshold_count 10
@@ -120,13 +120,13 @@ const int16_t kSensor_max[6] = {
   |0|1|2|3|4|5|6|7|8|9|255|
 */
 const int16_t kSensor_thresholds[6][kSensor_threshold_count] = {
-  // 0    1    2    3    4    5    6    7    8    9
-  { 100, 200, 300, 400, 550, INT16_MAX, INT16_MAX, INT16_MAX, INT16_MAX, INT16_MAX },
-  { 80, 180, 300, 400, 500, 600, 700, 800, 900, 1000 },
-  { 100, 200, 300, 400, 500, 650, 700, 800, 900, 1000 },
-  { 80, 180, 300, 400, 500, 600, 700, 800, 900, 1000 },
-  { 120, 250, 350, 450, 550, 630, INT16_MAX, INT16_MAX, INT16_MAX, INT16_MAX },
-  { 100, 200, 300, 400, 500, 650, 750, 800, 900, 1000 },
+  // 2    3    4    5    6    7    8    9    A    B
+  { 100, 200, 300, 400, 480, 550, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
+  {  80, 180, 300, 400, 500, 580, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
+  { 100, 200, 300, 400, 550, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
+  {  80, 180, 300, 400, 500, 580, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
+  { 120, 250, 350, 450, 550, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
+  { 100, 200, 300, 400, 480, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
 };
 
 const int8_t kSensor_offset[6] = {
@@ -134,7 +134,7 @@ const int8_t kSensor_offset[6] = {
   0,
   0,
   0,
-  10,
+  0,
   0
 };
 
