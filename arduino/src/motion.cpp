@@ -22,6 +22,7 @@ typedef enum {
 } move_type_t;
 
 typedef enum {
+  ALIGN_UNSET,
   ALIGN_LEFT,
   ALIGN_RIGHT,
   ALIGN_FORWARD
@@ -587,6 +588,7 @@ bool parse_moves = true;
 
 void loop_motion() {
   static state_t pState = IDLE;
+  static align_type_t pAlign_type = ALIGN_UNSET;
   static uint32_t report_delay_start = 0;
 
   if (pState != state) {
@@ -597,6 +599,13 @@ void loop_motion() {
     }
 
     pState = state;
+  }
+
+  if (pAlign_type != align_type) {
+    Serial.print("Align change: ");
+    Serial.println(align_type);
+
+    pAlign_type = align_type;
   }
 
   if (parse_moves) {
