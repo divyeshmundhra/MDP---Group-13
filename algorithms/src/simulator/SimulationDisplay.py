@@ -21,11 +21,20 @@ class SimulationDisplay:
                 if cell.is_explored():
                     pygame.draw.rect(self.dis, light_grey, [col*TILE_SIZE, graph_row*TILE_SIZE, TILE_SIZE, TILE_SIZE])
 
-                if cell.is_obstacle():
-                    pygame.draw.rect(self.dis, black, [col*TILE_SIZE, graph_row*TILE_SIZE, TILE_SIZE, TILE_SIZE])
-                
                 if cell.is_dangerous() and not cell.is_obstacle():
                     pygame.draw.rect(self.dis, grey, [col*TILE_SIZE, graph_row*TILE_SIZE, TILE_SIZE, TILE_SIZE])
+                
+                if cell.is_obstacle():
+                    pygame.draw.rect(self.dis, black, [col*TILE_SIZE, graph_row*TILE_SIZE, TILE_SIZE, TILE_SIZE])
+                    seen_surfaces = cell.get_seen_surfaces()
+                    if seen_surfaces[Orientation.NORTH]:
+                        pygame.draw.line(self.dis, light_blue, (col*TILE_SIZE, graph_row*TILE_SIZE), (col*TILE_SIZE + TILE_SIZE, graph_row*TILE_SIZE), width=2)
+                    if seen_surfaces[Orientation.WEST]:
+                        pygame.draw.line(self.dis, light_blue, (col*TILE_SIZE, graph_row*TILE_SIZE), (col*TILE_SIZE, graph_row*TILE_SIZE + TILE_SIZE), width=2)
+                    if seen_surfaces[Orientation.SOUTH]:
+                        pygame.draw.line(self.dis, light_blue, (col*TILE_SIZE, graph_row*TILE_SIZE + TILE_SIZE), (col*TILE_SIZE + TILE_SIZE, graph_row*TILE_SIZE + TILE_SIZE), width=2)
+                    if seen_surfaces[Orientation.EAST]:
+                        pygame.draw.line(self.dis, light_blue, (col*TILE_SIZE + TILE_SIZE, graph_row*TILE_SIZE), (col*TILE_SIZE + TILE_SIZE, graph_row*TILE_SIZE + TILE_SIZE), width=4)
 
                 if not cell.is_explored():
                     pygame.draw.rect(self.dis, white, [col*TILE_SIZE, graph_row*TILE_SIZE, TILE_SIZE, TILE_SIZE])

@@ -46,3 +46,15 @@ class OrientationTransform:
         elif orientation == Orientation.NORTH: return Coord(0, 1)
         elif orientation == Orientation.SOUTH: return Coord(0, -1)
         else: raise Exception(f'Invalid orientation: tried moving {x}, {y}. orientation_to_unit_displacement only implemented for cardinal directions')
+
+    @staticmethod
+    def get_two_cells_away(orientation: Orientation) -> Coord:
+        if orientation == Orientation.EAST: return Coord(2, 0)
+        elif orientation == Orientation.WEST: return Coord(-2, 0)
+        elif orientation == Orientation.NORTH: return Coord(0, 2)
+        elif orientation == Orientation.SOUTH: return Coord(0, -2)
+        else: raise Exception(f'Invalid orientation!')
+
+    @staticmethod
+    def get_new_coords_after_displacement(cur_coord: Coord, displacement: Coord) -> Coord: # cannot add directly to cur_coord in ImageRecognition.py since you just want to check the adjacent coord, not change the value of cur_coord
+        return Coord(cur_coord.get_x() + displacement.get_x(), cur_coord.get_y() + displacement.get_y())
