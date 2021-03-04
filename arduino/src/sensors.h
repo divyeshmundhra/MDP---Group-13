@@ -10,8 +10,9 @@ void log_all_sensors();
 void log_all_sensors_art();
 
 void convert_sensor_data();
-extern volatile int16_t sensor_distances[6];
-extern volatile int8_t sensor_obstacles[6];
+extern int16_t sensor_distances[6];
+extern int8_t sensor_obstacles[6];
+extern bool sensor_stable[6];
 
 extern bool log_sensors;
 

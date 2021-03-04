@@ -4,8 +4,10 @@
 #include "config.h"
 
 volatile uint16_t adc_val[6] = {0};
-volatile int16_t sensor_distances[6] = {0};
-volatile int8_t sensor_obstacles[6] = {0};
+int16_t sensor_distances[6] = {0};
+int8_t sensor_obstacles[6] = {0};
+
+bool sensor_stable[6] = {0};
 
 volatile bool has_new_val[6] = {0};
 
@@ -57,10 +59,14 @@ void setup_sensors() {
 }
 
 void convert_sensor_data() {
+  static int16_t pSensor_distances[6] = {0};
+
   for(uint8_t i = 0; i < 6; i++) {
     if (!has_new_val[i]) {
       continue;
     }
+
+    pSensor_distances[i] = sensor_distances[i];
 
     if (adc_val[i] < kSensor_min_value) {
       sensor_distances[i] = INT16_MAX;
@@ -75,6 +81,9 @@ void convert_sensor_data() {
 
     sensor_distances[i] = (kSensor_constants[i][0] * val + kSensor_constants[i][1]) / (val + kSensor_constants[i][2]);
     sensor_distances[i] += kSensor_offset[i];
+
+    int16_t delta = sensor_distances[i] - pSensor_distances[i];
+    sensor_stable[i] = (delta > -kSensor_stable_threshold) && (delta < kSensor_stable_threshold);
 
     if (sensor_distances[i] < 0) {
       sensor_distances[i] = 0;

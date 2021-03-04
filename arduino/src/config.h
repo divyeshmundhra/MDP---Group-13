@@ -12,6 +12,8 @@ const uint8_t kSensor_filter_alpha = 120;
 // if the raw ADC values are below this threshold, we treat it as no obstacle found
 // without even trying to convert. This handles a potential int16_t overflow
 const uint16_t kSensor_min_value = 300;
+// maximum delta of sensor distance below which is considered stable
+const int8_t kSensor_stable_threshold = 32;
 
 // max axis acceleration/deceleration
 const int16_t kMax_axis_accel = 64;
@@ -30,7 +32,7 @@ const int8_t kMax_obstacle_error = 5;
 const int8_t kMax_encoder_diff_error = 5;
 
 // time after a move to wait before reporting sensor values
-const int16_t kSensor_report_delay = 100;
+const int16_t kSensor_report_delay = 400;
 const int16_t kMax_encoder_correction = 64;
 const int16_t kMin_encoder_correction = -64;
 
