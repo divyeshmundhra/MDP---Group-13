@@ -116,13 +116,13 @@ static bool parse_buf() {
     }
   } else if (cmd == 'p') {
     if (cmd1 == 'a') {
-      kP_wall_diff = val;
+      kP_wall_diff_left = val;
     } else if (cmd1 == 'b') {
-      kD_wall_diff = val;
+      kP_wall_offset_left = val;
     } else if (cmd1 == 'c') {
-      kP_wall_offset = val;
+      kP_wall_diff_forward = val;
     } else if (cmd1 == 'd') {
-      kD_wall_offset = val;
+      kP_wall_offset_right = val;
     }
   } else if (cmd == 'w') {
     if (cmd1 == 'p') {

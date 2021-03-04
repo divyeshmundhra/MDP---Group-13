@@ -21,6 +21,12 @@ typedef enum {
   ALIGN_EQUAL
 } move_type_t;
 
+typedef enum {
+  ALIGN_LEFT,
+  ALIGN_RIGHT,
+  ALIGN_FORWARD
+} align_type_t;
+
 typedef struct {
   move_type_t type;
   motion_direction_t direction;
@@ -132,7 +138,55 @@ volatile int16_t correction = 0;
 // whether track left controller is enabled
 static bool straight_enabled = true;
 
+volatile uint16_t last_align_target = 0;
+
 void combine_next_move();
+
+volatile align_type_t align_type;
+bool is_valid_align_target(align_type_t type) {
+  switch (type) {
+    case ALIGN_LEFT:
+      {
+        if (
+            sensor_distances[LEFT_FRONT] > kWall_align_max_absolute_threshold ||
+            sensor_distances[LEFT_REAR] > kWall_align_max_absolute_threshold
+        ) {
+          return false;
+        }
+
+        int16_t wall_diff = sensor_distances[LEFT_FRONT] - sensor_distances[LEFT_REAR];
+        if (wall_diff <- kWall_align_max_absolute_difference || wall_diff > kWall_align_max_absolute_difference) {
+          return false;
+        }
+
+        return true;
+      }
+    case ALIGN_RIGHT:
+      if (sensor_distances[RIGHT_FRONT] > kWall_align_max_absolute_threshold) {
+        return false;
+      }
+      
+      return true;
+    case ALIGN_FORWARD:
+      {
+        if (
+            sensor_distances[FRONT_FRONT_RIGHT] > kWall_align_max_absolute_threshold ||
+            sensor_distances[FRONT_FRONT_LEFT] > kWall_align_max_absolute_threshold
+        ) {
+          return false;
+        }
+
+        int16_t wall_diff = sensor_distances[FRONT_FRONT_RIGHT] - sensor_distances[FRONT_FRONT_LEFT];
+        if (wall_diff <- kWall_align_max_absolute_difference || wall_diff > kWall_align_max_absolute_difference) {
+          return false;
+        }
+
+        return true;
+      }
+    default:
+      return false;
+  }
+}
 
 // triggers at 100Hz
 ISR(TIMER2_COMPA_vect) {
@@ -226,8 +280,6 @@ ISR(TIMER2_COMPA_vect) {
         resetControllerState(&state_obstacle, sensor_distances[FRONT_FRONT_MID]);
       }
       state = MOVING;
-      reached_max_power = false;
-      straight_enabled = true;
     }
   }
 
@@ -270,39 +322,43 @@ ISR(TIMER2_COMPA_vect) {
       tick_count = 0;
 
       if (move_dir == FORWARD) {
-        if (
-          sensor_distances[LEFT_FRONT] < kWall_align_max_absolute_threshold &&
-          sensor_distances[LEFT_REAR] < kWall_align_max_absolute_threshold
-        ) {
-          int16_t wall_diff = sensor_distances[LEFT_FRONT] - sensor_distances[LEFT_REAR];
-          int16_t wall_offset = sensor_distances[LEFT_FRONT] - 280;
-          if (wall_diff > - kWall_align_max_absolute_difference && wall_diff < kWall_align_max_absolute_difference) {
-            // if the two LEFT sensors see a difference, offset the encoder values
-            // so that controllerTrackLeft below will correct this offset and hopefully
-            // keep the robot moving straight. we offset the encoder values so that the course correction
-            // will persist even after the robot no longer has a near enough wall to align to.
-            static int16_t pWall_diff = 0;
-            static int16_t pWall_offset = 0;
+        if (is_valid_align_target(ALIGN_LEFT)) {
+          align_type = ALIGN_LEFT;
+          int16_t sensor_left_front_block = sensor_distances[LEFT_FRONT] % 100;
+          int16_t sensor_left_rear_block = sensor_distances[LEFT_REAR] % 100;
 
-            // reset derivative term if too long since last valid wall
-            // if (ticks_since_last_update > 10) {
-            //   pWall_diff = wall_diff;
-            //   pWall_offset = wall_offset;
-            // }
+          int16_t wall_diff = sensor_left_front_block - sensor_left_rear_block;
+          int16_t wall_offset = sensor_left_front_block - kWall_offset;
 
-            int32_t wall_correction = (
-              (int32_t) kP_wall_diff * wall_diff + (int32_t) kD_wall_diff * (pWall_diff - wall_diff) +
-              (int32_t) kP_wall_offset * wall_offset + (int32_t) kD_wall_offset * (pWall_offset - wall_offset)
-            ) >> 8;
+          int32_t wall_correction = ((int32_t) kP_wall_diff_left * wall_diff + (int32_t) kP_wall_offset_left * wall_offset) >> 8;
 
-            pWall_diff = wall_diff;
-            pWall_offset = wall_offset;
+          if (wall_correction > 0) {
+            axis_right.incrementEncoder(-wall_correction);
+          } else {
+            axis_left.incrementEncoder(wall_correction);
+          }
+        } else if (is_valid_align_target(ALIGN_FORWARD)) {
+          align_type = ALIGN_FORWARD;
+          int16_t wall_diff = sensor_distances[FRONT_FRONT_RIGHT] - sensor_distances[FRONT_FRONT_LEFT];
 
-            if (wall_correction > 0) {
-              axis_right.incrementEncoder(-wall_correction);
-            } else {
-              axis_left.incrementEncoder(wall_correction);
-            }
+          int32_t wall_correction = ((int32_t) kP_wall_diff_forward * wall_diff) >> 8;
+
+          if (wall_correction > 0) {
+            axis_right.incrementEncoder(-wall_correction);
+          } else {
+            axis_left.incrementEncoder(wall_correction);
+          }
+        } else if (is_valid_align_target(ALIGN_RIGHT)) {
+          align_type = ALIGN_RIGHT;
+          int16_t sensor_right_front_block = sensor_distances[RIGHT_FRONT] % 100;
+          int16_t wall_offset = sensor_right_front_block - kWall_offset;
+
+          int32_t wall_correction = ((int32_t) kP_wall_offset_right * wall_offset) >> 8;
+
+          if (wall_correction > 0) {
+            axis_left.incrementEncoder(-wall_correction);
+          } else {
+            axis_right.incrementEncoder(wall_correction);
           }
         }
       }
@@ -563,8 +619,8 @@ void loop_motion() {
       int16_t power_left = axis_left.getPower();
       int16_t power_right = axis_right.getPower();
       // int16_t _base_power = base_power;
-      int16_t _correction = correction;
-      int16_t _error = encoder_left - encoder_right;
+      // int16_t _correction = correction;
+      // int16_t _error = encoder_left - encoder_right;
       int16_t _sensor_front = sensor_distances[LEFT_FRONT];
       int16_t _sensor_rear = sensor_distances[LEFT_REAR];
       sei();
@@ -578,7 +634,7 @@ void loop_motion() {
       Serial.write((char *) &_sensor_front, 2);
       Serial.write((char *) &_sensor_rear, 2);
       Serial.write((char *) &state, 1);
-      Serial.write((char *) &move_type, 1);
+      Serial.write((char *) &align_type, 1);
       Serial.println();
 
       last_print = cur_time;

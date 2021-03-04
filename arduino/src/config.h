@@ -43,12 +43,16 @@ const uint8_t kParser_buf_size = 16;
 // align to wall only if both sensors see something within this distance (mm)
 const int16_t kWall_align_max_absolute_threshold = 400;
 // align to wall only if the abs difference between both sensors is less than this (mm)
-const int16_t kWall_align_max_absolute_difference = 50;
+const int16_t kWall_align_max_absolute_difference = 150;
 // scale difference between sensors
-extern int16_t kP_wall_diff;
-extern int16_t kD_wall_diff;
-extern int16_t kP_wall_offset;
-extern int16_t kD_wall_offset;
+extern int16_t kP_wall_diff_left;
+extern int16_t kP_wall_offset_left;
+
+extern int16_t kP_wall_diff_forward;
+
+extern int16_t kP_wall_offset_right;
+// scale difference between (sensor % 100) - kWall_offset
+const int16_t kWall_offset = 50;
 
 // controller parameters for offset (minimise error between encoder readings) controller
 extern int16_t kP_offset;
