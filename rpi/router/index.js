@@ -9,10 +9,30 @@ const robot = new Robot(config.serialPorts.arduinoPort);
 
 const logger = require("./logger.js")("index");
 
+const state = {
+  mode: false,
+};
+
 controller.on("data", (data) => {
   if (data === "START") {
     comms.send({ type: "start" });
-  } else if (data === "FP" || data === "EX") {
+  } else if (data === "FP") {
+    state.mode = "FP";
+    logger.info(`Mode set to ${state.mode}`);
+    comms.send({ type: "start" });
+  } else if (data === "EX") {
+    state.mode = "EX";
+    logger.info(`Mode set to ${state.mode}`);
+    comms.send({
+      type: "init",
+      data: {
+        task: "EX",
+        arena: {
+          P1: "0",
+          P2: "0",
+        },
+      },
+    });
     comms.send({ type: "start" });
   } else if (data.startsWith("WP:")) {
     const match = data.match(/WP:(\d+),(\d+)/);
@@ -82,7 +102,14 @@ comms.on("data", ({ type, data }) => {
     robot.send("QA");
   } else if (type === "status") {
     const { x, y, orientation } = data["robot_info"];
-    controller.send(`RobotPosition:${x},${y},${orientation}`);
+    const { P1, P2 } = data["internal_arena"];
+    if (state.mode === "FP") {
+      controller.send(`RobotPosition:${x},${y},${orientation}`);
+    } else if (state.mode === "EX") {
+      controller.send(`MapData:${P1},${P2},${x},${y},${orientation}`);
+    } else {
+      logger.warn("Received status while mode not set");
+    }
   }
 });
 
