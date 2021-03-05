@@ -22,11 +22,19 @@ const state = {
 };
 
 controller.on("data", (data) => {
-  if (data === "START") {
-    comms.send({ type: "start" });
-  } else if (data === "FP") {
+  if (data === "FP") {
     state.mode = "FP";
     logger.info(`Mode set to ${state.mode}`);
+    comms.send({
+      type: "init",
+      data: {
+        task: "FP",
+        arena: {
+          P1: "0",
+          P2: store.get("fp_p2"),
+        },
+      },
+    });
     comms.send({ type: "start" });
   } else if (data === "EX") {
     state.mode = "EX";
