@@ -56,8 +56,22 @@ extern int16_t kP_wall_offset_left;
 extern int16_t kP_wall_diff_forward;
 
 extern int16_t kP_wall_offset_right;
-// scale difference between (sensor % 100) - kWall_offset
-const int16_t kWall_offset = 50;
+
+// wall offsets: target offset to align to when distance to object is < (index * 100)
+#define kWall_offset_count 4
+const uint8_t kWall_offsets_left[kWall_offset_count] = {
+  50,
+  70,
+  50,
+  40
+};
+
+const uint8_t kWall_offsets_right[kWall_offset_count] = {
+  50,
+  75,
+  60,
+  40
+};
 
 // controller parameters for offset (minimise error between encoder readings) controller
 extern int16_t kP_offset;

@@ -201,6 +201,29 @@ bool is_valid_align_target(align_type_t type) {
   }
 }
 
+uint8_t get_wall_align_offset(align_type_t align_type, int16_t val) {
+  switch (align_type) {
+    case ALIGN_LEFT:
+      if (val > 400) {
+        return val;
+      }
+
+      return kWall_offsets_left[val / 100];
+      break;
+    case ALIGN_RIGHT:
+      if (val > 400) {
+        return val;
+      }
+
+      return kWall_offsets_right[val / 100];
+      break;
+    default:
+      break;
+  }
+
+  return val;
+}
+
 // triggers at 100Hz
 ISR(TIMER2_COMPA_vect) {
   // reset timer counter
@@ -341,7 +364,7 @@ ISR(TIMER2_COMPA_vect) {
           int16_t sensor_left_rear_block = sensor_distances[LEFT_REAR] % 100;
 
           int16_t wall_diff = sensor_left_front_block - sensor_left_rear_block;
-          int16_t wall_offset = sensor_left_front_block - kWall_offset;
+          int16_t wall_offset = sensor_left_front_block - get_wall_align_offset(ALIGN_LEFT, sensor_distances[LEFT_FRONT]);
 
           int32_t wall_correction = ((int32_t) kP_wall_diff_left * wall_diff + (int32_t) kP_wall_offset_left * wall_offset) >> 8;
 
@@ -364,7 +387,7 @@ ISR(TIMER2_COMPA_vect) {
         } else if (is_valid_align_target(ALIGN_RIGHT)) {
           align_type = ALIGN_RIGHT;
           int16_t sensor_right_front_block = sensor_distances[RIGHT_FRONT] % 100;
-          int16_t wall_offset = sensor_right_front_block - kWall_offset;
+          int16_t wall_offset = sensor_right_front_block - get_wall_align_offset(ALIGN_RIGHT, sensor_distances[RIGHT_FRONT]);
 
           int32_t wall_correction = ((int32_t) kP_wall_offset_right * wall_offset) >> 8;
 
