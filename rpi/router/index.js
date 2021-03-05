@@ -3,7 +3,11 @@ const Controller = require("./Controller.js");
 const Robot = require("./Robot.js");
 const config = require("./config.js");
 
-const comms = new Comms(config.zmq.broadcastAddress, config.zmq.updateAddress);
+const comms = new Comms(
+  config.zmq.broadcastAddress,
+  config.zmq.updateAddress,
+  config.zmq.configAddress
+);
 const controller = new Controller(config.serialPorts.btPort);
 const robot = new Robot(config.serialPorts.arduinoPort);
 
