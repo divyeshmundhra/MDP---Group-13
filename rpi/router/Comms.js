@@ -49,8 +49,7 @@ class Comms extends EventEmitter {
 
   async _reqReceiverTask() {
     for await (const [msg] of this.config) {
-      const str_msg = msg.toString();
-      if (str_msg === "ping") {
+      if (msg.toString() === "ping") {
         await this.config.send("pong");
         continue;
       }
@@ -61,7 +60,7 @@ class Comms extends EventEmitter {
         continue;
       }
 
-      await this.config.send(this.reqHandler(str_msg));
+      await this.config.send(this.reqHandler(JSON.parse(msg)));
     }
   }
 }
