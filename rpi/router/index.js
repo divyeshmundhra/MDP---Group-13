@@ -61,6 +61,7 @@ controller.on("data", (data) => {
     const y = parseInt(match[2], 10);
 
     comms.send({ type: "waypoint", data: { x, y } });
+    controller.send(`Grid:${store.get("fp_p2")}`);
   }
 });
 
