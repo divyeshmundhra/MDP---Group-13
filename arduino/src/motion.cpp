@@ -427,6 +427,28 @@ void start_motion_unit(motion_direction_t _direction, uint8_t unit) {
     return;
   }
 
+  // attempt to combine moves together if they are of the same type and direction
+  if (num_moves > 0) {
+    uint8_t prev_move = pos_moves_end == 0 ? (kMovement_buffer_size - 1) : pos_moves_end - 1;
+
+    if (
+      buffered_moves[prev_move].type == DISTANCE &&
+      buffered_moves[prev_move].direction == _direction
+    ) {
+      buffered_moves[prev_move].unit += unit;
+
+      if (_direction == FORWARD || _direction == REVERSE) {
+        buffered_moves[prev_move].target = buffered_moves[prev_move].unit * kBlock_distance;
+      } else if (_direction == LEFT || _direction == RIGHT) {
+        buffered_moves[prev_move].target = buffered_moves[prev_move].unit * kTicks_per_45_degrees;
+      }
+
+      Serial.print("Combined move with index=");
+      Serial.println(prev_move);
+      return;
+    }
+  }
+
   buffered_moves[pos_moves_end].type = DISTANCE;
   buffered_moves[pos_moves_end].direction = _direction;
   buffered_moves[pos_moves_end].unit = unit;
@@ -491,9 +513,7 @@ void parse_next_move() {
   axis_right.resetEncoder();
   state = MOVE_COMMANDED;
 
-  // track how many moves have been parsed
-  // this can be more than one when moves are combined, eg F1 + F1 = F2
-  uint8_t parsed_moves = 1;
+  Serial.println(buffered_moves[0].target);
 
   switch (buffered_moves[pos_moves_start].type) {
     case DISTANCE:
@@ -501,24 +521,6 @@ void parse_next_move() {
         move_type = DISTANCE;
         int32_t target = buffered_moves[pos_moves_start].target;
         move_dir = buffered_moves[pos_moves_start].direction;
-
-        // parse the next moves to see if we can combine them together
-        for (uint8_t i = 1; i < num_moves; i++) {
-          uint8_t move_index = (pos_moves_start + i) % kMovement_buffer_size;
-
-          if (
-            buffered_moves[move_index].type != DISTANCE ||
-            buffered_moves[move_index].direction != move_dir
-          ) {
-            break;
-          }
-
-          Serial.print("Combining move index=");
-          Serial.println(move_index);
-
-          target += buffered_moves[move_index].target;
-          parsed_moves ++;
-        }
 
         switch (move_dir) {
           case FORWARD:
@@ -560,8 +562,8 @@ void parse_next_move() {
   }
   sei();
 
-  num_moves -= parsed_moves;
-  pos_moves_start = (pos_moves_start + parsed_moves) % kMovement_buffer_size;
+  num_moves -= 1;
+  pos_moves_start = (pos_moves_start + 1) % kMovement_buffer_size;
 }
 
 void combine_next_move() {
