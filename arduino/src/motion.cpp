@@ -313,7 +313,7 @@ ISR(TIMER2_COMPA_vect) {
         resetControllerState(&state_straight_left, encoder_left);
         resetControllerState(&state_straight_right, encoder_right);
       } else if (move_type == OBSTACLE) {
-        resetControllerState(&state_obstacle, sensor_distances[FRONT_FRONT_MID]);
+        resetControllerState(&state_obstacle, sensor_distances[FRONT_FRONT_LEFT]);
       }
       state = MOVING;
     }
@@ -335,7 +335,7 @@ ISR(TIMER2_COMPA_vect) {
       // combine_next_move();
     }
   } else if (move_type == OBSTACLE) {
-    base_left = controllerObstacle(&state_obstacle, sensor_distances[FRONT_FRONT_MID], target_obstacle);
+    base_left = controllerObstacle(&state_obstacle, sensor_distances[FRONT_FRONT_LEFT], target_obstacle);
     base_right = base_left;
   } else if (move_type == ALIGN_EQUAL) {
     static uint8_t tick_count = 0;
@@ -358,7 +358,7 @@ ISR(TIMER2_COMPA_vect) {
       tick_count = 0;
 
       if (move_dir == FORWARD) {
-        if (is_valid_align_target(ALIGN_LEFT)) {
+        if (move_type != OBSTACLE && is_valid_align_target(ALIGN_LEFT)) {
           align_type = ALIGN_LEFT;
           int16_t sensor_left_front_block = sensor_distances[LEFT_FRONT] % 100;
           int16_t sensor_left_rear_block = sensor_distances[LEFT_REAR] % 100;
@@ -384,7 +384,7 @@ ISR(TIMER2_COMPA_vect) {
           } else {
             axis_left.incrementEncoder(wall_correction);
           }
-        } else if (is_valid_align_target(ALIGN_RIGHT)) {
+        } else if (move_type != OBSTACLE && is_valid_align_target(ALIGN_RIGHT)) {
           align_type = ALIGN_RIGHT;
           int16_t sensor_right_front_block = sensor_distances[RIGHT_FRONT] % 100;
           int16_t wall_offset = sensor_right_front_block - get_wall_align_offset(ALIGN_RIGHT, sensor_distances[RIGHT_FRONT]);
@@ -554,6 +554,7 @@ void parse_next_move() {
       }
     case OBSTACLE:
       move_type = OBSTACLE;
+      move_dir = FORWARD;
       target_obstacle = buffered_moves[pos_moves_start].target;
       axis_left.setReverse(false);
       axis_right.setReverse(false);
