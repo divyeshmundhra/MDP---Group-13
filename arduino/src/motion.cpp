@@ -153,9 +153,6 @@ ISR(TIMER2_COMPA_vect) {
   bool has_encoder_delta = (delta_left < -kEncoder_move_threshold) || (delta_left > kEncoder_move_threshold) ||
                   (delta_right < -kEncoder_move_threshold) || (delta_right > kEncoder_move_threshold);
 
-  // distance travelled after which the robot will report it has moved a tile
-  static uint16_t report_block_threshold;
-
   if (state == MOVING && !has_encoder_delta) {
     // encoder delta has slowed to almost zero - lets check if we should finish the move
     int32_t diff_err = encoder_left - encoder_right;
@@ -171,6 +168,22 @@ ISR(TIMER2_COMPA_vect) {
           (diff_right > -kMax_encoder_error && diff_right < kMax_encoder_error)
         ) {
           display.move_distance_done = 1;
+
+          switch(move_dir) {
+            case FORWARD:
+              display.update_f = 1;
+              break;
+            case REVERSE:
+              display.update_b = 1;
+              break;
+            case LEFT:
+              display.update_l = 1;
+              break;
+            case RIGHT:
+              display.update_r = 1;
+              break;
+          }
+
           state = REPORT_SENSOR;
           axis_left.setPower(0);
           axis_right.setPower(0);
@@ -197,7 +210,6 @@ ISR(TIMER2_COMPA_vect) {
       resetControllerState(&state_obstacle, sensor_distances[FRONT_FRONT_MID]);
     }
     state = MOVING;
-    report_block_threshold = 0;
     reached_max_power = false;
     straight_enabled = true;
   }
@@ -233,33 +245,6 @@ ISR(TIMER2_COMPA_vect) {
 
   axis_left.setPower(power_left);
   axis_right.setPower(power_right);
-
-  // we treat report_block_threshold == 0 as a "initialise the value" condition
-  // so that we don't have to duplicate the logic for incrementing dist_actual into the MOVE_COMMANDED handler
-  if (encoder_left > report_block_threshold || report_block_threshold == 0) {
-    if (report_block_threshold > 0) {
-      switch(move_dir) {
-        case FORWARD:
-          display.update_f = 1;
-          report_block_threshold += kBlock_distance;
-          break;
-        case REVERSE:
-          display.update_b = 1;
-          report_block_threshold += kBlock_distance;
-          break;
-        case LEFT:
-          display.update_l = 1;
-          report_block_threshold += kTicks_per_45_degrees * 2;
-          break;
-        case RIGHT:
-          display.update_r = 1;
-          report_block_threshold += kTicks_per_45_degrees * 2;
-          break;
-      }
-    } else {
-      report_block_threshold = kReport_distance;
-    }
-  }
 }
 
 bool get_motion_done() {
