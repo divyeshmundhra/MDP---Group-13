@@ -31,10 +31,4 @@ const uint16_t kSensor_side_center_distance = kSensor_side_front_rear_distance /
 
 const uint16_t kBlock_distance = 1150;
 
-// distance of travel after which to report sensor values
-const uint16_t kReport_distance = 0.95 * kBlock_distance;
-// delay the sensor read until the middle of the block to get a more accurate reading
-// this is not added for the final block since we won't actually move until the end of the block
-const uint16_t kReport_distance_offset = 0.4 * kBlock_distance;
-
 #endif
