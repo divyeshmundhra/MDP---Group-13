@@ -12,6 +12,7 @@ typedef enum {
   IDLE,
   MOVE_COMMANDED,
   MOVING,
+  REPORT_SENSOR_INIT,
   REPORT_SENSOR
 } state_t;
 
@@ -285,7 +286,7 @@ ISR(TIMER2_COMPA_vect) {
               break;
           }
 
-          state = REPORT_SENSOR;
+          state = REPORT_SENSOR_INIT;
           axis_left.setPower(0);
           axis_right.setPower(0);
           return;
@@ -625,18 +626,12 @@ bool log_motion = false;
 bool parse_moves = true;
 
 void loop_motion() {
-  static state_t pState = IDLE;
   static align_type_t pAlign_type = ALIGN_IDLE;
   static uint32_t report_delay_start = 0;
 
-  if (pState != state) {
-    if (state == IDLE) {
-      Serial.println("move done");
-    } else if (state == REPORT_SENSOR) {
-      report_delay_start = millis();
-    }
-
-    pState = state;
+  if (state == REPORT_SENSOR_INIT) {
+    report_delay_start = millis();
+    state = REPORT_SENSOR;
   }
 
   if (pAlign_type != align_type) {
@@ -648,11 +643,6 @@ void loop_motion() {
 
   if (parse_moves) {
     parse_next_move();
-  }
-
-  if (state == REPORT_SENSOR && (millis() - report_delay_start) > kSensor_report_delay) {
-    log_all_sensors();
-    state = IDLE;
   }
 
   if (log_motion) {
@@ -712,5 +702,10 @@ void loop_motion() {
   if (display.update_r) {
     Serial.println(F("$UR"));
     display.update_r = 0;
+  }
+
+  if (state == REPORT_SENSOR && (millis() - report_delay_start) > kSensor_report_delay) {
+    log_all_sensors();
+    state = IDLE;
   }
 }
