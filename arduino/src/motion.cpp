@@ -461,6 +461,20 @@ void start_motion_unit(motion_direction_t _direction, uint8_t unit) {
     return;
   }
 
+  if ((state == MOVE_COMMANDED || state == MOVING) && move_type == DISTANCE && move_dir == _direction) {
+    int32_t new_move = 0;
+    if (_direction == FORWARD || _direction == REVERSE) {
+      new_move = unit * kBlock_distance;
+    } else if (_direction == LEFT || _direction == RIGHT) {
+      new_move = unit * kTicks_per_45_degrees;
+    }
+
+    target_left += new_move;
+    target_right += new_move;
+    Serial.println("Combined move with active");
+    return;
+  }
+
   // attempt to combine moves together if they are of the same type and direction
   if (num_moves > 0) {
     uint8_t prev_move = pos_moves_end == 0 ? (kMovement_buffer_size - 1) : pos_moves_end - 1;
