@@ -359,46 +359,79 @@ ISR(TIMER2_COMPA_vect) {
       tick_count = 0;
 
       if (move_dir == FORWARD) {
-        if (move_type != OBSTACLE && is_valid_align_target(ALIGN_LEFT)) {
-          align_type = ALIGN_LEFT;
-          int16_t sensor_left_front_block = sensor_distances[LEFT_FRONT] % 100;
-          int16_t sensor_left_rear_block = sensor_distances[LEFT_REAR] % 100;
+        static uint8_t ticks_since_align_selected = 0;
+        ticks_since_align_selected ++;
 
-          int16_t wall_diff = sensor_left_front_block - sensor_left_rear_block;
-          int16_t wall_offset = sensor_left_front_block - get_wall_align_offset(ALIGN_LEFT, sensor_distances[LEFT_FRONT]);
+        if (align_type == ALIGN_IDLE && ticks_since_align_selected >= 5) {
+          ticks_since_align_selected = 0;
 
-          int32_t wall_correction = ((int32_t) kP_wall_diff_left * wall_diff + (int32_t) kP_wall_offset_left * wall_offset) >> 8;
-
-          if (wall_correction > 0) {
-            axis_right.incrementEncoder(-wall_correction);
+          if (move_type != OBSTACLE) {
+            if (is_valid_align_target(ALIGN_LEFT)) {
+              align_type = ALIGN_LEFT;
+            } else if (is_valid_align_target(ALIGN_FORWARD)) {
+              align_type = ALIGN_FORWARD;
+            } else if (is_valid_align_target(ALIGN_RIGHT)) {
+              align_type = ALIGN_RIGHT;
+            }
           } else {
-            axis_left.incrementEncoder(wall_correction);
-          }
-        } else if (is_valid_align_target(ALIGN_FORWARD)) {
-          align_type = ALIGN_FORWARD;
-          int16_t wall_diff = sensor_distances[FRONT_FRONT_RIGHT] - sensor_distances[FRONT_FRONT_LEFT];
-
-          int32_t wall_correction = ((int32_t) kP_wall_diff_forward * wall_diff) >> 8;
-
-          if (wall_correction > 0) {
-            axis_right.incrementEncoder(-wall_correction);
-          } else {
-            axis_left.incrementEncoder(wall_correction);
-          }
-        } else if (move_type != OBSTACLE && is_valid_align_target(ALIGN_RIGHT)) {
-          align_type = ALIGN_RIGHT;
-          int16_t sensor_right_front_block = sensor_distances[RIGHT_FRONT] % 100;
-          int16_t wall_offset = sensor_right_front_block - get_wall_align_offset(ALIGN_RIGHT, sensor_distances[RIGHT_FRONT]);
-
-          int32_t wall_correction = ((int32_t) kP_wall_offset_right * wall_offset) >> 8;
-
-          if (wall_correction > 0) {
-            axis_left.incrementEncoder(-wall_correction);
-          } else {
-            axis_right.incrementEncoder(wall_correction);
+            // obstacle will only align forwards
+            if (is_valid_align_target(ALIGN_FORWARD)) {
+              align_type = ALIGN_FORWARD;
+            }
           }
         } else {
-          align_type = ALIGN_IDLE;
+          if (!is_valid_align_target(align_type)) {
+            align_type = ALIGN_IDLE;
+          }
+        }
+
+        switch (align_type) {
+          case ALIGN_LEFT: {
+            int16_t sensor_left_front_block = sensor_distances[LEFT_FRONT] % 100;
+            int16_t sensor_left_rear_block = sensor_distances[LEFT_REAR] % 100;
+
+            int16_t wall_diff = sensor_left_front_block - sensor_left_rear_block;
+            int16_t wall_offset = sensor_left_front_block - get_wall_align_offset(ALIGN_LEFT, sensor_distances[LEFT_FRONT]);
+
+            int32_t wall_correction = ((int32_t) kP_wall_diff_left * wall_diff + (int32_t) kP_wall_offset_left * wall_offset) >> 8;
+
+            if (wall_correction > 0) {
+              axis_right.incrementEncoder(-wall_correction);
+            } else {
+              axis_left.incrementEncoder(wall_correction);
+            }
+
+            break;
+          }
+          case ALIGN_FORWARD:
+          {
+            int16_t wall_diff = sensor_distances[FRONT_FRONT_RIGHT] - sensor_distances[FRONT_FRONT_LEFT];
+
+            int32_t wall_correction = ((int32_t) kP_wall_diff_forward * wall_diff) >> 8;
+
+            if (wall_correction > 0) {
+              axis_right.incrementEncoder(-wall_correction);
+            } else {
+              axis_left.incrementEncoder(wall_correction);
+            }
+            
+            break;
+          }
+          case ALIGN_RIGHT:
+          {
+            int16_t sensor_right_front_block = sensor_distances[RIGHT_FRONT] % 100;
+            int16_t wall_offset = sensor_right_front_block - get_wall_align_offset(ALIGN_RIGHT, sensor_distances[RIGHT_FRONT]);
+
+            int32_t wall_correction = ((int32_t) kP_wall_offset_right * wall_offset) >> 8;
+
+            if (wall_correction > 0) {
+              axis_left.incrementEncoder(-wall_correction);
+            } else {
+              axis_right.incrementEncoder(wall_correction);
+            }
+
+            break;
+          }
         }
       }
     }
