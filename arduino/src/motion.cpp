@@ -513,8 +513,6 @@ void parse_next_move() {
   axis_right.resetEncoder();
   state = MOVE_COMMANDED;
 
-  Serial.println(buffered_moves[0].target);
-
   switch (buffered_moves[pos_moves_start].type) {
     case DISTANCE:
       {
