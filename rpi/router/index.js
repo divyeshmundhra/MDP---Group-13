@@ -3,7 +3,15 @@ const Controller = require("./Controller.js");
 const Robot = require("./Robot.js");
 const config = require("./config.js");
 
-const comms = new Comms(config.zmq.broadcastAddress, config.zmq.updateAddress);
+const store = require("data-store")({
+  path: require("path").join(process.cwd(), config.dataStoreFileName),
+});
+
+const comms = new Comms(
+  config.zmq.broadcastAddress,
+  config.zmq.updateAddress,
+  config.zmq.configAddress
+);
 const controller = new Controller(config.serialPorts.btPort);
 const robot = new Robot(config.serialPorts.arduinoPort);
 
@@ -14,11 +22,19 @@ const state = {
 };
 
 controller.on("data", (data) => {
-  if (data === "START") {
-    comms.send({ type: "start" });
-  } else if (data === "FP") {
+  if (data === "FP") {
     state.mode = "FP";
     logger.info(`Mode set to ${state.mode}`);
+    comms.send({
+      type: "init",
+      data: {
+        task: "FP",
+        arena: {
+          P1: "0",
+          P2: store.get("fp_p2"),
+        },
+      },
+    });
     comms.send({ type: "start" });
   } else if (data === "EX") {
     state.mode = "EX";
@@ -45,6 +61,7 @@ controller.on("data", (data) => {
     const y = parseInt(match[2], 10);
 
     comms.send({ type: "waypoint", data: { x, y } });
+    controller.send(`Grid:${store.get("fp_p2")}`);
   }
 });
 
@@ -110,6 +127,31 @@ comms.on("data", ({ type, data }) => {
     } else {
       logger.warn("Received status while mode not set");
     }
+  }
+});
+
+comms.setReqHandler(({ type, data }) => {
+  if (type === "setfparena") {
+    const { P2 } = data;
+
+    if (typeof P2 === "undefined") {
+      return "Expected P2 string but not defined";
+    }
+
+    let reply = "ok";
+
+    if (P2.length !== 76) {
+      reply = `Expected P2 string of length 76 but got ${P2.length} instead. Still saving string`;
+    }
+
+    if (P2.match(/[^0-9a-fA-F]/, P2)) {
+      reply = "Invalid hex character in string. Still saving string";
+    }
+
+    store.set("fp_p2", P2);
+    logger.info(`Set new fastest path arena: ${P2}`);
+
+    return reply;
   }
 });
 

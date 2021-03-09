@@ -8,5 +8,7 @@ module.exports = {
   zmq: {
     broadcastAddress: "tcp://0.0.0.0:3000",
     updateAddress: "tcp://0.0.0.0:3001",
+    configAddress: "tcp://0.0.0.0:3002",
   },
+  dataStoreFileName: "data.json",
 };
