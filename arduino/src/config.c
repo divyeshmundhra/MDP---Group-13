@@ -11,3 +11,14 @@ int16_t kD_straight = 2500;
 int16_t kP_obstacle = 400;
 int16_t kI_obstacle = 50;
 int16_t kD_obstacle = 0;
+
+int16_t kP_wall_diff_left = 200;
+int16_t kP_wall_offset_left = 200;
+
+int16_t kP_wall_diff_forward = 200;
+
+int16_t kP_wall_offset_right = 200;
+
+int16_t kP_align = 512;
+int16_t kI_align = 64;
+int16_t kD_align = 64;

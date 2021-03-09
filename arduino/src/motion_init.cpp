@@ -14,6 +14,7 @@ ISR(PCINT2_vect) {
   // http://makeatronics.blogspot.com/2013/02/efficiently-reading-quadrature-with.html
   // https://github.com/PaulStoffregen/Encoder/blob/master/Encoder.h
   static uint8_t state = 0;
+  int8_t delta = 0;
   asm volatile(
       // update encoder state
       "lsl %[state]                    \n\t" // state << 2
@@ -47,31 +48,27 @@ ISR(PCINT2_vect) {
       "rjmp L%=plus1                   \n\t" // 14
       "rjmp L%=end                     \n\t" // 15
     "L%=plus1:                         \n\t"
-      "subi %A[count], 255             \n\t"
-      "sbci %B[count], 255             \n\t"
-      "sbci %C[count], 255             \n\t"
-      "sbci %D[count], 255             \n\t"
+      "ldi %[delta], 1                 \n\t"
       "rjmp L%=end                     \n\t"
     "L%=minus1:                        \n\t"
-      "subi %A[count], 1               \n\t"
-      "sbci %B[count], 0               \n\t"
-      "sbci %C[count], 0               \n\t"
-      "sbci %D[count], 0               \n\t"
+      "ldi %[delta], 255               \n\t"
     "L%=end:                           \n\t"
     :
       [state] "=d" (state), // has to go into upper register because ANDI and SBR only operate on upper
-      [count] "=w" (axis_left.encoder_count)
+      [delta] "=d" (delta)
     :
       "0" (state),
-      "1" (axis_left.encoder_count),
       [in] "I" (_SFR_IO_ADDR(E1_PIN)),
       [encA] "I" (E1A_BIT),
       [encB] "I" (E1B_BIT)
     : "r30", "r31"
   );
+
+  axis_left.encoderEdge(delta);
 }
 
 ISR(PCINT0_vect) {
+  int8_t delta = 0;
   static uint8_t state = 0;
   asm volatile(
       // update encoder state
@@ -106,28 +103,23 @@ ISR(PCINT0_vect) {
       "rjmp L%=plus1                   \n\t" // 14
       "rjmp L%=end                     \n\t" // 15
     "L%=plus1:                         \n\t"
-      "subi %A[count], 255             \n\t"
-      "sbci %B[count], 255             \n\t"
-      "sbci %C[count], 255             \n\t"
-      "sbci %D[count], 255             \n\t"
+      "ldi %A[delta], 1                 \n\t"
       "rjmp L%=end                     \n\t"
     "L%=minus1:                        \n\t"
-      "subi %A[count], 1               \n\t"
-      "sbci %B[count], 0               \n\t"
-      "sbci %C[count], 0               \n\t"
-      "sbci %D[count], 0               \n\t"
+      "ldi %A[delta], 255               \n\t"
     "L%=end:                           \n\t"
     :
       [state] "=d" (state), // has to go into upper register because ANDI and SBR only operate on upper
-      [count] "=w" (axis_right.encoder_count)
+      [delta] "=d" (delta)
     :
       "0" (state),
-      "1" (axis_right.encoder_count),
       [in] "I" (_SFR_IO_ADDR(E2_PIN)),
       [encA] "I" (E2A_BIT),
       [encB] "I" (E2B_BIT)
     : "r30", "r31"
   );
+
+  axis_right.encoderEdge(delta);
 }
 
 void setPowerLeft(uint16_t power, bool reverse) {

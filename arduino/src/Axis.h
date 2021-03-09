@@ -2,6 +2,7 @@
 #define AXIS_H
 
 #include <stdint.h>
+#include "config.h"
 
 class Axis {
   public:
@@ -29,6 +30,19 @@ class Axis {
       _reverse = reverse;
     }
 
+    void encoderEdge(int8_t delta) {
+      if (
+        (_encoder_correction > 0 && delta < 0) ||
+        (_encoder_correction < 0 && delta > 0)
+      ) {
+        // we add delta only if it will cancel out _encoder_correction, else we add it to the main count
+        // this prevents _encoder_correction from growing too large in one direction and overflowing
+        _encoder_correction += delta;
+      } else {
+        _encoder_count += delta;
+      }
+    }
+
     /**
      * @brief Invert the encoder value if the axis is currently reversed
      * 
@@ -37,17 +51,30 @@ class Axis {
      */
     int32_t getEncoder() {
       if (_invert ^ _reverse) {
-        return -encoder_count;
+        return -_encoder_count - _encoder_correction;
       }
 
-      return encoder_count;
+      return _encoder_count + _encoder_correction;
     }
 
     void resetEncoder() {
-      encoder_count = 0;
+      _encoder_count = 0;
+      _encoder_correction = 0;
     }
 
-    volatile int32_t encoder_count = 0;
+    void incrementEncoder(int32_t delta) {
+      if (_invert) {
+        _encoder_correction -= delta;
+      } else {
+        _encoder_correction += delta;
+      }
+
+      if (_encoder_correction < kMin_encoder_correction) {
+        _encoder_correction = kMin_encoder_correction;
+      } else if (_encoder_correction > kMax_encoder_correction) {
+        _encoder_correction = kMax_encoder_correction;
+      }
+    }
 
     int16_t getPower() {
       return _power;
@@ -77,6 +104,9 @@ class Axis {
      * 
      */
     bool _reverse = false;
+
+    volatile int32_t _encoder_count = 0;
+    volatile int16_t _encoder_correction = 0;
 };
 
 #endif

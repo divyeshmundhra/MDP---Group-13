@@ -66,7 +66,7 @@ static bool parse_buf() {
       log_sensor(val);
     }
   } else if (cmd == 'A') {
-    start_align();
+    start_align(val);
   } else if (cmd == 'D') {
     state = DEBUG_IDLE;
   } else if (cmd == 'S') {
@@ -113,6 +113,24 @@ static bool parse_buf() {
       kI_obstacle = val;
     } else if (cmd1 == 'd') {
       kD_obstacle = val;
+    }
+  } else if (cmd == 'p') {
+    if (cmd1 == 'a') {
+      kP_wall_diff_left = val;
+    } else if (cmd1 == 'b') {
+      kP_wall_offset_left = val;
+    } else if (cmd1 == 'c') {
+      kP_wall_diff_forward = val;
+    } else if (cmd1 == 'd') {
+      kP_wall_offset_right = val;
+    }
+  } else if (cmd == 'w') {
+    if (cmd1 == 'p') {
+      kP_align = val;
+    } else if (cmd1 == 'i') {
+      kI_align = val;
+    } else if (cmd1 == 'd') {
+      kD_align = val;
     }
   } else {
     Serial.println("Unknown cmd");
