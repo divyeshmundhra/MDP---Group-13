@@ -461,7 +461,7 @@ void start_motion_unit(motion_direction_t _direction, uint8_t unit) {
     return;
   }
 
-  if ((state == MOVE_COMMANDED || state == MOVING) && move_type == DISTANCE && move_dir == _direction) {
+  if (num_moves == 0 && (state == MOVE_COMMANDED || state == MOVING) && move_type == DISTANCE && move_dir == _direction) {
     int32_t new_move = 0;
     if (_direction == FORWARD || _direction == REVERSE) {
       new_move = unit * kBlock_distance;
