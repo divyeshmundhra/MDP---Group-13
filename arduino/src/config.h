@@ -32,7 +32,7 @@ const int8_t kMax_obstacle_error = 5;
 const int8_t kMax_encoder_diff_error = 5;
 
 // time after a move to wait before reporting sensor values
-const int16_t kSensor_report_delay = 400;
+const int16_t kSensor_report_delay = 0;
 const int16_t kMax_encoder_correction = 64;
 const int16_t kMin_encoder_correction = -64;
 
@@ -43,9 +43,9 @@ const uint8_t kParser_buf_size = 16;
 // parameters for aligning the robot to the wall using LEFT_FRONT and LEFT_REAR sensors
 
 // align to wall only if both sensors see something within this distance (mm)
-const int16_t kWall_align_max_absolute_threshold = 400;
+const int16_t kWall_align_max_absolute_threshold = 200;
 // align to wall only if the abs difference between both sensors is less than this (mm)
-const int16_t kWall_align_max_absolute_difference = 150;
+const int16_t kWall_align_max_absolute_difference = 80;
 // align to wall only if the main controller outputs more than this power
 // this prevents the align controller from slowly turning at the end of a move
 const int16_t kWall_align_min_power = 100;
@@ -67,8 +67,8 @@ const uint8_t kWall_offsets_left[kWall_offset_count] = {
 };
 
 const uint8_t kWall_offsets_right[kWall_offset_count] = {
+  40,
   50,
-  75,
   60,
   40
 };
@@ -123,7 +123,7 @@ const double kSensor_constants[6][3] = {
   {-104.83, 797470.16, -44.35},   // LEFT_REAR
   {-253.4, 2186000, 455.2},  // FRONT_FRONT_LEFT
   {-104.83, 797470.16, -44.35},   // LEFT_FRONT
-  {-180.8, 1222000, 874.4}      // RIGHT_FRONT
+  {-117.70, 833191.25, -10.73}      // RIGHT_FRONT
 };
 
 // maximum valid distance reportable by each sensor
@@ -161,6 +161,6 @@ const int8_t kSensor_offset[6] = {
   0
 };
 
-const uint8_t kMovement_buffer_size = 64;
+const uint8_t kMovement_buffer_size = 32;
 
 #endif
