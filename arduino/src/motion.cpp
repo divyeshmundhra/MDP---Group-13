@@ -25,7 +25,8 @@ typedef enum {
 typedef enum {
   ALIGN_IDLE,
   ALIGN_LEFT,
-  ALIGN_RIGHT,
+  ALIGN_LEFT_FRONT,
+  ALIGN_RIGHT_FRONT,
   ALIGN_FORWARD
 } align_type_t;
 
@@ -167,7 +168,17 @@ bool is_valid_align_target(align_type_t type) {
 
         return true;
       }
-    case ALIGN_RIGHT:
+    case ALIGN_LEFT_FRONT:
+      if (!sensor_stable[LEFT_FRONT]) {
+        return false;
+      }
+
+      if (sensor_distances[LEFT_FRONT] > kWall_align_max_absolute_threshold) {
+        return false;
+      }
+      
+      return true;
+    case ALIGN_RIGHT_FRONT:
       if (!sensor_stable[RIGHT_FRONT]) {
         return false;
       }
@@ -205,13 +216,14 @@ bool is_valid_align_target(align_type_t type) {
 uint8_t get_wall_align_offset(align_type_t align_type, int16_t val) {
   switch (align_type) {
     case ALIGN_LEFT:
+    case ALIGN_LEFT_FRONT:
       if (val > 400) {
         return val;
       }
 
       return kWall_offsets_left[val / 100];
       break;
-    case ALIGN_RIGHT:
+    case ALIGN_RIGHT_FRONT:
       if (val > 400) {
         return val;
       }
@@ -368,10 +380,10 @@ ISR(TIMER2_COMPA_vect) {
           if (move_type != OBSTACLE) {
             if (is_valid_align_target(ALIGN_LEFT)) {
               align_type = ALIGN_LEFT;
-            } else if (is_valid_align_target(ALIGN_FORWARD)) {
-              align_type = ALIGN_FORWARD;
-            } else if (is_valid_align_target(ALIGN_RIGHT)) {
-              align_type = ALIGN_RIGHT;
+            } else if (is_valid_align_target(ALIGN_LEFT_FRONT)) {
+              align_type = ALIGN_LEFT_FRONT;
+            } else if (is_valid_align_target(ALIGN_RIGHT_FRONT)) {
+              align_type = ALIGN_RIGHT_FRONT;
             }
           } else {
             // obstacle will only align forwards
@@ -417,10 +429,25 @@ ISR(TIMER2_COMPA_vect) {
             
             break;
           }
-          case ALIGN_RIGHT:
+          case ALIGN_LEFT_FRONT:
+          {
+            int16_t sensor_left_front_block = sensor_distances[LEFT_FRONT] % 100;
+            int16_t wall_offset = sensor_left_front_block - get_wall_align_offset(ALIGN_LEFT_FRONT, sensor_distances[LEFT_FRONT]);
+
+            int32_t wall_correction = ((int32_t) kP_wall_offset_right * wall_offset) >> 8;
+
+            if (wall_correction > 0) {
+              axis_right.incrementEncoder(-wall_correction);
+            } else {
+              axis_left.incrementEncoder(wall_correction);
+            }
+
+            break;
+          }
+          case ALIGN_RIGHT_FRONT:
           {
             int16_t sensor_right_front_block = sensor_distances[RIGHT_FRONT] % 100;
-            int16_t wall_offset = sensor_right_front_block - get_wall_align_offset(ALIGN_RIGHT, sensor_distances[RIGHT_FRONT]);
+            int16_t wall_offset = sensor_right_front_block - get_wall_align_offset(ALIGN_RIGHT_FRONT, sensor_distances[RIGHT_FRONT]);
 
             int32_t wall_correction = ((int32_t) kP_wall_offset_right * wall_offset) >> 8;
 
