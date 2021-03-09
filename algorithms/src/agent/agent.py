@@ -52,7 +52,7 @@ class Agent:
                 move_command = None
             else:
                 message = f'Exploration complete!'
-                self.fill_remaining_unexplored_with_obstacles()
+                # self.fill_remaining_unexplored_with_obstacles()
                 if self.robot_info.get_coord().is_equal(START_COORD):
                     # avoid navigating to same square (and crash program) when already at start coord
                     move_command = None
