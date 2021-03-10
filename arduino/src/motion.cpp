@@ -213,7 +213,9 @@ bool is_valid_align_target(align_type_t type) {
   }
 }
 
-uint8_t get_wall_align_offset(align_type_t align_type, int16_t val) {
+volatile int16_t align_target_offset = 0;
+
+uint8_t get_base_wall_align_offset(align_type_t align_type, int16_t val) {
   switch (align_type) {
     case ALIGN_LEFT:
     case ALIGN_LEFT_FRONT:
@@ -378,12 +380,32 @@ ISR(TIMER2_COMPA_vect) {
           ticks_since_align_selected = 0;
 
           if (move_type != OBSTACLE) {
+            int16_t base_offset = 0;
+            int16_t diff = 0;
+            int16_t sensor_val = 0;
+
             if (is_valid_align_target(ALIGN_LEFT)) {
               align_type = ALIGN_LEFT;
+              sensor_val = sensor_distances[LEFT_FRONT] % 100;
+              base_offset = get_base_wall_align_offset(ALIGN_LEFT, sensor_val);
             } else if (is_valid_align_target(ALIGN_LEFT_FRONT)) {
               align_type = ALIGN_LEFT_FRONT;
+              sensor_val = sensor_distances[LEFT_FRONT] % 100;
+              base_offset = get_base_wall_align_offset(ALIGN_LEFT_FRONT, sensor_val);
             } else if (is_valid_align_target(ALIGN_RIGHT_FRONT)) {
               align_type = ALIGN_RIGHT_FRONT;
+              sensor_val = sensor_distances[RIGHT_FRONT] % 100;
+              base_offset = get_base_wall_align_offset(ALIGN_RIGHT_FRONT, sensor_val);
+            }
+
+            // compute diff between current sensor reading and the ideal offset
+            // if too far, use the current sensor reading as the offset target instead
+            diff = sensor_val - base_offset;
+            if (diff > -kWall_align_max_offset_delta && diff < kWall_align_max_offset_delta) {
+              align_target_offset = base_offset;
+            } else {
+              // align_target_offset = sensor_val;
+              align_type = ALIGN_IDLE;
             }
           } else {
             // obstacle will only align forwards
@@ -403,7 +425,7 @@ ISR(TIMER2_COMPA_vect) {
             int16_t sensor_left_rear_block = sensor_distances[LEFT_REAR] % 100;
 
             int16_t wall_diff = sensor_left_front_block - sensor_left_rear_block;
-            int16_t wall_offset = sensor_left_front_block - get_wall_align_offset(ALIGN_LEFT, sensor_distances[LEFT_FRONT]);
+            int16_t wall_offset = sensor_left_front_block - align_target_offset;
 
             int32_t wall_correction = ((int32_t) kP_wall_diff_left * wall_diff + (int32_t) kP_wall_offset_left * wall_offset) >> 8;
 
@@ -432,9 +454,9 @@ ISR(TIMER2_COMPA_vect) {
           case ALIGN_LEFT_FRONT:
           {
             int16_t sensor_left_front_block = sensor_distances[LEFT_FRONT] % 100;
-            int16_t wall_offset = sensor_left_front_block - get_wall_align_offset(ALIGN_LEFT_FRONT, sensor_distances[LEFT_FRONT]);
+            int16_t wall_offset = sensor_left_front_block - align_target_offset;
 
-            int32_t wall_correction = ((int32_t) kP_wall_offset_right * wall_offset) >> 8;
+            int32_t wall_correction = ((int32_t) kP_wall_offset_left * wall_offset) >> 8;
 
             if (wall_correction > 0) {
               axis_right.incrementEncoder(-wall_correction);
@@ -447,7 +469,7 @@ ISR(TIMER2_COMPA_vect) {
           case ALIGN_RIGHT_FRONT:
           {
             int16_t sensor_right_front_block = sensor_distances[RIGHT_FRONT] % 100;
-            int16_t wall_offset = sensor_right_front_block - get_wall_align_offset(ALIGN_RIGHT_FRONT, sensor_distances[RIGHT_FRONT]);
+            int16_t wall_offset = sensor_right_front_block - align_target_offset;
 
             int32_t wall_correction = ((int32_t) kP_wall_offset_right * wall_offset) >> 8;
 
