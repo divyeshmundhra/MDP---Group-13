@@ -13,7 +13,7 @@ const uint8_t kSensor_filter_alpha = 120;
 // without even trying to convert. This handles a potential int16_t overflow
 const uint16_t kSensor_min_value = 300;
 // maximum delta of sensor distance below which is considered stable
-const int8_t kSensor_stable_threshold = 32;
+const int8_t kSensor_stable_threshold = 8;
 
 // max axis acceleration/deceleration
 const int16_t kMax_axis_accel = 64;
@@ -43,9 +43,12 @@ const uint8_t kParser_buf_size = 16;
 // parameters for aligning the robot to the wall using LEFT_FRONT and LEFT_REAR sensors
 
 // align to wall only if both sensors see something within this distance (mm)
-const int16_t kWall_align_max_absolute_threshold = 200;
+const int16_t kWall_align_max_absolute_threshold = 250;
 // align to wall only if the abs difference between both sensors is less than this (mm)
-const int16_t kWall_align_max_absolute_difference = 80;
+const int16_t kWall_align_max_absolute_difference = 50;
+// do offset alignment only if difference between base offset is less than this
+// this prevents the robot from trying to correct too large an error
+const int16_t kWall_align_max_offset_delta = 20;
 // align to wall only if the main controller outputs more than this power
 // this prevents the align controller from slowly turning at the end of a move
 const int16_t kWall_align_min_power = 100;
@@ -61,14 +64,14 @@ extern int16_t kP_wall_offset_right;
 #define kWall_offset_count 4
 const uint8_t kWall_offsets_left[kWall_offset_count] = {
   50,
-  70,
+  60,
   50,
   40
 };
 
 const uint8_t kWall_offsets_right[kWall_offset_count] = {
   40,
-  50,
+  40,
   60,
   40
 };

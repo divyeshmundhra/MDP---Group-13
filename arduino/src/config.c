@@ -4,8 +4,8 @@ int16_t kP_offset = 500;
 int16_t kI_offset = 10;
 int16_t kD_offset = 0;
 
-int16_t kP_straight = 500;
-int16_t kI_straight = 50;
+int16_t kP_straight = 300;
+int16_t kI_straight = 100;
 int16_t kD_straight = 2500;
 
 int16_t kP_obstacle = 400;
