@@ -21,3 +21,17 @@ void Axis::setPower(int16_t target_power) {
     _setPower(-_power, !(_invert ^ _reverse));
   }
 }
+
+void Axis::setReverse(bool reverse) {
+  static char pReverse = 2;
+
+  if (pReverse != 2) {
+    if (reverse != pReverse) {
+      incrementEncoder(kBacklash_compensation);
+    }
+  }
+
+  pReverse = reverse;
+
+  _reverse = reverse;
+}
