@@ -9,6 +9,7 @@ from src.dto.ArenaStringParser import ArenaStringParser
 # from src.agent import FastestPathAlgo, ExplorationAlgo
 from src.agent.FastestPathAlgo import FastestPathAlgo
 from src.agent.ExplorationAlgo import ExplorationAlgo
+from src.agent.ExploreDangerousAlgo import ExploreDangerousAlgo
 
 from src.dto.constants import AgentTask, START_COORD
 
@@ -21,6 +22,8 @@ class Agent:
         self.end_coord = end_coord
         self.waypoint_coord = waypoint_coord
         self.reached_waypoint = False
+        self.exploration_complete = False
+        self.dangerous_exploration_path = None
         self.algo = None # initialized 3 lines below
 
         if self.task == AgentTask.FAST:
@@ -44,21 +47,31 @@ class Agent:
             self.reached_waypoint = True
 
     def step(self) -> AgentOutput:
-        target_coord = self.think()
+        if self.exploration_complete:
+            if self.robot_info.get_coord().is_equal(self.waypoint_coord):
+                self.waypoint_coord = self.dangerous_exploration_path.pop(0) if self.dangerous_exploration_path else None
+                # look around
+                return AgentOutput(
+                    MoveCommand(360, 0),
+                    'Looking around to see unexplored dangerous cell'
+                )
+            target_coord = FastestPathAlgo().get_next_step(self.arena,self.robot_info,self.waypoint_coord)
+        else:
+            target_coord = self.think()
         cur_coord = self.robot_info.get_coord()
         if target_coord == None:
             if self.task == AgentTask.FAST:
                 message = f'No valid path!'
                 move_command = None
             else:
-                message = f'Exploration complete!'
+                message = f'Explored all non-dangerous cells!'
+                self.exploration_complete = True
                 # self.fill_remaining_unexplored_with_obstacles()
-                if self.robot_info.get_coord().is_equal(START_COORD):
-                    # avoid navigating to same square (and crash program) when already at start coord
-                    move_command = None
-                else:
-                    next_step = FastestPathAlgo().get_next_step(self.arena,self.robot_info,START_COORD, None)
-                    move_command = self.calculate_move(cur_coord, next_step)
+                self.dangerous_exploration_path = ExploreDangerousAlgo(self.arena, self.robot_info).calculate_cheapest_path()
+                self.dangerous_exploration_path.append(START_COORD)
+                self.waypoint_coord = self.dangerous_exploration_path.pop(0)
+                target_coord = FastestPathAlgo().get_next_step(self.arena,self.robot_info, self.waypoint_coord)
+                move_command = self.calculate_move(cur_coord, target_coord)
         elif self.task == AgentTask.FAST and self.robot_info.get_coord().is_equal(self.end_coord):
             message = f'Fastest path complete!'
             move_command = None
