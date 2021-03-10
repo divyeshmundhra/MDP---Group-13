@@ -76,6 +76,9 @@ const uint8_t kWall_offsets_right[kWall_offset_count] = {
   40
 };
 
+// on axis direction change, add this as a correction to compensate for backlash
+const int16_t kBacklash_compensation = -20;
+
 // controller parameters for offset (minimise error between encoder readings) controller
 extern int16_t kP_offset;
 extern int16_t kI_offset;

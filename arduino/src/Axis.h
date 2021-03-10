@@ -26,9 +26,7 @@ class Axis {
      * 
      * @param reverse true to invert, or false otherwise
      */
-    void setReverse(bool reverse) {
-      _reverse = reverse;
-    }
+    void setReverse(bool reverse);
 
     void encoderEdge(int8_t delta) {
       if (
