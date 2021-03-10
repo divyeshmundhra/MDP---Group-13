@@ -50,19 +50,20 @@ class Simulator:
         self.arena.get_cell_at_coord(self.robot_info.get_coord()).set_is_visited(True)
 
         if ALGO_RETURNS_FULL_PATH:
-            # get agent next move
-            self.agent.calc_percepts(obstacle_coord_list, no_obs_coord_list)
-            agent_output = self.agent.step(obstacle_coord_list, no_obs_coord_list)
-            print(agent_output.get_message())
-            move_command = agent_output.get_move_command()
-        else:
             if self.full_path_step_count >= len(self.agent_output_full_path):
                 move_command = None
             else:
                 agent_output = self.agent_output_full_path[self.full_path_step_count]
-                print(agent_output.get_message())
+                if agent_output.get_message():
+                    print(agent_output.get_message())
                 move_command = agent_output.get_move_command()
                 self.full_path_step_count += 1
+        else:
+            # get agent next move
+            self.agent.calc_percepts(obstacle_coord_list, no_obs_coord_list)
+            agent_output = self.agent.step()
+            print(agent_output.get_message())
+            move_command = agent_output.get_move_command()
 
         if move_command is None:
             self.quit()
@@ -102,7 +103,7 @@ class Simulator:
         t.start()
 
         if ALGO_RETURNS_FULL_PATH:
-            self.agent_output_full_path = self.agent.get_move_command_as_list()
+            self.agent_output_full_path = self.agent.get_agent_output_list()
 
         i = 0
         while i<200:

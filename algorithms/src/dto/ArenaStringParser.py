@@ -17,10 +17,10 @@ class ArenaStringParser:
                 if cl[i] == '\n':
                     i = i + 1
                 if cl[i] == '1':
-                    arena.get_cell_at_coord(coord).set_is_obstacle(True)
+                    arena.get_cell_at_coord(coord).increment_is_obstacle()
                     obstacle_list.append(coord)
                 elif cl[i] == '0':
-                    arena.get_cell_at_coord(coord).set_is_obstacle(False)
+                    pass # not obstacle assumed
                 i = i+1
                 if y in [0,MAP_ROW-1] or x in [0,MAP_COL-1]:
                     # cells at edge of arena are too close to the walls
