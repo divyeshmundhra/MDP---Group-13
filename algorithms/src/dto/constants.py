@@ -10,6 +10,7 @@ red = [255, 0, 0]
 green = [0, 255, 0]
 yellow = [255, 255, 0]
 purple = [138, 43, 226]
+light_blue = [135,206,250]
 
 # Defining map dimensions
 MAP_ROW = 20
@@ -44,7 +45,7 @@ START_ORIENTATION = Orientation.NORTH
 class AgentTask(Enum):
     FAST = 0
     EXPLORE = 1
-
+    IMAGEREC = 2
 
 class TimeCosts:
     QUARTER_TURN = 1

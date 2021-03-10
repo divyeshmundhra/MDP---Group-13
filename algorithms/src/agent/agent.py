@@ -9,6 +9,7 @@ from src.dto.ArenaStringParser import ArenaStringParser
 # from src.agent import FastestPathAlgo, ExplorationAlgo
 from src.agent.FastestPathAlgo import FastestPathAlgo
 from src.agent.ExplorationAlgo import ExplorationAlgo
+from src.agent.ImageRecognition import RightWallHuggingAlgo
 
 from src.dto.constants import AgentTask, START_COORD
 
@@ -27,10 +28,15 @@ class Agent:
             self.arena = ArenaStringParser.parse_arena_string(arena_string)
             self.algo = FastestPathAlgo()
             self.arena.set_all_explored()
-        else:
+        elif self.task == AgentTask.EXPLORE:
             self.arena = Arena()
             self.algo = ExplorationAlgo()
             self.reached_waypoint = True
+        else:
+            self.arena = Arena()
+            self.algo = RightWallHuggingAlgo()
+            self.reached_waypoint = True
+
     def calc_percepts(self, obstacles_coord_list: list, no_obs_coord_list: list, move_q_size: int = 0) -> None:
         # update real robot info
         if self.expected_robot_info:
@@ -38,7 +44,7 @@ class Agent:
                 # robot has finished move, set position to expected position after move
                 self.robot_info.set_coord(self.expected_robot_info.get_coord())
             self.robot_info.set_orientation(self.expected_robot_info.get_orientation())
-        if self.task == AgentTask.EXPLORE:
+        if self.task == AgentTask.EXPLORE or self.task == AgentTask.IMAGEREC:
             self.update_arena(obstacles_coord_list, no_obs_coord_list)
         elif not self.reached_waypoint and self.robot_info.get_coord().is_equal(self.waypoint_coord):
             self.reached_waypoint = True
@@ -50,7 +56,7 @@ class Agent:
             if self.task == AgentTask.FAST:
                 message = f'No valid path!'
                 move_command = None
-            else:
+            elif self.task == AgentTask.EXPLORE:
                 message = f'Exploration complete!'
                 # self.fill_remaining_unexplored_with_obstacles()
                 if self.robot_info.get_coord().is_equal(START_COORD):
@@ -59,9 +65,15 @@ class Agent:
                 else:
                     next_step = FastestPathAlgo().get_next_step(self.arena,self.robot_info,START_COORD, None)
                     move_command = self.calculate_move(cur_coord, next_step)
+            else:
+                if self.robot_info.get_coord().is_equal(START_COORD):
+                    move_command = None
+                    message = f'reached starting point'
+                
         elif self.task == AgentTask.FAST and self.robot_info.get_coord().is_equal(self.end_coord):
             message = f'Fastest path complete!'
             move_command = None
+
         else:
             move_command = self.calculate_move(cur_coord, target_coord)
             message = f'Target: {target_coord.get_x()}, {target_coord.get_y()}, TURN: {move_command.get_turn_angle()} degs, then \
@@ -88,8 +100,10 @@ class Agent:
         if self.task == AgentTask.FAST:
             waypoint = None if self.reached_waypoint else self.waypoint_coord
             next_step = self.algo.get_next_step(self.arena, self.robot_info, self.end_coord, waypoint)
-        else:
+        elif self.task == AgentTask.EXPLORE:
             next_step = self.algo.get_next_step(self.arena, self.robot_info) # pylint: disable=no-value-for-parameter
+        else:
+            next_step = self.algo.get_next_step(self.arena, self.robot_info)
         return next_step
 
     def calculate_move(self, current_coord, target_coord) -> MoveCommand:
