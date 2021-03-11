@@ -51,6 +51,7 @@ struct {
   uint16_t update_b : 1;
   uint16_t update_l : 1;
   uint16_t update_r : 1;
+  uint16_t emergency_stop : 1;
 } display;
 
 pid_state_t state_tl;
@@ -269,6 +270,15 @@ ISR(TIMER2_COMPA_vect) {
   bool has_encoder_delta = (delta_left < -kEncoder_move_threshold) || (delta_left > kEncoder_move_threshold) ||
                   (delta_right < -kEncoder_move_threshold) || (delta_right > kEncoder_move_threshold);
 
+  static bool has_ebraked = false;
+  if (!has_ebraked && state == MOVING && move_type == DISTANCE && move_dir == FORWARD) {
+    if (sensor_distances[FRONT_FRONT_MID] < kEmergency_brake_threshold) {
+      display.emergency_stop = 1;
+      target_left = target_right = encoder_left + kEmergency_brake_correction;
+      has_ebraked = true;
+    }
+  }
+
   if (state == MOVING && !has_encoder_delta) {
     // encoder delta has slowed to almost zero - lets check if we should finish the move
     int32_t diff_err = encoder_left - encoder_right;
@@ -327,6 +337,7 @@ ISR(TIMER2_COMPA_vect) {
       if (move_type == DISTANCE) {
         resetControllerState(&state_straight_left, encoder_left);
         resetControllerState(&state_straight_right, encoder_right);
+        has_ebraked = false;
       } else if (move_type == OBSTACLE) {
         resetControllerState(&state_obstacle, sensor_distances[FRONT_FRONT_LEFT]);
       }
@@ -771,6 +782,11 @@ void loop_motion() {
     }
   }
 
+  if (display.emergency_stop) {
+    Serial.print(F("emergency stop. travelled: "));
+    Serial.println(axis_left.getEncoder());
+    display.emergency_stop = 0;
+  }
   if (display.move_distance_done) {
     Serial.println(F("move distance done"));
     display.move_distance_done = 0;

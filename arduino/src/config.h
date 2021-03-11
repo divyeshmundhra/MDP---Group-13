@@ -79,6 +79,10 @@ const uint8_t kWall_offsets_right[kWall_offset_count] = {
 // on axis direction change, add this as a correction to compensate for backlash
 const int16_t kBacklash_compensation = -20;
 
+// if FRONT_FRONT_MID sees a value less than this, abort the move immediately
+const int16_t kEmergency_brake_threshold = 50;
+const int16_t kEmergency_brake_correction = -300;
+
 // controller parameters for offset (minimise error between encoder readings) controller
 extern int16_t kP_offset;
 extern int16_t kI_offset;
