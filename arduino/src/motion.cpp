@@ -248,8 +248,8 @@ ISR(TIMER2_COMPA_vect) {
   static int32_t pEncoder_right = 0;
 
   if (state == IDLE) {
-    axis_left.setPower(0);
-    axis_right.setPower(0);
+    axis_left.setBrake(400);
+    axis_right.setBrake(400);
     return;
   }
 
@@ -301,8 +301,8 @@ ISR(TIMER2_COMPA_vect) {
           }
 
           state = REPORT_SENSOR_INIT;
-          axis_left.setPower(0);
-          axis_right.setPower(0);
+          axis_left.setBrake(400);
+          axis_right.setBrake(400);
           return;
         }
       } else if (move_type == OBSTACLE) {
@@ -311,8 +311,8 @@ ISR(TIMER2_COMPA_vect) {
         if (diff_err > -kMax_obstacle_error && diff_err < kMax_obstacle_error) {
           display.move_obstacle_done = 1;
           state = IDLE;
-          axis_left.setPower(0);
-          axis_right.setPower(0);
+          axis_left.setBrake(400);
+          axis_right.setBrake(400);
           return;
         }
       }

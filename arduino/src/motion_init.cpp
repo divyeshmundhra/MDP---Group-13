@@ -7,8 +7,11 @@
 void setPowerLeft(uint16_t power, bool reverse);
 void setPowerRight(uint16_t power, bool reverse);
 
-Axis axis_left(setPowerLeft, true);
-Axis axis_right(setPowerRight);
+void setBrakeLeft(uint16_t power);
+void setBrakeRight(uint16_t power);
+
+Axis axis_left(setPowerLeft, setBrakeLeft, true);
+Axis axis_right(setPowerRight, setBrakeRight);
 
 ISR(PCINT2_vect) {
   // http://makeatronics.blogspot.com/2013/02/efficiently-reading-quadrature-with.html
@@ -150,6 +153,18 @@ void setPowerRight(uint16_t power, bool reverse) {
     M2_INA_PORT |= _BV(M2_INA_BIT);
     M2_INB_PORT &= ~_BV(M2_INB_BIT);
   }
+}
+
+void setBrakeLeft(uint16_t power) {
+  OCR1A = power;
+  M1_INA_PORT &= ~_BV(M1_INA_BIT);
+  M1_INB_PORT &= ~_BV(M1_INB_BIT);
+}
+
+void setBrakeRight(uint16_t power) {
+  OCR1B = power;
+  M2_INA_PORT &= ~_BV(M2_INA_BIT);
+  M2_INB_PORT &= ~_BV(M2_INB_BIT);
 }
 
 void setup_motion() {
