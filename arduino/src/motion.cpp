@@ -387,15 +387,15 @@ ISR(TIMER2_COMPA_vect) {
             if (is_valid_align_target(ALIGN_LEFT)) {
               align_type = ALIGN_LEFT;
               sensor_val = sensor_distances[LEFT_FRONT] % 100;
-              base_offset = get_base_wall_align_offset(ALIGN_LEFT, sensor_val);
+              base_offset = get_base_wall_align_offset(ALIGN_LEFT, sensor_distances[LEFT_FRONT]);
             } else if (is_valid_align_target(ALIGN_LEFT_FRONT)) {
               align_type = ALIGN_LEFT_FRONT;
               sensor_val = sensor_distances[LEFT_FRONT] % 100;
-              base_offset = get_base_wall_align_offset(ALIGN_LEFT_FRONT, sensor_val);
+              base_offset = get_base_wall_align_offset(ALIGN_LEFT_FRONT, sensor_distances[LEFT_FRONT]);
             } else if (is_valid_align_target(ALIGN_RIGHT_FRONT)) {
               align_type = ALIGN_RIGHT_FRONT;
               sensor_val = sensor_distances[RIGHT_FRONT] % 100;
-              base_offset = get_base_wall_align_offset(ALIGN_RIGHT_FRONT, sensor_val);
+              base_offset = get_base_wall_align_offset(ALIGN_RIGHT_FRONT, sensor_distances[RIGHT_FRONT]);
             }
 
             // compute diff between current sensor reading and the ideal offset
