@@ -21,17 +21,17 @@ class RightWallHuggingAlgo():
 
         next_step = self.right_wall_hug() # keep trying right wall hugging
 
-        if self.arena.get_cell_at_coord(next_step).is_visited(): #returned to start
-            self.move_towards_island = True
-        
-        if self.move_towards_island:
-            self.waypoint_coord = self.get_nearest_obstacle()
+        if self.arena.get_cell_at_coord(next_step).is_visited(): # robot has passed through this coord before
+            # self.move_towards_island = True
+            print("ENCOUNTERED VISITED COORD AT: ", next_step.get_x(), next_step.get_y())
+        # if self.move_towards_island:
+            self.waypoint_coord = self.get_nearest_obstacle() # move towards nearest obstacle instead
             # self.waypoint_coord = self.dangerous_exploration_path.pop(0)
             next_step = FastestPathAlgo().get_next_step(self.arena,self.robot_info, self.waypoint_coord)
             
-            if next_step.is_equal(self.cur_coord):
-                self.move_towards_island == False
-                return None
+            # if next_step.is_equal(self.cur_coord):
+            #     self.move_towards_island == False
+            #     return None
         
         return next_step
 
@@ -75,10 +75,10 @@ class RightWallHuggingAlgo():
 
         # find nearest obstacle first, then find vantage
         while unseen_obstacles_list: # iterate through the obstacles
-            ue_distance = [] #sort coords by distance
+            ue_distance = [] 
             for ue in unseen_obstacles_list:
                 ue_distance.append((ue, ue.subtract(self.robot_info.get_coord()).manhattan_distance()))
-            coord = sorted(ue_distance, key=lambda x: x[1])[0][0]
+            coord = sorted(ue_distance, key=lambda x: x[1])[0][0] #sort coords by distance
 
             for vantage in self.calculate_vantage_points(coord): # iterate through the obstacle's vantage points
                 found_vantage = False
@@ -87,6 +87,9 @@ class RightWallHuggingAlgo():
                     continue
                 if self.arena.get_cell_at_coord(vantage).is_dangerous():
                     continue
+                if not self.arena.get_cell_at_coord(vantage).is_explored():
+                    continue
+
                 found_vantage = True
                     
                 if found_vantage:
@@ -107,7 +110,7 @@ class RightWallHuggingAlgo():
         # vantage points are cells where robot will stand next to an obstacle
         vantage_points = []
         
-        for disp in [(0,2), (2,0), (0,-2), (-2,0)]:
+        for disp in [(-2,0), (0,2), (0,-2), (2,0)]:
             coord = Coord(disp[0], disp[1])
             vantage_points.append(ue.add(coord))
             
