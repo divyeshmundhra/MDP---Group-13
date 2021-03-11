@@ -56,6 +56,22 @@ class RightWallHuggingAlgo():
             target = self.move_back()
         return target
 
+    def right_wall_hugging_algo(self, arena: Arena, robot_info: RobotInfo) -> Coord:
+        self.arena = arena
+        self.robot_info = robot_info
+        self.cur_coord = self.robot_info.get_coord()
+        self.cur_direction = self.robot_info.get_orientation()
+
+        if self.check_right_free():
+            target = self.move_right()
+        elif self.check_front_free():
+            target = self.move_forward()
+        elif self.check_left_free():
+            target = self.move_left()
+        else:
+            target = self.move_back()
+        return target
+
     def get_nearest_obstacle(self):
         obstacle_coord_list = self.arena.list_known_obstacles()
         unseen_obstacles_list = []
@@ -63,8 +79,10 @@ class RightWallHuggingAlgo():
 
         for item in obstacle_coord_list:
             if not self.arena.get_cell_at_coord(item).is_seen():
-                unseen_obstacles_list.append(item)
+                if item.get_x() != 0 and item.get_x() != 14 and item.get_y() != 0 and item.get_y() != 19:
+                    unseen_obstacles_list.append(item)
 
+        # find nearest obstacle first, then find vantage
         while unseen_obstacles_list:
             ue_distance = [] #sort coords by distance
             for ue in unseen_obstacles_list:
@@ -87,6 +105,8 @@ class RightWallHuggingAlgo():
                 path.append(vantage) # pylint: disable=undefined-loop-variable
             else:
                 raise Exception(f'ImageRecognition: unexplored cell {coord.get_x(), coord.get_y()}cannot be viewed from any angle')
+            
+            print ("ELIMINATING OBSTACLE AT: ", coord.get_x(), coord.get_y())
             unseen_obstacles_list.remove(coord)
 
         return path

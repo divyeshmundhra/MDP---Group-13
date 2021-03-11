@@ -67,6 +67,7 @@ class Agent:
                     move_command = self.calculate_move(cur_coord, next_step)
             else: # if image rec is done, return to start
                 message = f'Reached dangerous obstacle, commencing right wall hugging!'
+                next_step = self.algo.right_wall_hugging_algo(self.arena, self.robot_info)
                 move_command = self.calculate_move(cur_coord, next_step)
                 
         elif self.task == AgentTask.FAST and self.robot_info.get_coord().is_equal(self.end_coord):
