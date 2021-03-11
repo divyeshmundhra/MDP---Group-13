@@ -22,18 +22,20 @@ class RightWallHuggingAlgo():
 
         next_step = self.right_wall_hug()
 
-        if self.arena.get_cell_at_coord(next_step).is_seen(): #returned to start
+        if self.arena.get_cell_at_coord(next_step).is_visited(): #returned to start
             self.move_towards_island = True
             print("SEEN NEXT STEP, moving towards island ", next_step.get_x(), next_step.get_y())
         
-        self.arena.get_cell_at_coord(next_step).set_is_seen(True)
+        # self.arena.get_cell_at_coord(next_step).set_is_seen(True)
 
         if self.move_towards_island:
             # print("MOVING TOWARDS ISLAND NOW")
             self.dangerous_exploration_path = self.get_nearest_obstacle()
             # self.dangerous_exploration_path.append(START_COORD)
             self.waypoint_coord = self.dangerous_exploration_path.pop(0)
+            print("END COORD FOUND: ", self.waypoint_coord.get_x(), self.waypoint_coord.get_y())
             next_step = FastestPathAlgo().get_next_step(self.arena,self.robot_info, self.waypoint_coord)
+            
             if next_step.is_equal(self.cur_coord):
                 self.move_towards_island == False
                 print("BACK TO WALL HUGGING")
@@ -113,6 +115,7 @@ class RightWallHuggingAlgo():
                 adj_obstacle = viewed_cell
                 surface_orientation = (abs_degree + 180)%360
                 self.arena.get_cell_at_coord(adj_obstacle).set_seen_surface(surface_orientation)
+                self.arena.get_cell_at_coord(adj_obstacle).set_is_seen(True)
             return False
 
     def check_left_free(self) -> bool:
@@ -128,6 +131,7 @@ class RightWallHuggingAlgo():
                 adj_obstacle = viewed_cell
                 surface_orientation = (abs_degree + 180)%360
                 self.arena.get_cell_at_coord(adj_obstacle).set_seen_surface(surface_orientation)
+                self.arena.get_cell_at_coord(adj_obstacle).set_is_seen(True)
             return False
 
     def check_right_free(self):
@@ -143,6 +147,7 @@ class RightWallHuggingAlgo():
                 adj_obstacle = viewed_cell
                 surface_orientation = (abs_degree + 180)%360
                 self.arena.get_cell_at_coord(adj_obstacle).set_seen_surface(surface_orientation)
+                self.arena.get_cell_at_coord(adj_obstacle).set_is_seen(True)
             return False
 
     def move_forward(self) -> Coord:

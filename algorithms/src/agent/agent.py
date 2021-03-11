@@ -130,8 +130,9 @@ class Agent:
         adj = self.arena.get_eight_adjacent_in_arena(center_value)
         adj.append(center_value)
         for cd in adj:
-            self.arena.get_cell_at_coord(cd).set_is_visited(True)
+            # self.arena.get_cell_at_coord(cd).set_is_visited(True)
             self.arena.get_cell_at_coord(cd).set_is_explored(True)
+        self.arena.get_cell_at_coord(center_value).set_is_visited(True)
 
     def get_arena(self) -> Arena:
         return self.arena
