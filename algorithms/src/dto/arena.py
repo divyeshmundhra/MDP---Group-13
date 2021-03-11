@@ -118,6 +118,15 @@ class Arena:
                     l.append(cell)
         return l
 
+    def list_known_obstacles(self) -> list:
+        l = []
+        for y in range(MAP_ROW):
+            for x in range(MAP_COL):
+                coord = Coord(x,y)
+                if self.get_cell_at_coord(coord).is_obstacle():
+                    l.append(coord)
+        return l
+
     def set_all_explored(self) -> None:
         for row in self.cell_matrix:
             for cell in row:

@@ -5,29 +5,42 @@ from src.dto.OrientationTransform import OrientationTransform as OT
 from src.dto.constants import *
 from src.agent.FastestPathAlgo import FastestPathAlgo
 from src.simulator.SensorInputSimulation import SensorInputSimulation
-
+from src.agent.ExploreDangerousAlgo import ExploreDangerousAlgo
 
 class RightWallHuggingAlgo():
     def __init__(self):
         self.arena = None
         self.cur_coord = None
         self.cur_direction = None
+        self.move_towards_island = False
 
     def get_next_step(self, arena: Arena, robot_info: RobotInfo) -> Coord:
         self.arena = arena
-        self.cur_coord = robot_info.get_coord()
-        self.cur_direction = robot_info.get_orientation()
+        self.robot_info = robot_info
+        self.cur_coord = self.robot_info.get_coord()
+        self.cur_direction = self.robot_info.get_orientation()
+
         next_step = self.right_wall_hug()
 
-        sis = SensorInputSimulation(robot_info, self.arena)
-        self.obstacle_coord_list, no_obs_coord_list = sis.calculate_percepts()
+        if self.arena.get_cell_at_coord(next_step).is_seen(): #returned to start
+            self.move_towards_island = True
+            print("SEEN NEXT STEP, moving towards island ", next_step.get_x(), next_step.get_y())
+        
+        self.arena.get_cell_at_coord(next_step).set_is_seen(True)
 
-        if self.arena.get_cell_at_coord(next_step).is_visited(): #returned to start
-            raise Exception('Right Wall Hugging: returned to initial position')
-            # target = self.get_nearest_obstacle()
-            # next_step = FastestPathAlgo().get_next_step(arena, robot_info, end=target, waypoint=None)
-            return None
-
+        if self.move_towards_island:
+            # print("MOVING TOWARDS ISLAND NOW")
+            self.dangerous_exploration_path = self.get_nearest_obstacle()
+            # self.dangerous_exploration_path.append(START_COORD)
+            self.waypoint_coord = self.dangerous_exploration_path.pop(0)
+            next_step = FastestPathAlgo().get_next_step(self.arena,self.robot_info, self.waypoint_coord)
+            if next_step.is_equal(self.cur_coord):
+                self.move_towards_island == False
+                print("BACK TO WALL HUGGING")
+                return None
+                # next_step = self.right_wall_hug()
+                # print("NEXT STEP: ", next_step.get_x(), next_step.get_y())
+        
         return next_step
 
     def right_wall_hug(self) -> Coord:
@@ -41,12 +54,51 @@ class RightWallHuggingAlgo():
             target = self.move_back()
         return target
 
-    # def get_nearest_obstacle(self):
-    #     self.q = []
+    def get_nearest_obstacle(self):
+        obstacle_coord_list = self.arena.list_known_obstacles()
+        unseen_obstacles_list = []
+        path = []
 
-    #     for coord in self.obstacle_coord_list:
-    #         if self.arena.get_cell_at_coord(coord).is_visited():
-    #             q.append(coord)
+        for item in obstacle_coord_list:
+            if not self.arena.get_cell_at_coord(item).is_seen():
+                unseen_obstacles_list.append(item)
+
+        while unseen_obstacles_list:
+            ue_distance = [] #sort coords by distance
+            for ue in unseen_obstacles_list:
+                ue_distance.append((ue, ue.subtract(self.robot_info.get_coord()).manhattan_distance()))
+            coord = sorted(ue_distance, key=lambda x: x[1])[0][0]
+
+            for vantage in self.calculate_vantage_points(coord):
+                found_vantage = False
+                
+                if not self.arena.coord_is_valid(vantage):
+                    continue
+                if self.arena.get_cell_at_coord(vantage).is_dangerous():
+                    continue
+                found_vantage = True
+                    
+                if found_vantage:
+                    break
+
+            if vantage: # pylint: disable=undefined-loop-variable
+                path.append(vantage) # pylint: disable=undefined-loop-variable
+            else:
+                raise Exception(f'ImageRecognition: unexplored cell {coord.get_x(), coord.get_y()}cannot be viewed from any angle')
+            unseen_obstacles_list.remove(coord)
+
+        return path
+
+    def calculate_vantage_points(self, ue: Coord) -> list:
+        # vantage points are cells where robot will stand next to an obstacle
+        vantage_points = []
+        
+        for disp in [(0,2), (2,0), (0,-2), (-2,0)]:
+            coord = Coord(disp[0], disp[1])
+            vantage_points.append(ue.add(coord))
+            
+        return vantage_points
+
 
     def check_front_free(self) -> bool:
         abs_degree = (self.cur_direction.value*90 + OT.orientation_to_degree[Orientation.NORTH]) % 360

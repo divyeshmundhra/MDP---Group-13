@@ -52,6 +52,7 @@ class TimeCosts:
     MOVE_ONE_UNIT = 1
     # extendable: predefined times for larger turns and moves? linear equation to calculate time for larger turns and moves?
 
+SURE_VIEW_RANGE = 3
 
 SENSOR_CONSTANTS = {
     "FORWARD_FRONT_LEFT": {

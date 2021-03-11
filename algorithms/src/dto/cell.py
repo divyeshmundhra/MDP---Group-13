@@ -7,7 +7,7 @@ class Cell:
         self.visited = False
         self.obstacle = 0
         self.danger = None # danger when too close to wall, thus danger of collision
-
+        self.seen = False
         self.seen_surface = { # only for dangerous cells
                 Orientation.NORTH: False,
                 Orientation.EAST: False,
@@ -54,6 +54,13 @@ class Cell:
 
     def set_is_dangerous(self, danger):
         self.danger = danger
+        return self
+
+    def is_seen(self):
+        return self.seen
+    
+    def set_is_seen(self, seen):
+        self.seen = seen
         return self
 
     def set_seen_surface(self, face):

@@ -6,12 +6,19 @@ from src.dto.OrientationTransform import OrientationTransform
 from src.dto.arena import Arena
 
 from src.dto.constants import TimeCosts, MAP_ROW, MAP_COL
-from src.agent import DecisionNode
+from src.agent.DecisionNode import DecisionNode
 
 class FastestPathAlgo():
-    def get_next_step(self, arena: Arena, robot_info: RobotInfo, end: Coord, waypoint: Coord, full_path = False):
+    def get_next_step(self, arena: Arena, robot_info: RobotInfo, end: Coord, waypoint:Coord=None, full_path = False):
+        cur_list = self.get_fastest_path(arena, robot_info, end, waypoint)
+        if full_path:
+            return [cur.get_coord() for cur in cur_list] # returns nodes
+        else:
+            return cur_list[0].get_coord()
+
+    def get_fastest_path(self, arena: Arena, robot_info: RobotInfo, end: Coord, waypoint:Coord=None):
         start = robot_info.get_coord()
-        current_orientation = robot_info.get_orientation()
+        start_orientation = robot_info.get_orientation()
         if not arena.coord_is_valid(end):
             raise Exception(f'FastestPath: end coord out of arena: {end.get_x()}, {end.get_y()}')
         end_cell = arena.get_cell_at_coord(end)
@@ -24,7 +31,7 @@ class FastestPathAlgo():
         else:
             target = end
 
-        root = DecisionNode.DecisionNode(start, exact_cost=0, parent=None)
+        root = DecisionNode(start, start_orientation, exact_cost=0, parent=None)
         fringe_nodes = PriorityQueue()
         queue_tie_breaker = 0
         fringe_nodes.put((
@@ -38,6 +45,7 @@ class FastestPathAlgo():
         while True:
             # two conditions to exit loop, one may or may not be enabled
             cur_coord = cur.get_coord()
+            cur_orientation = cur.get_orientation()
             if not end_cell.is_dangerous():
                 # normally exit when target is found
                 if cur_coord.is_equal(target):
@@ -62,14 +70,14 @@ class FastestPathAlgo():
                     continue
                 # get costs
                 target_orientation = OrientationTransform.displacement_to_orientation(coord.subtract(cur_coord))
-                degree_of_turn = OrientationTransform.calc_degree_of_turn(current_orientation, target_orientation)
+                degree_of_turn = OrientationTransform.calc_degree_of_turn(cur_orientation, target_orientation)
                 turning_cost = int(degree_of_turn/90)*TimeCosts.QUARTER_TURN
                 displacement_cost = TimeCosts.MOVE_ONE_UNIT
                 cost = turning_cost + displacement_cost
                 exact_cost = cur.get_exact_cost() + cost
                 estimated_cost = FastestPathAlgo.heuristic(cur_coord, target)
                 total_cost = exact_cost + estimated_cost
-                fringe_node = DecisionNode.DecisionNode(coord, exact_cost=exact_cost, parent=cur)
+                fringe_node = DecisionNode(coord, target_orientation, exact_cost=exact_cost, parent=cur)
                 queue_tie_breaker += 1
                 fringe_nodes.put((total_cost, queue_tie_breaker, fringe_node))
 
@@ -79,15 +87,12 @@ class FastestPathAlgo():
 
         cur_list = []
         while cur.get_parent() and not cur.get_parent().get_coord().is_equal(start):
-            cur_list.append(cur.get_coord())
+            cur_list.append(cur)
             cur = cur.get_parent()
-        cur_list.append(cur.get_coord())
+        cur_list.append(cur)
+        cur_list.reverse()
 
-        if full_path:
-            cur_list.reverse()
-            return cur_list
-        else:
-            return cur.get_coord()
+        return cur_list
 
     @staticmethod
     def heuristic(cur: Coord, target: Coord) -> int:

@@ -66,9 +66,8 @@ class Agent:
                     next_step = FastestPathAlgo().get_next_step(self.arena,self.robot_info,START_COORD, None)
                     move_command = self.calculate_move(cur_coord, next_step)
             else: # if image rec is done, return to start
-                next_step = FastestPathAlgo().get_next_step(self.arena,self.robot_info,START_COORD, None)
+                message = f'Reached dangerous obstacle, commencing right wall hugging!'
                 move_command = self.calculate_move(cur_coord, next_step)
-    
                 
         elif self.task == AgentTask.FAST and self.robot_info.get_coord().is_equal(self.end_coord):
             message = f'Fastest path complete!'
