@@ -5,7 +5,6 @@ from src.dto.OrientationTransform import OrientationTransform as OT
 from src.dto.constants import *
 from src.agent.FastestPathAlgo import FastestPathAlgo
 from src.simulator.SensorInputSimulation import SensorInputSimulation
-from src.agent.ExploreDangerousAlgo import ExploreDangerousAlgo
 
 class RightWallHuggingAlgo():
     def __init__(self):
@@ -24,24 +23,15 @@ class RightWallHuggingAlgo():
 
         if self.arena.get_cell_at_coord(next_step).is_visited(): #returned to start
             self.move_towards_island = True
-            print("SEEN NEXT STEP, moving towards island ", next_step.get_x(), next_step.get_y())
         
-        # self.arena.get_cell_at_coord(next_step).set_is_seen(True)
-
         if self.move_towards_island:
-            # print("MOVING TOWARDS ISLAND NOW")
             self.dangerous_exploration_path = self.get_nearest_obstacle()
-            # self.dangerous_exploration_path.append(START_COORD)
             self.waypoint_coord = self.dangerous_exploration_path.pop(0)
-            print("END COORD FOUND: ", self.waypoint_coord.get_x(), self.waypoint_coord.get_y())
             next_step = FastestPathAlgo().get_next_step(self.arena,self.robot_info, self.waypoint_coord)
             
             if next_step.is_equal(self.cur_coord):
                 self.move_towards_island == False
-                print("BACK TO WALL HUGGING")
                 return None
-                # next_step = self.right_wall_hug()
-                # print("NEXT STEP: ", next_step.get_x(), next_step.get_y())
         
         return next_step
 
@@ -106,7 +96,6 @@ class RightWallHuggingAlgo():
             else:
                 raise Exception(f'ImageRecognition: unexplored cell {coord.get_x(), coord.get_y()}cannot be viewed from any angle')
             
-            print ("ELIMINATING OBSTACLE AT: ", coord.get_x(), coord.get_y())
             unseen_obstacles_list.remove(coord)
 
         return path
