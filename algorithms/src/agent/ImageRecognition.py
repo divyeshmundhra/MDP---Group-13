@@ -19,14 +19,14 @@ class RightWallHuggingAlgo():
         self.cur_coord = self.robot_info.get_coord()
         self.cur_direction = self.robot_info.get_orientation()
 
-        next_step = self.right_wall_hug()
+        next_step = self.right_wall_hug() # keep trying right wall hugging
 
         if self.arena.get_cell_at_coord(next_step).is_visited(): #returned to start
             self.move_towards_island = True
         
         if self.move_towards_island:
-            self.dangerous_exploration_path = self.get_nearest_obstacle()
-            self.waypoint_coord = self.dangerous_exploration_path.pop(0)
+            self.waypoint_coord = self.get_nearest_obstacle()
+            # self.waypoint_coord = self.dangerous_exploration_path.pop(0)
             next_step = FastestPathAlgo().get_next_step(self.arena,self.robot_info, self.waypoint_coord)
             
             if next_step.is_equal(self.cur_coord):
@@ -66,6 +66,7 @@ class RightWallHuggingAlgo():
         obstacle_coord_list = self.arena.list_known_obstacles()
         unseen_obstacles_list = []
         path = []
+        target = None
 
         for item in obstacle_coord_list:
             if not self.arena.get_cell_at_coord(item).is_seen():
@@ -73,13 +74,13 @@ class RightWallHuggingAlgo():
                     unseen_obstacles_list.append(item)
 
         # find nearest obstacle first, then find vantage
-        while unseen_obstacles_list:
+        while unseen_obstacles_list: # iterate through the obstacles
             ue_distance = [] #sort coords by distance
             for ue in unseen_obstacles_list:
                 ue_distance.append((ue, ue.subtract(self.robot_info.get_coord()).manhattan_distance()))
             coord = sorted(ue_distance, key=lambda x: x[1])[0][0]
 
-            for vantage in self.calculate_vantage_points(coord):
+            for vantage in self.calculate_vantage_points(coord): # iterate through the obstacle's vantage points
                 found_vantage = False
                 
                 if not self.arena.coord_is_valid(vantage):
@@ -92,13 +93,15 @@ class RightWallHuggingAlgo():
                     break
 
             if vantage: # pylint: disable=undefined-loop-variable
-                path.append(vantage) # pylint: disable=undefined-loop-variable
+                target = vantage
+                break
+                # path.append(vantage) # pylint: disable=undefined-loop-variable
             else:
                 raise Exception(f'ImageRecognition: unexplored cell {coord.get_x(), coord.get_y()}cannot be viewed from any angle')
             
             unseen_obstacles_list.remove(coord)
 
-        return path
+        return target
 
     def calculate_vantage_points(self, ue: Coord) -> list:
         # vantage points are cells where robot will stand next to an obstacle
