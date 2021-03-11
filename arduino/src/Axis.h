@@ -6,14 +6,14 @@
 
 class Axis {
   public:
-    Axis(void (*setPower)(uint16_t power, bool reverse)): _setPower(setPower) {};
+    Axis(void (*setPower)(uint16_t power, bool reverse), void (*setBrake)(uint16_t power)): _setPower(setPower), _setBrake(setBrake) {};
     /**
      * @brief Construct a new Axis object
      * 
      * @param setPower function pointer to be called to actually set power of this axis
      * @param invert whether this axis is inverted
      */
-    Axis(void (*setPower)(uint16_t power, bool reverse), bool invert): _setPower(setPower), _invert(invert) {};
+    Axis(void (*setPower)(uint16_t power, bool reverse), void (*setBrake)(uint16_t power), bool invert): _setPower(setPower), _setBrake(setBrake), _invert(invert) {};
     /**
      * @brief Updates target PWM duty cycle, then updates actual duty cycle after
      *  limiting maximum change with kMax_axis_accel/kMax_axis_decel
@@ -21,6 +21,10 @@ class Axis {
      * @param target_power New target power
      */
     void setPower(int16_t target_power);
+
+    void setBrake(uint16_t power) {
+      _setBrake(power);
+    }
     /**
      * @brief Invert the axis temporarily
      * 
@@ -82,6 +86,8 @@ class Axis {
      * @brief Function pointer to be called to set motor PWM duty cycle
      */
     void (*_setPower)(uint16_t power, bool reverse);
+
+    void (*_setBrake)(uint16_t power);
 
     /**
      * @brief Actual duty cycle written to the motor
