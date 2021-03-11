@@ -526,7 +526,7 @@ void start_motion_unit(motion_direction_t _direction, uint8_t unit) {
     if (_direction == FORWARD || _direction == REVERSE) {
       new_move = unit * kBlock_distance;
     } else if (_direction == LEFT || _direction == RIGHT) {
-      new_move = unit * kTicks_per_45_degrees;
+      new_move = unit_turn_to_ticks(unit);
     }
 
     target_left += new_move;
@@ -548,7 +548,7 @@ void start_motion_unit(motion_direction_t _direction, uint8_t unit) {
       if (_direction == FORWARD || _direction == REVERSE) {
         buffered_moves[prev_move].target = buffered_moves[prev_move].unit * kBlock_distance;
       } else if (_direction == LEFT || _direction == RIGHT) {
-        buffered_moves[prev_move].target = buffered_moves[prev_move].unit * kTicks_per_45_degrees;
+        buffered_moves[prev_move].target = unit_turn_to_ticks(buffered_moves[prev_move].unit);
       }
 
       Serial.print("Combined move with index=");
@@ -564,7 +564,7 @@ void start_motion_unit(motion_direction_t _direction, uint8_t unit) {
   if (_direction == FORWARD || _direction == REVERSE) {
     buffered_moves[pos_moves_end].target = unit * kBlock_distance;
   } else if (_direction == LEFT || _direction == RIGHT) {
-    buffered_moves[pos_moves_end].target = unit * kTicks_per_45_degrees;
+    buffered_moves[pos_moves_end].target = unit_turn_to_ticks(unit);
   }
 
   num_moves ++;
