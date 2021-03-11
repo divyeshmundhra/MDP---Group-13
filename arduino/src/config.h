@@ -71,7 +71,7 @@ const uint8_t kWall_offsets_left[kWall_offset_count] = {
 
 const uint8_t kWall_offsets_right[kWall_offset_count] = {
   40,
-  40,
+  55,
   60,
   40
 };
