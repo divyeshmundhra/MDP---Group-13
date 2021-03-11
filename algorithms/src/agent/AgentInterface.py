@@ -43,6 +43,7 @@ class AgentInterface:
                     self.update_percepts(data)
                 if self.q_size == 0:
                     self.step()
+                    time.sleep(0.5)
                 print('got sensor data')
             elif data['type'] == 'move_done':
                 self.q_size -= 1
@@ -53,8 +54,10 @@ class AgentInterface:
                     while not self.agent.get_robot_info().get_coord().is_equal(Coord(13, 18)):
                         self.update_percepts(None)
                         self.step()
+                        time.sleep(0.5)
                 else:
                     self.step()
+                    time.sleep(0.5)
                 print('got start')
             elif data['type'] == 'init':
                 self.init(data)
