@@ -65,10 +65,10 @@ class Agent:
                 else:
                     next_step = FastestPathAlgo().get_next_step(self.arena,self.robot_info,START_COORD, None)
                     move_command = self.calculate_move(cur_coord, next_step)
-            else:
-                if self.robot_info.get_coord().is_equal(START_COORD):
-                    move_command = None
-                    message = f'reached starting point'
+            else: # if image rec is done, return to start
+                next_step = FastestPathAlgo().get_next_step(self.arena,self.robot_info,START_COORD, None)
+                move_command = self.calculate_move(cur_coord, next_step)
+    
                 
         elif self.task == AgentTask.FAST and self.robot_info.get_coord().is_equal(self.end_coord):
             message = f'Fastest path complete!'
@@ -85,7 +85,7 @@ class Agent:
         )
 
     def update_arena(self, obstacles_coord_list: list, no_obs_coord_list: list) -> None:
-        self.mark_robot_visisted_cells(self.robot_info.get_coord())
+        self.mark_robot_visited_cells(self.robot_info.get_coord())
         
         for coord in no_obs_coord_list:
             # mark seen clear cells as explored
@@ -127,7 +127,7 @@ class Agent:
             # cell.increment_is_obstacle()
             cell.set_is_dangerous(True)
 
-    def mark_robot_visisted_cells(self,center_value):
+    def mark_robot_visited_cells(self,center_value):
         adj = self.arena.get_eight_adjacent_in_arena(center_value)
         adj.append(center_value)
         for cd in adj:
