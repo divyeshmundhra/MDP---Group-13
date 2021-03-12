@@ -118,15 +118,6 @@ class Arena:
                     l.append(cell)
         return l
 
-    def list_known_obstacles(self) -> list:
-        l = []
-        for y in range(MAP_ROW):
-            for x in range(MAP_COL):
-                coord = Coord(x,y)
-                if self.get_cell_at_coord(coord).is_obstacle():
-                    l.append(coord)
-        return l
-
     def set_all_explored(self) -> None:
         for row in self.cell_matrix:
             for cell in row:
@@ -138,3 +129,68 @@ class Arena:
                 if y in [0,MAP_ROW-1] or x in [0,MAP_COL-1]:
                     # cells at edge of arena are too close to the walls
                     self.get_cell_at_coord(Coord(x,y)).set_is_dangerous(True)
+
+
+# Used in Image Rec Algo:
+    def list_known_obstacles(self) -> list:
+        l = []
+        for y in range(MAP_ROW):
+            for x in range(MAP_COL):
+                coord = Coord(x,y)
+                if self.get_cell_at_coord(coord).is_obstacle():
+                    l.append(coord)
+        return l
+
+    def get_nearest_obstacle_adj_coord(self, cur_coord: Coord) -> Coord:
+        obstacle_coord_list = self.list_known_obstacles()
+        unseen_obstacles_list = []
+        path = []
+        target = None
+
+        for item in obstacle_coord_list:
+            if not self.get_cell_at_coord(item).is_seen():
+                if item.get_x() != 0 and item.get_x() != 14 and item.get_y() != 0 and item.get_y() != 19:
+                    unseen_obstacles_list.append(item)
+
+        # find nearest obstacle first, then find vantage
+        while unseen_obstacles_list: # iterate through the obstacles
+            ue_distance = [] 
+            for ue in unseen_obstacles_list:
+                ue_distance.append((ue, ue.subtract(cur_coord).manhattan_distance()))
+            coord = sorted(ue_distance, key=lambda x: x[1])[0][0] #sort coords by distance
+
+            for vantage in self.calculate_vantage_points(coord): # iterate through the obstacle's vantage points
+                found_vantage = False
+                
+                if not self.coord_is_valid(vantage):
+                    continue
+                if self.get_cell_at_coord(vantage).is_dangerous():
+                    continue
+                if not self.get_cell_at_coord(vantage).is_explored():
+                    continue
+
+                found_vantage = True
+                    
+                if found_vantage:
+                    break
+
+            if vantage: # pylint: disable=undefined-loop-variable
+                target = vantage
+                break
+                # path.append(vantage) # pylint: disable=undefined-loop-variable
+            else:
+                raise Exception(f'ImageRecognition: unexplored cell {coord.get_x(), coord.get_y()}cannot be viewed from any angle')
+            
+            unseen_obstacles_list.remove(coord)
+
+        return target
+
+    def calculate_vantage_points(self, ue: Coord) -> list:
+        # vantage points are cells where robot will stand next to an obstacle
+        vantage_points = []
+        
+        for disp in [(-2,0), (0,2), (0,-2), (2,0)]:
+            coord = Coord(disp[0], disp[1])
+            vantage_points.append(ue.add(coord))
+            
+        return vantage_points

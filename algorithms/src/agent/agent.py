@@ -24,6 +24,10 @@ class Agent:
         self.reached_waypoint = False
         self.algo = None # initialized 3 lines below
 
+        self.back_to_start = False
+        self.FP_or_RWH = False # False for RWH, True for FP
+        self.RWH_start_coord = START_COORD # initialise this to the starting coord
+
         if self.task == AgentTask.FAST:
             self.arena = ArenaStringParser.parse_arena_string(arena_string)
             self.algo = FastestPathAlgo()
@@ -50,8 +54,19 @@ class Agent:
             self.reached_waypoint = True
 
     def step(self) -> AgentOutput:
-        target_coord = self.think()
         cur_coord = self.robot_info.get_coord()
+
+        if cur_coord.is_equal(self.RWH_start_coord) and not self.back_to_start:
+            self.back_to_start = True
+        elif cur_coord.is_equal(self.RWH_start_coord) and self.back_to_start:
+            # get nearest obstacle (adj coord) and set it as new start coord
+            self.FP_or_RWH = True
+            new_start = self.arena.get_nearest_obstacle_adj_coord(cur_coord) # you only get this once every time you reach back to the starting point
+            self.RWH_start_coord = new_start
+            self.back_to_start = False # once you reset the start coord, need to set it back to false
+
+        target_coord = self.think()
+
         if target_coord == None:
             if self.task == AgentTask.FAST:
                 message = f'No valid path!'
@@ -65,9 +80,10 @@ class Agent:
                 else:
                     next_step = FastestPathAlgo().get_next_step(self.arena,self.robot_info,START_COORD, None)
                     move_command = self.calculate_move(cur_coord, next_step)
-            else: # if image rec is done, return to start
+            else: # Image rec target coord returns None if the FP has reached its goal
                 message = f'Reached dangerous obstacle, commencing right wall hugging!'
-                next_step = self.algo.right_wall_hugging_algo(self.arena, self.robot_info)
+                next_step = self.algo.align_right_wall(self.arena, self.robot_info)
+                print("ALIGNING RIGHT WALL... ", next_step.get_x(), next_step.get_y())
                 move_command = self.calculate_move(cur_coord, next_step)
                 
         elif self.task == AgentTask.FAST and self.robot_info.get_coord().is_equal(self.end_coord):
@@ -102,8 +118,17 @@ class Agent:
             next_step = self.algo.get_next_step(self.arena, self.robot_info, self.end_coord, waypoint)
         elif self.task == AgentTask.EXPLORE:
             next_step = self.algo.get_next_step(self.arena, self.robot_info) # pylint: disable=no-value-for-parameter
-        else:
-            next_step = self.algo.get_next_step(self.arena, self.robot_info)
+        else: # check if right wall hug or fastest path
+            if self.FP_or_RWH: # if FP, keep running fastest path algo with the initialised start point
+                next_step = FastestPathAlgo().get_next_step(self.arena,self.robot_info, self.RWH_start_coord)
+                print("MY CURRENT COORD: ", self.robot_info.get_coord().get_x(), self.robot_info.get_coord().get_y())
+                print("FASTEST PATH NEXT STEP: ", next_step.get_x(), next_step.get_y())
+                if self.robot_info.get_coord().is_equal(self.RWH_start_coord):
+                    self.FP_or_RWH = False
+                    print("Setting FP_or_RWH back to RWH...")
+                    return None
+            else: # run right wall hugging algo
+                next_step = self.algo.get_next_step(self.arena, self.robot_info)
         return next_step
 
     def calculate_move(self, current_coord, target_coord) -> MoveCommand:
@@ -131,9 +156,8 @@ class Agent:
         adj = self.arena.get_eight_adjacent_in_arena(center_value)
         adj.append(center_value)
         for cd in adj:
-            # self.arena.get_cell_at_coord(cd).set_is_visited(True)
+            self.arena.get_cell_at_coord(cd).set_is_visited(True)
             self.arena.get_cell_at_coord(cd).set_is_explored(True)
-        self.arena.get_cell_at_coord(center_value).set_is_visited(True)
 
     def get_arena(self) -> Arena:
         return self.arena
