@@ -1,4 +1,5 @@
 const zmq = require("zeromq");
+const Queue = require("better-queue");
 const { EventEmitter } = require("events");
 
 const logger = require("./logger.js")("comms");
@@ -25,6 +26,15 @@ class Comms extends EventEmitter {
     logger.info(`init with tx: ${txAddress}, rx: ${rxAddress}`);
     this._receiverTask();
     this._reqReceiverTask();
+
+    this._txQueue = new Queue((data, cb) => {
+      const json_data = JSON.stringify(data);
+      logger.verbose(`TX: ${json_data}`);
+      this.tx
+        .send(json_data)
+        .then(() => cb(null))
+        .catch((err) => cb(err));
+    });
   }
 
   async _receiverTask() {
@@ -38,9 +48,8 @@ class Comms extends EventEmitter {
     }
   }
 
-  async send(data) {
-    logger.verbose(`TX: ${JSON.stringify(data)}`);
-    await this.tx.send(JSON.stringify(data));
+  send(data) {
+    this._txQueue.push(data);
   }
 
   setReqHandler(func) {
