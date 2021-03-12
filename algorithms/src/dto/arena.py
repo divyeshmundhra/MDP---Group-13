@@ -147,7 +147,7 @@ class Arena:
                     l.append(coord)
         return l
 
-    def get_nearest_obstacle_adj_coord(self, cur_coord: Coord, empty: bool) -> Coord: # if empty is true, return the adj coord, else return the obstacle itself
+    def get_nearest_obstacle_adj_coord(self, cur_coord: Coord, adj: bool) -> Coord: # if empty is true, return the adj coord, else return the obstacle itself
         obstacle_coord_list = self.list_known_obstacles()
         unseen_obstacles_list = []
         path = []
@@ -158,16 +158,10 @@ class Arena:
                 if item.get_x() != 0 and item.get_x() != 14 and item.get_y() != 0 and item.get_y() != 19:
                     unseen_obstacles_list.append(item)
 
-        # find nearest obstacle first, then find vantage
-        while unseen_obstacles_list: # iterate through the obstacles
-            ue_distance = [] 
-            for ue in unseen_obstacles_list:
-                ue_distance.append((ue, ue.subtract(cur_coord).manhattan_distance()))
-            coord = sorted(ue_distance, key=lambda x: x[1])[0][0] #sort coords by distance
-
+        # store a list of all vantages, then take the nearest one
+        vantage_list = []
+        for coord in unseen_obstacles_list:
             for vantage in self.calculate_vantage_points(coord): # iterate through the obstacle's vantage points
-                found_vantage = False
-                
                 if not self.coord_is_valid(vantage):
                     continue
                 if self.get_cell_at_coord(vantage).is_dangerous():
@@ -175,24 +169,16 @@ class Arena:
                 if not self.get_cell_at_coord(vantage).is_explored():
                     continue
 
-                found_vantage = True
-                    
-                if found_vantage:
-                    break
+                distance = vantage.subtract(cur_coord).manhattan_distance()
+                vantage_list.append((distance, vantage, coord))
 
-            if vantage: # pylint: disable=undefined-loop-variable
-                target = vantage
-                break
-                # path.append(vantage) # pylint: disable=undefined-loop-variable
-            else:
-                raise Exception(f'ImageRecognition: unexplored cell {coord.get_x(), coord.get_y()}cannot be viewed from any angle')
-            
-            unseen_obstacles_list.remove(coord)
+        target = sorted(vantage_list, key=lambda x: x[0])[0]
 
-        if empty:
-            return target
+        if adj:
+            return target[1]
         else:
-            return coord
+            return target[2]
+
 
     def calculate_vantage_points(self, ue: Coord) -> list:
         # vantage points are cells where robot will stand next to an obstacle
