@@ -90,7 +90,7 @@ class Simulator:
         self.timelimit = float(input("Enter time limit (sec) (-1 for default): "))
 
         if self.coverage < 0:
-            self.coverage = 100
+            self.coverage = 1000
 
         if self.speed < 0:
             self.speed = 0.5
