@@ -132,6 +132,12 @@ class Arena:
 
 
 # Used in Image Rec Algo:
+    def all_obstacles_seen(self) -> bool:
+        for coord in self.list_known_obstacles():
+            if not self.get_cell_at_coord(coord).is_seen():
+                return False
+        return True
+    
     def list_known_obstacles(self) -> list:
         l = []
         for y in range(MAP_ROW):
@@ -141,7 +147,7 @@ class Arena:
                     l.append(coord)
         return l
 
-    def get_nearest_obstacle_adj_coord(self, cur_coord: Coord) -> Coord:
+    def get_nearest_obstacle_adj_coord(self, cur_coord: Coord, empty: bool) -> Coord: # if empty is true, return the adj coord, else return the obstacle itself
         obstacle_coord_list = self.list_known_obstacles()
         unseen_obstacles_list = []
         path = []
@@ -183,7 +189,10 @@ class Arena:
             
             unseen_obstacles_list.remove(coord)
 
-        return target
+        if empty:
+            return target
+        else:
+            return coord
 
     def calculate_vantage_points(self, ue: Coord) -> list:
         # vantage points are cells where robot will stand next to an obstacle

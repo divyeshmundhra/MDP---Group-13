@@ -27,6 +27,7 @@ class Agent:
         self.back_to_start = False
         self.FP_or_RWH = False # False for RWH, True for FP
         self.RWH_start_coord = START_COORD # initialise this to the starting coord
+        self.target_obstacle = None
 
         if self.task == AgentTask.FAST:
             self.arena = ArenaStringParser.parse_arena_string(arena_string)
@@ -61,8 +62,8 @@ class Agent:
         elif cur_coord.is_equal(self.RWH_start_coord) and self.back_to_start:
             # get nearest obstacle (adj coord) and set it as new start coord
             self.FP_or_RWH = True
-            new_start = self.arena.get_nearest_obstacle_adj_coord(cur_coord) # you only get this once every time you reach back to the starting point
-            self.RWH_start_coord = new_start
+            self.RWH_start_coord = self.arena.get_nearest_obstacle_adj_coord(cur_coord, True) # you only get this once every time you reach back to the starting point
+            self.target_obstacle = self.arena.get_nearest_obstacle_adj_coord(cur_coord, False)
             self.back_to_start = False # once you reset the start coord, need to set it back to false
 
         target_coord = self.think()
@@ -81,10 +82,14 @@ class Agent:
                     next_step = FastestPathAlgo().get_next_step(self.arena,self.robot_info,START_COORD, None)
                     move_command = self.calculate_move(cur_coord, next_step)
             else: # Image rec target coord returns None if the FP has reached its goal
-                message = f'Reached dangerous obstacle, commencing right wall hugging!'
-                next_step = self.algo.align_right_wall(self.arena, self.robot_info)
-                print("ALIGNING RIGHT WALL... ", next_step.get_x(), next_step.get_y())
-                move_command = self.calculate_move(cur_coord, next_step)
+                if self.arena.all_obstacles_seen(): # if no obstacles left to observe, return to start
+                    message = f'Image rec complete, returning to start!'
+                    next_step = FastestPathAlgo().get_next_step(self.arena,self.robot_info, START_COORD)
+                    move_command = self.calculate_move(cur_coord, next_step)
+                else:
+                    message = f'Reached dangerous obstacle, commencing right wall hugging!'
+                    next_step = self.algo.align_right_wall(self.arena, self.robot_info, self.target_obstacle)
+                    move_command = self.calculate_move(cur_coord, next_step)
                 
         elif self.task == AgentTask.FAST and self.robot_info.get_coord().is_equal(self.end_coord):
             message = f'Fastest path complete!'
@@ -121,11 +126,8 @@ class Agent:
         else: # check if right wall hug or fastest path
             if self.FP_or_RWH: # if FP, keep running fastest path algo with the initialised start point
                 next_step = FastestPathAlgo().get_next_step(self.arena,self.robot_info, self.RWH_start_coord)
-                print("MY CURRENT COORD: ", self.robot_info.get_coord().get_x(), self.robot_info.get_coord().get_y())
-                print("FASTEST PATH NEXT STEP: ", next_step.get_x(), next_step.get_y())
                 if self.robot_info.get_coord().is_equal(self.RWH_start_coord):
                     self.FP_or_RWH = False
-                    print("Setting FP_or_RWH back to RWH...")
                     return None
             else: # run right wall hugging algo
                 next_step = self.algo.get_next_step(self.arena, self.robot_info)
