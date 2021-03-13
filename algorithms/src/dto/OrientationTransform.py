@@ -46,11 +46,3 @@ class OrientationTransform:
         elif orientation == Orientation.NORTH: return Coord(0, 1)
         elif orientation == Orientation.SOUTH: return Coord(0, -1)
         else: raise Exception(f'Invalid orientation: tried moving {orientation.name}. orientation_to_unit_displacement only implemented for cardinal directions')
-
-    @staticmethod
-    def get_two_cells_away(orientation: Orientation) -> Coord:
-        if orientation == Orientation.EAST: return Coord(2, 0)
-        elif orientation == Orientation.WEST: return Coord(-2, 0)
-        elif orientation == Orientation.NORTH: return Coord(0, 2)
-        elif orientation == Orientation.SOUTH: return Coord(0, -2)
-        else: raise Exception(f'Invalid orientation!')

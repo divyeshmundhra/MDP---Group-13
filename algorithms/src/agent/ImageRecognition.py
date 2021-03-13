@@ -55,7 +55,7 @@ class RightWallHuggingAlgo():
         displacement = OT.orientation_to_unit_displacement(OT.degree_to_orientation[abs_degree])
         front_coord = self.cur_coord.add(displacement)
         if return_coords:
-            displacement = OT.get_two_cells_away(OT.degree_to_orientation[abs_degree])
+            displacement = OT.orientation_to_unit_displacement(OT.degree_to_orientation[abs_degree]).multiply(2)
             viewed_cell = self.cur_coord.add(displacement)
             return viewed_cell
         else:
@@ -69,7 +69,7 @@ class RightWallHuggingAlgo():
         displacement = OT.orientation_to_unit_displacement(OT.degree_to_orientation[abs_degree])
         left_coord = self.cur_coord.add(displacement)
         if return_coords:
-            displacement = OT.get_two_cells_away(OT.degree_to_orientation[abs_degree])
+            displacement = OT.orientation_to_unit_displacement(OT.degree_to_orientation[abs_degree]).multiply(2)
             viewed_cell = self.cur_coord.add(displacement)
             return viewed_cell
         else:
@@ -83,14 +83,14 @@ class RightWallHuggingAlgo():
         displacement = OT.orientation_to_unit_displacement(OT.degree_to_orientation[abs_degree])
         right_coord = self.cur_coord.add(displacement)
         if return_coords:
-            displacement = OT.get_two_cells_away(OT.degree_to_orientation[abs_degree])
+            displacement = OT.orientation_to_unit_displacement(OT.degree_to_orientation[abs_degree]).multiply(2)
             viewed_cell = self.cur_coord.add(displacement)
             return viewed_cell
         else:
             if 0 <= right_coord.get_x() < MAP_COL and 0 <= right_coord.get_y() < MAP_ROW and not self.arena.get_cell_at_coord(right_coord).is_dangerous():
                 return True
             else:
-                displacement = OT.get_two_cells_away(OT.degree_to_orientation[abs_degree])
+                displacement = OT.orientation_to_unit_displacement(OT.degree_to_orientation[abs_degree]).multiply(2)
                 viewed_cell = self.cur_coord.add(displacement)
                 if 0 <= viewed_cell.get_x() < MAP_COL and 0 <= viewed_cell.get_y() < MAP_ROW and self.arena.get_cell_at_coord(viewed_cell).is_obstacle():
                     adj_obstacle = viewed_cell
