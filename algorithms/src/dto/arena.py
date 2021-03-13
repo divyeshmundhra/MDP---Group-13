@@ -150,7 +150,6 @@ class Arena:
     def get_nearest_obstacle_adj_coord(self, cur_coord: Coord, adj: bool) -> Coord: # if empty is true, return the adj coord, else return the obstacle itself
         obstacle_coord_list = self.list_known_obstacles()
         unseen_obstacles_list = []
-        path = []
         target = None
 
         for item in obstacle_coord_list:
@@ -159,20 +158,22 @@ class Arena:
                     unseen_obstacles_list.append(item)
 
         # store a list of all vantages, then take the nearest one
-        vantage_list = []
+        rwh_vantage_list = []
         for coord in unseen_obstacles_list:
-            for vantage in self.calculate_vantage_points(coord): # iterate through the obstacle's vantage points
-                if not self.coord_is_valid(vantage):
+            for rwh_vantage in self.calculate_rwh_vantage(coord): # iterate through the obstacle's vantage points
+                if not self.coord_is_valid(rwh_vantage):
                     continue
-                if self.get_cell_at_coord(vantage).is_dangerous():
+                if self.get_cell_at_coord(rwh_vantage).is_obstacle():
                     continue
-                if not self.get_cell_at_coord(vantage).is_explored():
+                if self.get_cell_at_coord(rwh_vantage).is_dangerous():
+                    continue
+                if not self.get_cell_at_coord(rwh_vantage).is_explored():
                     continue
 
-                distance = vantage.subtract(cur_coord).manhattan_distance()
-                vantage_list.append((distance, vantage, coord))
+                distance = rwh_vantage.subtract(cur_coord).manhattan_distance()
+                rwh_vantage_list.append((distance, rwh_vantage, coord))
 
-        target = sorted(vantage_list, key=lambda x: x[0])[0]
+        target = sorted(rwh_vantage_list, key=lambda x: x[0])[0]
 
         if adj:
             return target[1]
@@ -180,12 +181,12 @@ class Arena:
             return target[2]
 
 
-    def calculate_vantage_points(self, ue: Coord) -> list:
+    def calculate_rwh_vantage(self, ue: Coord) -> list:
         # vantage points are cells where robot will stand next to an obstacle
-        vantage_points = []
+        rwh_vantage_points = []
         
         for disp in [(-2,0), (0,2), (0,-2), (2,0)]:
             coord = Coord(disp[0], disp[1])
-            vantage_points.append(ue.add(coord))
+            rwh_vantage_points.append(ue.add(coord))
             
-        return vantage_points
+        return rwh_vantage_points
