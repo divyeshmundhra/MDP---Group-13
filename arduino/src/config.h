@@ -15,10 +15,6 @@ const uint16_t kSensor_min_value = 300;
 // maximum delta of sensor distance below which is considered stable
 const int8_t kSensor_stable_threshold = 8;
 
-// max axis acceleration/deceleration
-const int16_t kMax_axis_accel = 64;
-const int16_t kMax_axis_decel = -128;
-
 // minimum encoder delta for the robot to be considered moving
 const int32_t kEncoder_move_threshold = 10;
 // minimum sensor delta to be considered sensor unstable
