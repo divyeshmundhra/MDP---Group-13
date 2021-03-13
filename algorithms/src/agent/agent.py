@@ -56,16 +56,6 @@ class Agent:
 
     def step(self) -> AgentOutput:
         cur_coord = self.robot_info.get_coord()
-
-        if cur_coord.is_equal(self.RWH_start_coord) and not self.back_to_start:
-            self.back_to_start = True
-        elif cur_coord.is_equal(self.RWH_start_coord) and self.back_to_start:
-            # get nearest obstacle (adj coord) and set it as new start coord
-            self.FP_or_RWH = True
-            self.RWH_start_coord = self.arena.get_nearest_obstacle_adj_coord(cur_coord, True) # you only get this once every time you reach back to the starting point
-            self.target_obstacle = self.arena.get_nearest_obstacle_adj_coord(cur_coord, False)
-            self.back_to_start = False # once you reset the start coord, need to set it back to false
-
         target_coord = self.think()
 
         if target_coord == None:
@@ -81,15 +71,12 @@ class Agent:
                 else:
                     next_step = FastestPathAlgo().get_next_step(self.arena,self.robot_info,START_COORD, None)
                     move_command = self.calculate_move(cur_coord, next_step)
-            else: # Image rec target coord returns None if the FP has reached its goal
-                if self.arena.all_obstacles_seen(): # if no obstacles left to observe, return to start
-                    message = f'Image rec complete, returning to start!'
-                    next_step = FastestPathAlgo().get_next_step(self.arena,self.robot_info, START_COORD)
-                    move_command = self.calculate_move(cur_coord, next_step)
-                else:
-                    message = f'Reached dangerous obstacle, commencing right wall hugging!'
-                    next_step = self.algo.align_right_wall(self.arena, self.robot_info, self.target_obstacle)
-                    move_command = self.calculate_move(cur_coord, next_step)
+            else:
+                # Image rec target coord returns None if the FP has reached its goal
+                # Once we use FP to reach the next obstacle, we need to align it with the wall before we can start RWH
+                message = f'Reached dangerous obstacle, commencing right wall hugging!'
+                next_step = self.algo.align_right_wall(self.arena, self.robot_info, self.target_obstacle)
+                move_command = self.calculate_move(cur_coord, next_step)
                 
         elif self.task == AgentTask.FAST and self.robot_info.get_coord().is_equal(self.end_coord):
             message = f'Fastest path complete!'
@@ -123,14 +110,25 @@ class Agent:
             next_step = self.algo.get_next_step(self.arena, self.robot_info, self.end_coord, waypoint)
         elif self.task == AgentTask.EXPLORE:
             next_step = self.algo.get_next_step(self.arena, self.robot_info) # pylint: disable=no-value-for-parameter
-        else: # check if right wall hug or fastest path
-            if self.FP_or_RWH: # if FP, keep running fastest path algo with the initialised start point
+        else:
+            cur_coord = self.robot_info.get_coord()
+            
+            if cur_coord.is_equal(self.RWH_start_coord) and not self.back_to_start: # first time robot has passed the start coord
+                self.back_to_start = True
+            elif cur_coord.is_equal(self.RWH_start_coord) and self.back_to_start: # when the back_to_start flag has been set as True, it means if the coords are equal again, this is the second time it is passing the coords
+                self.FP_or_RWH = True
+                self.RWH_start_coord = self.arena.get_nearest_obstacle_adj_coord(cur_coord, True)
+                self.target_obstacle = self.arena.get_nearest_obstacle_adj_coord(cur_coord, False)
+                self.back_to_start = False # once you reset the start coord, need to set the flag back to false
+
+            if self.FP_or_RWH: # need this because back_to_start doesn't tell you if we are currently running RWH or going to nearest obstacle using FP
                 next_step = FastestPathAlgo().get_next_step(self.arena,self.robot_info, self.RWH_start_coord)
-                if self.robot_info.get_coord().is_equal(self.RWH_start_coord):
+                if self.robot_info.get_coord().is_equal(self.RWH_start_coord): # once you have reached the new RWH_start_coord, start running RWH instead of FP
                     self.FP_or_RWH = False
                     return None
-            else: # run right wall hugging algo
+            else:
                 next_step = self.algo.get_next_step(self.arena, self.robot_info)
+
         return next_step
 
     def calculate_move(self, current_coord, target_coord) -> MoveCommand:
