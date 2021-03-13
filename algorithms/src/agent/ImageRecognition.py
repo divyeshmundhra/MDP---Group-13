@@ -53,59 +53,45 @@ class RightWallHuggingAlgo():
     def check_front_free(self, return_coords: bool = False) -> bool:
         abs_degree = (self.cur_direction.value*90 + OT.orientation_to_degree[Orientation.NORTH]) % 360
         displacement = OT.orientation_to_unit_displacement(OT.degree_to_orientation[abs_degree])
-        front_coord = OT.get_new_coords_after_displacement(self.cur_coord, displacement)
+        front_coord = self.cur_coord.add(displacement)
         if return_coords:
             displacement = OT.get_two_cells_away(OT.degree_to_orientation[abs_degree])
-            viewed_cell = OT.get_new_coords_after_displacement(self.cur_coord, displacement)
+            viewed_cell = self.cur_coord.add(displacement)
             return viewed_cell
         else:
             if 0 <= front_coord.get_x() < MAP_COL and 0 <= front_coord.get_y() < MAP_ROW and not self.arena.get_cell_at_coord(front_coord).is_dangerous():
                 return True
             else:
-                # displacement = OT.get_two_cells_away(OT.degree_to_orientation[abs_degree])
-                # viewed_cell = OT.get_new_coords_after_displacement(self.cur_coord, displacement)
-                # if 0 <= viewed_cell.get_x() < MAP_COL and 0 <= viewed_cell.get_y() < MAP_ROW and self.arena.get_cell_at_coord(viewed_cell).is_obstacle():
-                #     adj_obstacle = viewed_cell
-                #     surface_orientation = (abs_degree + 180)%360
-                #     self.arena.get_cell_at_coord(adj_obstacle).set_seen_surface(surface_orientation)
-                #     self.arena.get_cell_at_coord(adj_obstacle).set_is_seen(True)
                 return False
 
     def check_left_free(self, return_coords: bool = False):
         abs_degree = (self.cur_direction.value*90 + OT.orientation_to_degree[Orientation.WEST]) % 360
         displacement = OT.orientation_to_unit_displacement(OT.degree_to_orientation[abs_degree])
-        left_coord = OT.get_new_coords_after_displacement(self.cur_coord, displacement)
+        left_coord = self.cur_coord.add(displacement)
         if return_coords:
             displacement = OT.get_two_cells_away(OT.degree_to_orientation[abs_degree])
-            viewed_cell = OT.get_new_coords_after_displacement(self.cur_coord, displacement)
+            viewed_cell = self.cur_coord.add(displacement)
             return viewed_cell
         else:
             if 0 <= left_coord.get_x() < MAP_COL and 0 <= left_coord.get_y() < MAP_ROW and not self.arena.get_cell_at_coord(left_coord).is_dangerous():
                 return True
             else:
-                # displacement = OT.get_two_cells_away(OT.degree_to_orientation[abs_degree])
-                # viewed_cell = OT.get_new_coords_after_displacement(self.cur_coord, displacement)
-                # if 0 <= viewed_cell.get_x() < MAP_COL and 0 <= viewed_cell.get_y() < MAP_ROW and self.arena.get_cell_at_coord(viewed_cell).is_obstacle():
-                #     adj_obstacle = viewed_cell
-                #     surface_orientation = (abs_degree + 180)%360
-                #     self.arena.get_cell_at_coord(adj_obstacle).set_seen_surface(surface_orientation)
-                #     self.arena.get_cell_at_coord(adj_obstacle).set_is_seen(True)
                 return False
 
     def check_right_free(self, return_coords: bool = False):
         abs_degree = (self.cur_direction.value*90 + OT.orientation_to_degree[Orientation.EAST]) % 360
         displacement = OT.orientation_to_unit_displacement(OT.degree_to_orientation[abs_degree])
-        right_coord = OT.get_new_coords_after_displacement(self.cur_coord, displacement)
+        right_coord = self.cur_coord.add(displacement)
         if return_coords:
             displacement = OT.get_two_cells_away(OT.degree_to_orientation[abs_degree])
-            viewed_cell = OT.get_new_coords_after_displacement(self.cur_coord, displacement)
+            viewed_cell = self.cur_coord.add(displacement)
             return viewed_cell
         else:
             if 0 <= right_coord.get_x() < MAP_COL and 0 <= right_coord.get_y() < MAP_ROW and not self.arena.get_cell_at_coord(right_coord).is_dangerous():
                 return True
             else:
                 displacement = OT.get_two_cells_away(OT.degree_to_orientation[abs_degree])
-                viewed_cell = OT.get_new_coords_after_displacement(self.cur_coord, displacement)
+                viewed_cell = self.cur_coord.add(displacement)
                 if 0 <= viewed_cell.get_x() < MAP_COL and 0 <= viewed_cell.get_y() < MAP_ROW and self.arena.get_cell_at_coord(viewed_cell).is_obstacle():
                     adj_obstacle = viewed_cell
                     surface_orientation = (abs_degree + 180)%360
@@ -116,23 +102,23 @@ class RightWallHuggingAlgo():
     def move_forward(self) -> Coord:
         abs_degree = (self.cur_direction.value*90 + OT.orientation_to_degree[Orientation.NORTH]) % 360
         displacement = OT.orientation_to_unit_displacement(OT.degree_to_orientation[abs_degree])
-        front_coord = OT.get_new_coords_after_displacement(self.cur_coord, displacement)
+        front_coord = self.cur_coord.add(displacement)
         return front_coord
 
     def move_left(self) -> Coord:
         abs_degree = (self.cur_direction.value*90 + OT.orientation_to_degree[Orientation.WEST]) % 360
         displacement = OT.orientation_to_unit_displacement(OT.degree_to_orientation[abs_degree])
-        left_coord = OT.get_new_coords_after_displacement(self.cur_coord, displacement)
+        left_coord = self.cur_coord.add(displacement)
         return left_coord
 
     def move_right(self) -> Coord:
         abs_degree = (self.cur_direction.value*90 + OT.orientation_to_degree[Orientation.EAST]) % 360
         displacement = OT.orientation_to_unit_displacement(OT.degree_to_orientation[abs_degree])
-        right_coord = OT.get_new_coords_after_displacement(self.cur_coord, displacement)
+        right_coord = self.cur_coord.add(displacement)
         return right_coord
 
     def move_back(self) -> Coord:
         abs_degree = (self.cur_direction.value*90 + OT.orientation_to_degree[Orientation.SOUTH]) % 360
         displacement = OT.orientation_to_unit_displacement(OT.degree_to_orientation[abs_degree])
-        back_coord = OT.get_new_coords_after_displacement(self.cur_coord, displacement)
+        back_coord = self.cur_coord.add(displacement)
         return back_coord 
