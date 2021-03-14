@@ -2,6 +2,7 @@
 
 #include "motion.h"
 #include "motion_init.h"
+#include "motion_profile.h"
 #include "config.h"
 #include "board.h"
 #include "sensors.h"
@@ -74,19 +75,23 @@ int16_t controllerTrackLeft(int32_t encoder_left, int32_t encoder_right) {
 
 pid_state_t state_straight_left;
 pid_state_t state_straight_right;
-int16_t controllerStraight(pid_state_t *state, int32_t encoder_left, int32_t target) {
-  // controller aiming to make encoder_left track target
-  int32_t error = target - encoder_left;
+int16_t controllerMotionProfile(pid_state_t *state, int32_t encoder, setpoint_t *sp) {
+  // controller aiming to make encoder track setpoint
+  int32_t error = sp->pos - encoder;
 
-  state->integral = constrain((int32_t) state->integral + error, kMS_integral_min, kMS_integral_max);
-  int16_t power = ((int32_t) kP_straight * error + (int32_t) kI_straight * state->integral + (int32_t) kD_straight * (state->last_input - encoder_left)) >> 8;
+  int16_t power = (
+    (int32_t) kV_mp * sp->vel +
+    (int32_t) kA_mp * sp->accel +
+    (int32_t) kP_mp * error +
+    (int32_t) kD_mp * (error - state->last_input)
+  ) >> 8;
 
-  state->last_input = encoder_left;
+  state->last_input = error;
 
-  if (power > kMS_max_output) {
-    return kMS_max_output;
-  } else if (power < kMS_min_output) {
-    return kMS_min_output;
+  if (power > kMP_max_output) {
+    return kMP_max_output;
+  } else if (power < kMP_min_output) {
+    return kMP_min_output;
   }
 
   return power;
@@ -240,6 +245,8 @@ uint8_t get_base_wall_align_offset(align_type_t align_type, int16_t val) {
   return val;
 }
 
+Motion_Profile mp;
+
 // triggers at 100Hz
 ISR(TIMER2_COMPA_vect) {
   // reset timer counter
@@ -338,6 +345,8 @@ ISR(TIMER2_COMPA_vect) {
         resetControllerState(&state_straight_left, encoder_left);
         resetControllerState(&state_straight_right, encoder_right);
         has_ebraked = false;
+
+        mp.init(target_left);
       } else if (move_type == OBSTACLE) {
         resetControllerState(&state_obstacle, sensor_distances[FRONT_FRONT_LEFT]);
       }
@@ -347,19 +356,33 @@ ISR(TIMER2_COMPA_vect) {
 
   int16_t power_left = 0, power_right = 0;
   if (move_type == DISTANCE) {
-    base_left = controllerStraight(&state_straight_left, encoder_left, target_left);
-    base_right = controllerStraight(&state_straight_right, encoder_right, target_right);
+    setpoint_t sp;
 
-    // crude way to determine if robot is decelerating:
-    // for most of the move, controllerStraight will be saturated
-    // when it starts to fall, we're nearing the end of the move
-    if (base_left >= kMS_max_output) {
-      reached_max_power = true;
-    } else if (reached_max_power) {
-      reached_max_power = false;
-      display.decelerating = 1;
-      // combine_next_move();
+    if (!mp.step(&sp)) {
+      display.move_distance_done = 1;
+
+      switch(move_dir) {
+        case FORWARD:
+          display.update_f = 1;
+          break;
+        case REVERSE:
+          display.update_b = 1;
+          break;
+        case LEFT:
+          display.update_l = 1;
+          break;
+        case RIGHT:
+          display.update_r = 1;
+          break;
+      }
+
+      state = REPORT_SENSOR_INIT;
+      axis_left.setBrake(400);
+      axis_right.setBrake(400);
+      return;
     }
+    base_left = controllerMotionProfile(&state_straight_left, encoder_left, &sp);
+    base_right = controllerMotionProfile(&state_straight_right, encoder_right, &sp);
   } else if (move_type == OBSTACLE) {
     base_left = controllerObstacle(&state_obstacle, sensor_distances[FRONT_FRONT_LEFT], target_obstacle);
     base_right = base_left;
@@ -376,7 +399,7 @@ ISR(TIMER2_COMPA_vect) {
     }
   }
 
-  if (straight_enabled) {
+  if (false && straight_enabled) {
     static uint8_t tick_count = 0;
     tick_count ++;
 

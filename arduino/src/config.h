@@ -87,16 +87,14 @@ extern int16_t kD_offset;
 const int16_t kTL_integral_min = -400;
 const int16_t kTL_integral_max = 400;
 
-// controller parameters for move-straight controller
-extern int16_t kP_straight;
-extern int16_t kI_straight;
-extern int16_t kD_straight;
+// controller parameters for controller tracking the motion profile
+extern int16_t kV_mp;
+extern int16_t kA_mp;
+extern int16_t kP_mp;
+extern int16_t kD_mp;
 
-const int16_t kMS_integral_min = -100;
-const int16_t kMS_integral_max = 100;
-
-const int16_t kMS_max_output = 400;
-const int16_t kMS_min_output = -400;
+const int16_t kMP_max_output = 400;
+const int16_t kMP_min_output = -400;
 
 // controller parameters for move-until-obstacle controller
 extern int16_t kP_obstacle;
