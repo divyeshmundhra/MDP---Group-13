@@ -24,8 +24,8 @@ class Agent:
         self.reached_waypoint = False
         self.algo = None # initialized 3 lines below
 
-        self.back_to_start = False
-        self.FP_or_RWH = False # False for RWH, True for FP
+        self.image_rec_back_to_start = False
+        self.image_rec_going_to_next_obstacle = False # False for RWH, True for FP
         self.RWH_start_coord = START_COORD # initialise this to the starting coord
         self.target_obstacle = None
 
@@ -113,18 +113,17 @@ class Agent:
         else:
             cur_coord = self.robot_info.get_coord()
             
-            if cur_coord.is_equal(self.RWH_start_coord) and not self.back_to_start: # first time robot has passed the start coord
-                self.back_to_start = True
-            elif cur_coord.is_equal(self.RWH_start_coord) and self.back_to_start: # when the back_to_start flag has been set as True, it means if the coords are equal again, this is the second time it is passing the coords
-                self.FP_or_RWH = True
-                self.RWH_start_coord = self.arena.get_nearest_obstacle_adj_coord(cur_coord, True)
-                self.target_obstacle = self.arena.get_nearest_obstacle_adj_coord(cur_coord, False)
-                self.back_to_start = False # once you reset the start coord, need to set the flag back to false
+            if cur_coord.is_equal(self.RWH_start_coord) and not self.image_rec_back_to_start: # first time robot has passed the start coord
+                self.image_rec_back_to_start = True
+            elif cur_coord.is_equal(self.RWH_start_coord) and self.image_rec_back_to_start: # when the image_rec_back_to_start flag has been set as True, it means if the coords are equal again, this is the second time it is passing the coords
+                self.image_rec_going_to_next_obstacle = True
+                self.RWH_start_coord, self.target_obstacle = self.arena.get_nearest_obstacle_adj_coord(cur_coord)
+                self.image_rec_back_to_start = False # once you reset the start coord, need to set the flag back to false
 
-            if self.FP_or_RWH: # need this because back_to_start doesn't tell you if we are currently running RWH or going to nearest obstacle using FP
+            if self.image_rec_going_to_next_obstacle: # need this because image_rec_back_to_start doesn't tell you if we are currently running RWH or going to nearest obstacle using FP
                 next_step = FastestPathAlgo().get_next_step(self.arena,self.robot_info, self.RWH_start_coord)
                 if self.robot_info.get_coord().is_equal(self.RWH_start_coord): # once you have reached the new RWH_start_coord, start running RWH instead of FP
-                    self.FP_or_RWH = False
+                    self.image_rec_going_to_next_obstacle = False
                     return None
             else:
                 next_step = self.algo.get_next_step(self.arena, self.robot_info)

@@ -15,9 +15,8 @@ class RightWallHuggingAlgo():
 
     def get_next_step(self, arena: Arena, robot_info: RobotInfo) -> Coord:
         self.arena = arena
-        self.robot_info = robot_info
-        self.cur_coord = self.robot_info.get_coord()
-        self.cur_direction = self.robot_info.get_orientation()
+        self.cur_coord = robot_info.get_coord()
+        self.cur_direction = robot_info.get_orientation()
 
         next_step = self.right_wall_hug() # keep trying right wall hugging
         
@@ -36,9 +35,8 @@ class RightWallHuggingAlgo():
 
     def align_right_wall(self, arena: Arena, robot_info: RobotInfo, target_obstacle: Coord) -> Coord: 
         self.arena = arena
-        self.robot_info = robot_info
-        self.cur_coord = self.robot_info.get_coord()
-        self.cur_direction = self.robot_info.get_orientation()
+        self.cur_coord = robot_info.get_coord()
+        self.cur_direction = robot_info.get_orientation()
 
         # check which side the obstacle is on with respect to the robot's current orientation, 
         # then rotate the robot to have its right side facing the obstacle

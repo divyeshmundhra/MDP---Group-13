@@ -4,21 +4,10 @@
 #include "config.h"
 
 void Axis::setPower(int16_t target_power) {
-  _target_power = target_power;
-
-  int16_t delta = _target_power - _power;
-  if (delta > kMax_axis_accel) {
-    _power += kMax_axis_accel;
-  } else if (delta < kMax_axis_decel) {
-    _power += kMax_axis_decel;
+  if (target_power > 0) {
+    _setPower(target_power, _invert ^ _reverse);
   } else {
-    _power = _target_power;
-  }
-
-  if (_power > 0) {
-    _setPower(_power, _invert ^ _reverse);
-  } else {
-    _setPower(-_power, !(_invert ^ _reverse));
+    _setPower(-target_power, !(_invert ^ _reverse));
   }
 }
 

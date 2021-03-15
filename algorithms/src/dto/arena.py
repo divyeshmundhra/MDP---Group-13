@@ -147,7 +147,7 @@ class Arena:
                     l.append(coord)
         return l
 
-    def get_nearest_obstacle_adj_coord(self, cur_coord: Coord, adj: bool) -> Coord: # if empty is true, return the adj coord, else return the obstacle itself
+    def get_nearest_obstacle_adj_coord(self, cur_coord: Coord) -> Coord: # if empty is true, return the adj coord, else return the obstacle itself
         obstacle_coord_list = self.list_known_obstacles()
         unseen_obstacles_list = []
         target = None
@@ -159,8 +159,8 @@ class Arena:
 
         # store a list of all vantages, then take the nearest one
         rwh_vantage_list = []
-        for coord in unseen_obstacles_list:
-            for rwh_vantage in self.calculate_rwh_vantage(coord): # iterate through the obstacle's vantage points
+        for obstacle in unseen_obstacles_list:
+            for rwh_vantage in self.calculate_rwh_vantage(obstacle): # iterate through the obstacle's vantage points
                 if not self.coord_is_valid(rwh_vantage):
                     continue
                 if self.get_cell_at_coord(rwh_vantage).is_obstacle():
@@ -171,14 +171,11 @@ class Arena:
                     continue
 
                 distance = rwh_vantage.subtract(cur_coord).manhattan_distance()
-                rwh_vantage_list.append((distance, rwh_vantage, coord))
+                rwh_vantage_list.append((distance, rwh_vantage, obstacle))
 
         target = sorted(rwh_vantage_list, key=lambda x: x[0])[0]
 
-        if adj:
-            return target[1]
-        else:
-            return target[2]
+        return target[1], target[2]
 
 
     def calculate_rwh_vantage(self, ue: Coord) -> list:
