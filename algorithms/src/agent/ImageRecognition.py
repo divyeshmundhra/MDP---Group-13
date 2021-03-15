@@ -59,7 +59,7 @@ class RightWallHuggingAlgo():
             viewed_cell = self.cur_coord.add(displacement)
             return viewed_cell
         else:
-            if 0 <= front_coord.get_x() < MAP_COL and 0 <= front_coord.get_y() < MAP_ROW and not self.arena.get_cell_at_coord(front_coord).is_dangerous():
+            if self.arena.coord_is_valid(front_coord) and not self.arena.get_cell_at_coord(front_coord).is_dangerous():
                 return True
             else:
                 return False
@@ -73,7 +73,7 @@ class RightWallHuggingAlgo():
             viewed_cell = self.cur_coord.add(displacement)
             return viewed_cell
         else:
-            if 0 <= left_coord.get_x() < MAP_COL and 0 <= left_coord.get_y() < MAP_ROW and not self.arena.get_cell_at_coord(left_coord).is_dangerous():
+            if self.arena.coord_is_valid(left_coord) and not self.arena.get_cell_at_coord(left_coord).is_dangerous():
                 return True
             else:
                 return False
@@ -87,12 +87,12 @@ class RightWallHuggingAlgo():
             viewed_cell = self.cur_coord.add(displacement)
             return viewed_cell
         else:
-            if 0 <= right_coord.get_x() < MAP_COL and 0 <= right_coord.get_y() < MAP_ROW and not self.arena.get_cell_at_coord(right_coord).is_dangerous():
+            if self.arena.coord_is_valid(right_coord) and not self.arena.get_cell_at_coord(right_coord).is_dangerous():
                 return True
             else:
                 displacement = OT.orientation_to_unit_displacement(OT.degree_to_orientation[abs_degree]).multiply(2)
                 viewed_cell = self.cur_coord.add(displacement)
-                if 0 <= viewed_cell.get_x() < MAP_COL and 0 <= viewed_cell.get_y() < MAP_ROW and self.arena.get_cell_at_coord(viewed_cell).is_obstacle():
+                if self.arena.coord_is_valid(viewed_cell) and self.arena.get_cell_at_coord(viewed_cell).is_obstacle():
                     adj_obstacle = viewed_cell
                     surface_orientation = (abs_degree + 180)%360
                     self.arena.get_cell_at_coord(adj_obstacle).set_seen_surface(surface_orientation)
