@@ -9,6 +9,7 @@ from src.dto.ArenaStringParser import ArenaStringParser
 # from src.agent import FastestPathAlgo, ExplorationAlgo
 from src.agent.FastestPathAlgo import FastestPathAlgo
 from src.agent.ExplorationAlgo import ExplorationAlgo
+from src.agent.ImageRecognition import RightWallHuggingAlgo
 
 from src.dto.constants import AgentTask, START_COORD
 
@@ -23,14 +24,24 @@ class Agent:
         self.reached_waypoint = False
         self.algo = None # initialized 3 lines below
 
+        self.image_rec_back_to_start = False
+        self.image_rec_going_to_next_obstacle = False # False for RWH, True for FP
+        self.RWH_start_coord = START_COORD # initialise this to the starting coord
+        self.target_obstacle = None
+
         if self.task == AgentTask.FAST:
             self.arena = ArenaStringParser.parse_arena_string(arena_string)
             self.algo = FastestPathAlgo()
             self.arena.set_all_explored()
-        else:
+        elif self.task == AgentTask.EXPLORE:
             self.arena = Arena()
             self.algo = ExplorationAlgo()
             self.reached_waypoint = True
+        else:
+            self.arena = Arena()
+            self.algo = RightWallHuggingAlgo()
+            self.reached_waypoint = True
+
     def calc_percepts(self, obstacles_coord_list: list, no_obs_coord_list: list, move_q_size: int = 0) -> None:
         # update real robot info
         if self.expected_robot_info:
@@ -38,19 +49,20 @@ class Agent:
                 # robot has finished move, set position to expected position after move
                 self.robot_info.set_coord(self.expected_robot_info.get_coord())
             self.robot_info.set_orientation(self.expected_robot_info.get_orientation())
-        if self.task == AgentTask.EXPLORE:
+        if self.task == AgentTask.EXPLORE or self.task == AgentTask.IMAGEREC:
             self.update_arena(obstacles_coord_list, no_obs_coord_list)
         elif not self.reached_waypoint and self.robot_info.get_coord().is_equal(self.waypoint_coord):
             self.reached_waypoint = True
 
     def step(self) -> AgentOutput:
-        target_coord = self.think()
         cur_coord = self.robot_info.get_coord()
+        target_coord = self.think()
+
         if target_coord == None:
             if self.task == AgentTask.FAST:
                 message = f'No valid path!'
                 move_command = None
-            else:
+            elif self.task == AgentTask.EXPLORE:
                 message = f'Exploration complete!'
                 # self.fill_remaining_unexplored_with_obstacles()
                 if self.robot_info.get_coord().is_equal(START_COORD):
@@ -59,9 +71,17 @@ class Agent:
                 else:
                     next_step = FastestPathAlgo().get_next_step(self.arena,self.robot_info,START_COORD, None)
                     move_command = self.calculate_move(cur_coord, next_step)
+            else:
+                # Image rec target coord returns None if the FP has reached its goal
+                # Once we use FP to reach the next obstacle, we need to align it with the wall before we can start RWH
+                message = f'Reached dangerous obstacle, commencing right wall hugging!'
+                next_step = self.algo.align_right_wall(self.arena, self.robot_info, self.target_obstacle)
+                move_command = self.calculate_move(cur_coord, next_step)
+                
         elif self.task == AgentTask.FAST and self.robot_info.get_coord().is_equal(self.end_coord):
             message = f'Fastest path complete!'
             move_command = None
+
         else:
             move_command = self.calculate_move(cur_coord, target_coord)
             message = f'Target: {target_coord.get_x()}, {target_coord.get_y()}, TURN: {move_command.get_turn_angle()} degs, then \
@@ -73,7 +93,7 @@ class Agent:
         )
 
     def update_arena(self, obstacles_coord_list: list, no_obs_coord_list: list) -> None:
-        self.mark_robot_visisted_cells(self.robot_info.get_coord())
+        self.mark_robot_visited_cells(self.robot_info.get_coord())
         
         for coord in no_obs_coord_list:
             # mark seen clear cells as explored
@@ -88,8 +108,26 @@ class Agent:
         if self.task == AgentTask.FAST:
             waypoint = None if self.reached_waypoint else self.waypoint_coord
             next_step = self.algo.get_next_step(self.arena, self.robot_info, self.end_coord, waypoint)
-        else:
+        elif self.task == AgentTask.EXPLORE:
             next_step = self.algo.get_next_step(self.arena, self.robot_info) # pylint: disable=no-value-for-parameter
+        else:
+            cur_coord = self.robot_info.get_coord()
+            
+            if cur_coord.is_equal(self.RWH_start_coord) and not self.image_rec_back_to_start: # first time robot has passed the start coord
+                self.image_rec_back_to_start = True
+            elif cur_coord.is_equal(self.RWH_start_coord) and self.image_rec_back_to_start: # when the image_rec_back_to_start flag has been set as True, it means if the coords are equal again, this is the second time it is passing the coords
+                self.image_rec_going_to_next_obstacle = True
+                self.RWH_start_coord, self.target_obstacle = self.arena.get_nearest_obstacle_adj_coord(cur_coord)
+                self.image_rec_back_to_start = False # once you reset the start coord, need to set the flag back to false
+
+            if self.image_rec_going_to_next_obstacle: # need this because image_rec_back_to_start doesn't tell you if we are currently running RWH or going to nearest obstacle using FP
+                next_step = FastestPathAlgo().get_next_step(self.arena,self.robot_info, self.RWH_start_coord)
+                if self.robot_info.get_coord().is_equal(self.RWH_start_coord): # once you have reached the new RWH_start_coord, start running RWH instead of FP
+                    self.image_rec_going_to_next_obstacle = False
+                    return None
+            else:
+                next_step = self.algo.get_next_step(self.arena, self.robot_info)
+
         return next_step
 
     def calculate_move(self, current_coord, target_coord) -> MoveCommand:
@@ -113,7 +151,7 @@ class Agent:
             # cell.increment_is_obstacle()
             cell.set_is_dangerous(True)
 
-    def mark_robot_visisted_cells(self,center_value):
+    def mark_robot_visited_cells(self,center_value):
         adj = self.arena.get_eight_adjacent_in_arena(center_value)
         adj.append(center_value)
         for cd in adj:

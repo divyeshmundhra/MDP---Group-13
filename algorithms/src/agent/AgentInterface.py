@@ -38,7 +38,7 @@ class AgentInterface:
 
             print('qsize ', self.q_size)
             if data['type'] == 'sensor':
-                if self.agent_task == AgentTask.EXPLORE:
+                if self.agent_task == AgentTask.EXPLORE or self.agent_task == AgentTask.IMAGEREC:
                     self.update_percepts(data)
                 if self.q_size == 0:
                     self.step()
@@ -118,7 +118,7 @@ class AgentInterface:
     def step(self):
         # get agent output
         agent_output = self.agent.step()
-        if self.agent_task == AgentTask.EXPLORE:
+        if self.agent_task == AgentTask.EXPLORE or self.agent_task == AgentTask.IMAGEREC:
             if not agent_output.get_move_command().get_turn_angle() == 0: # NONE TYPE HAS NO ATTRIBUTE GET TURN ANGLE
                 self.q_size += 2
             else:
@@ -153,6 +153,8 @@ class AgentInterface:
             agent_task = AgentTask.FAST
         elif init_data['data']['task'] == 'EX':
             agent_task = AgentTask.EXPLORE
+        elif init_data['data']['task'] == 'IR':
+            agent_task = AgentTask.IMAGEREC
         else: raise Exception('Invalid agent task: ' + init_data['data']['task'])
 
         # end_coord
