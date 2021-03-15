@@ -117,8 +117,7 @@ class Agent:
                 self.back_to_start = True
             elif cur_coord.is_equal(self.RWH_start_coord) and self.back_to_start: # when the back_to_start flag has been set as True, it means if the coords are equal again, this is the second time it is passing the coords
                 self.image_rec_going_to_next_obstacle = True
-                self.RWH_start_coord = self.arena.get_nearest_obstacle_adj_coord(cur_coord, True)
-                self.target_obstacle = self.arena.get_nearest_obstacle_adj_coord(cur_coord, False)
+                self.RWH_start_coord, self.target_obstacle = self.arena.get_nearest_obstacle_adj_coord(cur_coord)
                 self.back_to_start = False # once you reset the start coord, need to set the flag back to false
 
             if self.image_rec_going_to_next_obstacle: # need this because back_to_start doesn't tell you if we are currently running RWH or going to nearest obstacle using FP
