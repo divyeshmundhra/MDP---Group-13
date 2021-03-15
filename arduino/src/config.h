@@ -15,10 +15,6 @@ const uint16_t kSensor_min_value = 300;
 // maximum delta of sensor distance below which is considered stable
 const int8_t kSensor_stable_threshold = 8;
 
-// max axis acceleration/deceleration
-const int16_t kMax_axis_accel = 64;
-const int16_t kMax_axis_decel = -128;
-
 // minimum encoder delta for the robot to be considered moving
 const int32_t kEncoder_move_threshold = 10;
 // minimum sensor delta to be considered sensor unstable
@@ -32,7 +28,7 @@ const int8_t kMax_obstacle_error = 5;
 const int8_t kMax_encoder_diff_error = 5;
 
 // time after a move to wait before reporting sensor values
-const int16_t kSensor_report_delay = 0;
+const int16_t kSensor_report_delay = 100;
 const int16_t kMax_encoder_correction = 64;
 const int16_t kMin_encoder_correction = -64;
 
@@ -80,7 +76,7 @@ const uint8_t kWall_offsets_right[kWall_offset_count] = {
 const int16_t kBacklash_compensation = -20;
 
 // if FRONT_FRONT_MID sees a value less than this, abort the move immediately
-const int16_t kEmergency_brake_threshold = 50;
+const int16_t kEmergency_brake_threshold = 0;
 const int16_t kEmergency_brake_correction = -300;
 
 // controller parameters for offset (minimise error between encoder readings) controller
@@ -91,16 +87,14 @@ extern int16_t kD_offset;
 const int16_t kTL_integral_min = -400;
 const int16_t kTL_integral_max = 400;
 
-// controller parameters for move-straight controller
-extern int16_t kP_straight;
-extern int16_t kI_straight;
-extern int16_t kD_straight;
+// controller parameters for controller tracking the motion profile
+extern int16_t kV_mp;
+extern int16_t kA_mp;
+extern int16_t kP_mp;
+extern int16_t kD_mp;
 
-const int16_t kMS_integral_min = -100;
-const int16_t kMS_integral_max = 100;
-
-const int16_t kMS_max_output = 400;
-const int16_t kMS_min_output = -400;
+const int16_t kMP_max_output = 400;
+const int16_t kMP_min_output = -400;
 
 // controller parameters for move-until-obstacle controller
 extern int16_t kP_obstacle;

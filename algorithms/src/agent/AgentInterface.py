@@ -1,4 +1,4 @@
-import sys, os, time, json, math
+import sys, os, time, json, math, threading
 import zmq
 path_of_directory_head = os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))))
 sys.path.append(path_of_directory_head)
@@ -12,16 +12,15 @@ from src.dto.coord import Coord
 from src.dto.constants import AgentTask, START_COORD, END_COORD, WAYPOINT, START_ORIENTATION, MAP_COL, MAP_ROW
 from src.dto.MoveCommand import MoveCommand
 
+E_INIT = pygame.USEREVENT + 1
+E_UPDATE = pygame.USEREVENT + 2
+
 class AgentInterface:
     def __init__(self):
         self.agent = None
         self.agent_task = None
         self.waypoint = None
         self.q_size = 0 # queue of sent moves pending sensor response
-        # display robot internal representation of arena
-        pygame.init()
-        self.sim_display = None
-        pygame.display.set_caption('arena simulator')
         # connection to rpi
         self.context = zmq.Context()
         self.rx = self.context.socket(zmq.SUB) # pylint: disable=no-member
@@ -71,8 +70,11 @@ class AgentInterface:
         arena_string, robot_info, agent_task, end_coord = self.parse_init_data(init_data)
         self.agent_task = agent_task
         self.agent = Agent(arena_string, robot_info, agent_task, end_coord, self.waypoint)
-        self.agent.mark_robot_visited_cells(self.agent.get_robot_info().get_coord()) # temp solution
-        self.sim_display = SimulationDisplay(robot_info)
+        self.agent.mark_robot_visisted_cells(self.agent.get_robot_info().get_coord()) # temp solution
+        ev = pygame.event.Event(E_INIT, {
+            'robot_info': robot_info
+        })
+        pygame.event.post(ev)
         self.update_simulation_display()
     
     def process_sensor_data(self, percept_data):
@@ -282,8 +284,27 @@ class AgentInterface:
         return readmap_final
 
     def update_simulation_display(self):
-        seen_arena = self.agent.get_arena()
-        self.sim_display.draw(seen_arena, self.agent.get_robot_info())
-        pygame.display.update()
+        ev = pygame.event.Event(E_UPDATE, {
+            'arena': self.agent.get_arena(),
+            'robot_info': self.agent.get_robot_info()
+        })
+        pygame.event.post(ev)
 
-AgentInterface().main()
+def handle_ui():
+    pygame.init()
+    pygame.display.set_caption('Arena Simulator')
+
+    sim_display = None
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return
+            elif event.type == E_INIT:
+                sim_display = SimulationDisplay(event.robot_info)
+            elif event.type == E_UPDATE:
+                sim_display.draw(event.arena, event.robot_info)
+                pygame.display.update()
+
+threading.Thread(target=AgentInterface().main, daemon=True).start()
+handle_ui()
