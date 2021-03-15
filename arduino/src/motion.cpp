@@ -255,7 +255,7 @@ ISR(TIMER2_COMPA_vect) {
   static int32_t pEncoder_left = 0;
   static int32_t pEncoder_right = 0;
 
-  if (state == IDLE) {
+  if (state != MOVE_COMMANDED && state != MOVING) {
     axis_left.setBrake(400);
     axis_right.setBrake(400);
     return;
@@ -399,7 +399,7 @@ ISR(TIMER2_COMPA_vect) {
     }
   }
 
-  if (false && straight_enabled) {
+  if (straight_enabled) {
     static uint8_t tick_count = 0;
     tick_count ++;
 
@@ -518,7 +518,8 @@ ISR(TIMER2_COMPA_vect) {
         }
       }
     }
-    correction = controllerTrackLeft(encoder_left, encoder_right);
+    // correction = controllerTrackLeft(encoder_left, encoder_right);
+    correction = 0;
   } else {
     correction = 0;
   }

@@ -13,12 +13,11 @@ typedef struct {
 } setpoint_t;
 
 // in encoder ticks/s
-const uint8_t kMP_max_speed = 32;
-const uint8_t kLen_up_lut = 10;
-const PROGMEM int8_t up_vel_lut[kLen_up_lut] = {2, 5, 9, 13, 17, 21, 25, 29, 30, 31};
-const uint8_t kLen_down_lut = 11;
-const PROGMEM int8_t down_vel_lut[kLen_down_lut] = {29, 26, 23, 19, 15, 11, 7, 3, 1, 0, 0};
-
+const uint8_t kMP_max_speed = 28;
+const uint8_t kLen_up_lut = 18;
+const PROGMEM int8_t up_vel_lut[kLen_up_lut] = {1, 2, 4, 6, 8, 10, 12, 14, 16, 19, 21, 23, 24, 25, 26, 27, 27, 27};
+const uint8_t kLen_down_lut = 19;
+const PROGMEM int8_t down_vel_lut[kLen_down_lut] = {26, 25, 23, 21, 19, 17, 15, 13, 11, 8, 6, 4, 3, 2, 1, 0, 0, 0, 0};
 class Motion_Profile {
   public:
     void init(uint16_t distance);

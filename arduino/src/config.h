@@ -28,7 +28,7 @@ const int8_t kMax_obstacle_error = 5;
 const int8_t kMax_encoder_diff_error = 5;
 
 // time after a move to wait before reporting sensor values
-const int16_t kSensor_report_delay = 0;
+const int16_t kSensor_report_delay = 100;
 const int16_t kMax_encoder_correction = 64;
 const int16_t kMin_encoder_correction = -64;
 
@@ -76,7 +76,7 @@ const uint8_t kWall_offsets_right[kWall_offset_count] = {
 const int16_t kBacklash_compensation = -20;
 
 // if FRONT_FRONT_MID sees a value less than this, abort the move immediately
-const int16_t kEmergency_brake_threshold = 50;
+const int16_t kEmergency_brake_threshold = 0;
 const int16_t kEmergency_brake_correction = -300;
 
 // controller parameters for offset (minimise error between encoder readings) controller
