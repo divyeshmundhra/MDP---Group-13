@@ -83,6 +83,18 @@ const int16_t kEmergency_brake_correction = -300;
 const int16_t kMax_axis_accel = 64;
 const int16_t kMax_axis_decel = -128;
 
+// if a forward movement is started while the current sensor value is offset from the ideal position,
+// offset the move to try to compensate for the error
+#define kForward_align_count 3
+const int16_t kForward_align_target[kForward_align_count] = {
+  0,
+  160,
+  250
+};
+
+// offset move only if error is within this value
+const uint8_t kForward_align_max_error = 20;
+
 // controller parameters for offset (minimise error between encoder readings) controller
 extern int16_t kP_offset;
 extern int16_t kI_offset;
