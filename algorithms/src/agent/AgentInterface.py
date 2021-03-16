@@ -12,6 +12,11 @@ from src.dto.coord import Coord
 from src.dto.constants import AgentTask, START_COORD, END_COORD, WAYPOINT, START_ORIENTATION, MAP_COL, MAP_ROW
 from src.dto.MoveCommand import MoveCommand
 
+HOST = "192.168.13.1"
+CONNSTR_RX = f'tcp://{HOST}:3000'
+CONNSTR_TX = f'tcp://{HOST}:3001'
+CONNSTR_CONFIG = f'tcp://{HOST}:3002'
+
 E_INIT = pygame.USEREVENT + 1
 E_UPDATE = pygame.USEREVENT + 2
 
@@ -24,11 +29,11 @@ class AgentInterface:
         # connection to rpi
         self.context = zmq.Context()
         self.rx = self.context.socket(zmq.SUB) # pylint: disable=no-member
-        self.rx.connect("tcp://192.168.13.1:3000")
+        self.rx.connect(CONNSTR_RX)
         self.tx = self.context.socket(zmq.PUSH) # pylint: disable=no-member
-        self.tx.connect("tcp://192.168.13.1:3001")
+        self.tx.connect(CONNSTR_TX)
         self.rx.setsockopt_string(zmq.SUBSCRIBE, '') # pylint: disable=no-member
-        print("connected")
+        print("Agent interface initialised")
 
     def main(self):
         i = 0
@@ -306,5 +311,26 @@ def handle_ui():
                 sim_display.draw(event.arena, event.robot_info)
                 pygame.display.update()
 
+def test_connection():
+
+    connected = False
+
+    time.sleep(0.1)
+    while True:
+        sock = zmq.Context().socket(zmq.REQ)
+        sock.setsockopt(zmq.RCVTIMEO, 1000)
+        sock.connect(CONNSTR_CONFIG)
+        sock.send_string("ping")
+        try:
+            sock.recv()
+            if not connected:
+                print("Connected")
+                connected = True
+            time.sleep(1)
+        except zmq.error.Again:
+            print("Connection timeout")
+            connected = False
+
 threading.Thread(target=AgentInterface().main, daemon=True).start()
+threading.Thread(target=test_connection, daemon=True).start()
 handle_ui()
