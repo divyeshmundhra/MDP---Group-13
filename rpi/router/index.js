@@ -127,6 +127,8 @@ comms.on("data", ({ type, data }) => {
     } else {
       logger.warn("Received status while mode not set");
     }
+
+    comms.send({ type: "robotinfo", data: data["robot_info"] });
   }
 });
 
