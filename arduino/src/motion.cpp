@@ -673,8 +673,29 @@ void parse_next_move() {
     buffered_moves[pos_moves_start].type == DISTANCE_UNPLANNED
   ) {
     move_type = buffered_moves[pos_moves_start].type;
-    int32_t target = buffered_moves[pos_moves_start].target;
     move_dir = buffered_moves[pos_moves_start].direction;
+
+    int32_t target = 0;
+
+    if (move_type == DISTANCE && move_dir == FORWARD) {
+      uint8_t blocks_away = sensor_distances[FRONT_FRONT_MID] / 100;
+
+      int16_t offset_move_distance = 0;
+      if (blocks_away < kForward_align_count) {
+        int8_t delta = sensor_distances[FRONT_FRONT_MID] - kForward_align_target[blocks_away];
+        Serial.print("delta: ");
+        Serial.println(delta);
+        if (delta > -kForward_align_max_error && delta < kForward_align_max_error) {
+          offset_move_distance = ((int32_t) delta * kBlock_distance) / 100;
+          Serial.print("offset by ");
+          Serial.println(offset_move_distance);
+        }
+      }
+
+      target = buffered_moves[pos_moves_start].target + offset_move_distance;
+    } else {
+      target = buffered_moves[pos_moves_start].target;
+    }
 
     switch (move_dir) {
       case FORWARD:
@@ -863,6 +884,11 @@ void loop_motion() {
 
   if (state == REPORT_SENSOR && (millis() - report_delay_start) > kSensor_report_delay) {
     log_all_sensors();
+
+    if (move_dir == FORWARD) {
+      Serial.print("front mid sensor: ");
+      Serial.println(sensor_distances[FRONT_FRONT_MID]);
+    }
     state = IDLE;
   }
 }

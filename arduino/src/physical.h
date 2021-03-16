@@ -33,6 +33,6 @@ const uint16_t kTicks_per_45_degrees_combined = 1500;
 const uint16_t kSensor_side_front_rear_distance = 15 + 145 + 15;
 const uint16_t kSensor_side_center_distance = kSensor_side_front_rear_distance / 2;
 
-const uint16_t kBlock_distance = 1160;
+const uint16_t kBlock_distance = 1185;
 
 #endif
