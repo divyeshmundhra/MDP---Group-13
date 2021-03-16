@@ -101,22 +101,58 @@ class RightWallHuggingAlgo():
         abs_degree = (self.cur_direction.value*90 + OT.orientation_to_degree[Orientation.NORTH]) % 360
         displacement = OT.orientation_to_unit_displacement(OT.degree_to_orientation[abs_degree])
         front_coord = self.cur_coord.add(displacement)
+
+        front_cell_abs_degree = (abs_degree + 90)%360
+        front_cell = self.cur_coord.add(OT.orientation_to_unit_displacement(OT.degree_to_orientation[front_cell_abs_degree]).multiply(2))
+        if self.arena.coord_is_valid(front_cell) and self.arena.get_cell_at_coord(front_cell).is_obstacle():
+            adj_obstacle = front_cell
+            surface_orientation = (front_cell_abs_degree + 180)%360
+            self.arena.get_cell_at_coord(adj_obstacle).set_seen_surface(surface_orientation)
+            self.arena.get_cell_at_coord(adj_obstacle).set_is_seen(True)
+
         return front_coord
 
     def move_left(self) -> Coord:
         abs_degree = (self.cur_direction.value*90 + OT.orientation_to_degree[Orientation.WEST]) % 360
         displacement = OT.orientation_to_unit_displacement(OT.degree_to_orientation[abs_degree])
         left_coord = self.cur_coord.add(displacement)
+
+        front_cell_abs_degree = (abs_degree + 90)%360
+        front_cell = self.cur_coord.add(OT.orientation_to_unit_displacement(OT.degree_to_orientation[front_cell_abs_degree]).multiply(2))
+        if self.arena.coord_is_valid(front_cell) and self.arena.get_cell_at_coord(front_cell).is_obstacle():
+            adj_obstacle = front_cell
+            surface_orientation = (front_cell_abs_degree + 180)%360
+            self.arena.get_cell_at_coord(adj_obstacle).set_seen_surface(surface_orientation)
+            self.arena.get_cell_at_coord(adj_obstacle).set_is_seen(True)
+
         return left_coord
 
     def move_right(self) -> Coord:
         abs_degree = (self.cur_direction.value*90 + OT.orientation_to_degree[Orientation.EAST]) % 360
         displacement = OT.orientation_to_unit_displacement(OT.degree_to_orientation[abs_degree])
         right_coord = self.cur_coord.add(displacement)
+
+        front_cell_abs_degree = (abs_degree + 90)%360
+        front_cell = self.cur_coord.add(OT.orientation_to_unit_displacement(OT.degree_to_orientation[front_cell_abs_degree]).multiply(2))
+        if self.arena.coord_is_valid(front_cell) and self.arena.get_cell_at_coord(front_cell).is_obstacle():
+            adj_obstacle = front_cell
+            surface_orientation = (front_cell_abs_degree + 180)%360
+            self.arena.get_cell_at_coord(adj_obstacle).set_seen_surface(surface_orientation)
+            self.arena.get_cell_at_coord(adj_obstacle).set_is_seen(True)
+
         return right_coord
 
     def move_back(self) -> Coord:
         abs_degree = (self.cur_direction.value*90 + OT.orientation_to_degree[Orientation.SOUTH]) % 360
         displacement = OT.orientation_to_unit_displacement(OT.degree_to_orientation[abs_degree])
         back_coord = self.cur_coord.add(displacement)
+
+        front_cell_abs_degree = (abs_degree + 90)%360
+        front_cell = self.cur_coord.add(OT.orientation_to_unit_displacement(OT.degree_to_orientation[front_cell_abs_degree]).multiply(2))
+        if self.arena.coord_is_valid(front_cell) and self.arena.get_cell_at_coord(front_cell).is_obstacle():
+            adj_obstacle = front_cell
+            surface_orientation = (front_cell_abs_degree + 180)%360
+            self.arena.get_cell_at_coord(adj_obstacle).set_seen_surface(surface_orientation)
+            self.arena.get_cell_at_coord(adj_obstacle).set_is_seen(True)
+
         return back_coord 
