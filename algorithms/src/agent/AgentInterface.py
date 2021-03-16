@@ -67,6 +67,8 @@ class AgentInterface:
             elif data['type'] == 'waypoint':
                 self.waypoint = Coord(data['data']['x'], data['data']['y'])
                 print('got waypoint')
+            elif data['type'] == 'ping':
+                self.tx.send_json({'type': 'pong'})
             
             print('received message ', i)
             i += 1
