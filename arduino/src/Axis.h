@@ -19,8 +19,9 @@ class Axis {
      *  limiting maximum change with kMax_axis_accel/kMax_axis_decel
      * 
      * @param target_power New target power
+     * @param cap_accel Whether to limit acceleration
      */
-    void setPower(int16_t target_power);
+    void setPower(int16_t target_power, bool cap_accel);
 
     void setBrake(uint16_t power) {
       _setBrake(power);
