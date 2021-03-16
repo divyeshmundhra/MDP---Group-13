@@ -70,7 +70,7 @@ class AgentInterface:
         arena_string, robot_info, agent_task, end_coord = self.parse_init_data(init_data)
         self.agent_task = agent_task
         self.agent = Agent(arena_string, robot_info, agent_task, end_coord, self.waypoint)
-        self.agent.mark_robot_visisted_cells(self.agent.get_robot_info().get_coord()) # temp solution
+        self.agent.mark_robot_visited_cells(self.agent.get_robot_info().get_coord()) # temp solution
         ev = pygame.event.Event(E_INIT, {
             'robot_info': robot_info
         })
