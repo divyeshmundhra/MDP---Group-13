@@ -15,6 +15,8 @@ class Robot extends EventEmitter {
   _onSerialData(line) {
     let match = null;
 
+    this.emit("data", line);
+
     if (
       (match = line.match(
         /\$SENSOR ([0-9i]+)\|([0-9i]+)\|([0-9i]+)\|([0-9i]+)\|([0-9i]+)\|([0-9i]+)\|/

@@ -62,6 +62,14 @@ controller.on("data", (data) => {
 
     comms.send({ type: "waypoint", data: { x, y } });
     controller.send(`Grid:${store.get("fp_p2")}`);
+  } else if (data === "PING") {
+    // transmit message that algo should reply to
+    comms.send({ type: "ping" });
+    // transmit message that robot should reply to
+    robot.send("D0");
+    robot.once("data", () => {
+      controller.send("Pong from robot");
+    });
   }
 });
 
@@ -129,6 +137,8 @@ comms.on("data", ({ type, data }) => {
     }
 
     comms.send({ type: "robotinfo", data: data["robot_info"] });
+  } else if (type === "pong") {
+    controller.send("Pong from algo");
   }
 });
 
