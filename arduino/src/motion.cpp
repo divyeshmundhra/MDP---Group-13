@@ -655,6 +655,23 @@ void start_motion_obstacle(uint16_t distance) {
   }
 }
 
+// compute the offset of the robot from obstacles in front using a particular sensor
+int16_t get_forward_offset(sensor_position_t sensor, uint8_t data_index) {
+  // data_index: index to lookup in constants for this sensors operation
+  uint8_t blocks_away = sensor_distances[sensor] / 100;
+
+  if (blocks_away >= kForward_align_count) {
+    return 0;
+  }
+
+  int8_t delta = sensor_distances[sensor] - kForward_align_target[data_index][blocks_away];
+  if (delta <= -kForward_align_max_error || delta > kForward_align_max_error) {
+    return 0;
+  }
+
+  return ((int32_t) delta * kBlock_distance) / 100;
+}
+
 void parse_next_move() {
   if (num_moves == 0 || state != IDLE) {
     return;
@@ -678,18 +695,15 @@ void parse_next_move() {
     int32_t target = 0;
 
     if (move_type == DISTANCE && move_dir == FORWARD) {
-      uint8_t blocks_away = sensor_distances[FRONT_FRONT_MID] / 100;
+      // cycle through front sensors to compute offset
+      int16_t offset_move_distance = get_forward_offset(FRONT_FRONT_MID, 0);
 
-      int16_t offset_move_distance = 0;
-      if (blocks_away < kForward_align_count) {
-        int8_t delta = sensor_distances[FRONT_FRONT_MID] - kForward_align_target[blocks_away];
-        Serial.print("delta: ");
-        Serial.println(delta);
-        if (delta > -kForward_align_max_error && delta < kForward_align_max_error) {
-          offset_move_distance = ((int32_t) delta * kBlock_distance) / 100;
-          Serial.print("offset by ");
-          Serial.println(offset_move_distance);
-        }
+      if (offset_move_distance == 0) {
+        offset_move_distance = get_forward_offset(FRONT_FRONT_LEFT, 1);
+      }
+
+      if (offset_move_distance == 0) {
+        offset_move_distance = get_forward_offset(FRONT_FRONT_RIGHT, 2);
       }
 
       target = buffered_moves[pos_moves_start].target + offset_move_distance;

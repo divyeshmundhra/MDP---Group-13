@@ -85,11 +85,32 @@ const int16_t kMax_axis_decel = -128;
 
 // if a forward movement is started while the current sensor value is offset from the ideal position,
 // offset the move to try to compensate for the error
-#define kForward_align_count 3
-const int16_t kForward_align_target[kForward_align_count] = {
-  0,
-  160,
-  250
+#define kForward_align_count 5
+const int16_t kForward_align_target[3][kForward_align_count] = {
+  // FRONT_FRONT_MID offsets
+  {
+    0,
+    160,
+    250,
+    330,
+    INT16_MAX
+  },
+  // FRONT_FRONT_LEFT offsets
+  {
+    0,
+    140,
+    250,
+    350,
+    420
+  },
+  // FRONT_FRONT_RIGHT offsets
+  {
+    0,
+    140,
+    250,
+    350,
+    420
+  }
 };
 
 // offset move only if error is within this value
