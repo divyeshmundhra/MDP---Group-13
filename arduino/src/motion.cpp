@@ -884,11 +884,6 @@ void loop_motion() {
 
   if (state == REPORT_SENSOR && (millis() - report_delay_start) > kSensor_report_delay) {
     log_all_sensors();
-
-    if (move_dir == FORWARD) {
-      Serial.print("front mid sensor: ");
-      Serial.println(sensor_distances[FRONT_FRONT_MID]);
-    }
     state = IDLE;
   }
 }
