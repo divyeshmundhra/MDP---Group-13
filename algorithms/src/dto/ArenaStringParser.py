@@ -44,3 +44,35 @@ class ArenaStringParser:
                     arena.get_cell_at_coord(dangerous_coord).set_is_dangerous(True)
         
         return arena
+
+    @staticmethod
+    def parse_p1_p2(p1: str, p2: str) -> Arena:
+        p1_str= bin(int(p1, 16))[2:]
+
+        if len(p1_str) != 304:
+            raise Exception(f'Expected p1 string to be of length 304, got {len(p1_str)} instead')
+
+        # 2:-2 to strip out padding bits
+        p1_bin = list(p1_str[2:-2])
+
+        # zfill to put back leading zeros
+        p2_bin = list(bin(int(p2, 16))[2:].zfill(len(p2) * 4))
+
+        arena = Arena()
+
+        for y in range(MAP_ROW):
+            for x in range(MAP_COL):
+                explored = p1_bin.pop(0) == "1"
+
+                if not explored:
+                    continue
+
+                coord = Coord(x, y)
+                arena.get_cell_at_coord(coord).set_is_explored(True)
+
+                obstacle = p2_bin.pop(0) == "1"
+
+                if obstacle:
+                    arena.get_cell_at_coord(coord).increment_is_obstacle()
+
+        return arena
