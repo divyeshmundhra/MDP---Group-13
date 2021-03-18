@@ -50,6 +50,20 @@ controller.on("data", (data) => {
       },
     });
     comms.send({ type: "start" });
+  } else if (data === "IR") {
+    state.mode = "EX";
+    logger.info(`Mode set to ${state.mode}`);
+    comms.send({
+      type: "init",
+      data: {
+        task: "IR",
+        arena: {
+          P1: "0",
+          P2: "0",
+        },
+      },
+    });
+    comms.send({ type: "start" });
   } else if (data.startsWith("WP:")) {
     const match = data.match(/WP:(\d+),(\d+)/);
     if (!match) {
