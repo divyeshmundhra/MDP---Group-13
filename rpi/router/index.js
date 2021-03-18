@@ -77,6 +77,8 @@ controller.on("data", (data) => {
 
     comms.send({ type: "waypoint", data: { x, y } });
     controller.send(`Grid:${store.get("fp_p2")}`);
+  } else if (data === "TX") {
+    comms.send({ type: "terminate" });
   }
 });
 
