@@ -146,6 +146,8 @@ comms.on("data", ({ type, data }) => {
     }
 
     comms.send({ type: "robotinfo", data: data["robot_info"] });
+  } else if (type === "detection") {
+    controller.send(`NumberedBlock:${data["x"]},${data["y"]},${data["id"]}`);
   }
 });
 
