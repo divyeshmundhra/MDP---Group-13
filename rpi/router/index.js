@@ -64,6 +64,7 @@ controller.on("data", (data) => {
       },
     });
     comms.send({ type: "start" });
+    robot.send("D0");
   } else if (data.startsWith("WP:")) {
     const match = data.match(/WP:(\d+),(\d+)/);
     if (!match) {
