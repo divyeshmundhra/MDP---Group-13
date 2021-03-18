@@ -31,7 +31,7 @@ class RightWallHuggingAlgo():
 
         if len(self.rwh_last_four) >= 3:
             self.rwh_last_four.pop(0)
-            self.rwh_last_four.append(self.arena.get_cell_at_coord(next_step))   
+        self.rwh_last_four.append(self.arena.get_cell_at_coord(next_step))   
 
         return next_step
 
