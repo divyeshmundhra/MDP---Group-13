@@ -22,7 +22,7 @@ class RightWallHuggingAlgo():
 
         # check for looping in RWH
         
-        if len(self.rwh_last_four) == 4 and self.rwh_last_four[0].is_equal(self.cur_coord):
+        if len(self.rwh_last_four) == 4 and self.rwh_last_four[0].is_equal(self.cur_coord) and not self.rwh_last_four[1].is_equal(self.rwh_last_four[3]):
             self.rwh_looped = True
 
         if self.rwh_looped:
