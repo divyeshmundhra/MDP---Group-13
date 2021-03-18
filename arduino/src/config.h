@@ -100,8 +100,8 @@ const int16_t kForward_align_target[3][kForward_align_count] = {
     0,
     140,
     250,
-    350,
-    420
+    360,
+    480
   },
   // FRONT_FRONT_RIGHT offsets
   {
@@ -109,7 +109,7 @@ const int16_t kForward_align_target[3][kForward_align_count] = {
     140,
     250,
     350,
-    420
+    460
   }
 };
 
@@ -171,9 +171,9 @@ const int16_t kA_min_output = -200;
 // same order as sensor_position_t
 const double kSensor_constants[6][3] = {
   {-108.795, 1030808.35, 627.38},  // FRONT_FRONT_MID
-  {-363.8, 2896000, 1618}, // FRONT_FRONT_RIGHT
+  {-219.6, 1885000, -90}, // FRONT_FRONT_RIGHT
   {-104.83, 797470.16, -44.35},   // LEFT_REAR
-  {-363.8, 2896000, 1618},  // FRONT_FRONT_LEFT
+  {-219.6, 1885000, -90},  // FRONT_FRONT_LEFT
   {-104.83, 797470.16, -44.35},   // LEFT_FRONT
   {-117.70, 833191.25, -10.73}      // RIGHT_FRONT
 };
@@ -196,10 +196,10 @@ const int16_t kSensor_max[6] = {
 */
 const int16_t kSensor_thresholds[6][kSensor_threshold_count] = {
   // 2    3    4    5    6    7    8    9    A    B
-  { 100, 200, 300, 400, 480, 550, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
-  {  80, 180, 300, 400, 500, 580, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
+  { 100, 200, 300, 400, 480, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
+  {  80, 180, 290, 400, 520, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
   { 100, 200, 300, 400, 550, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
-  {  80, 180, 300, 400, 500, 580, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
+  {  80, 180, 290, 400, 520, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
   { 120, 250, 350, 450, 550, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
   { 100, 200, 300, 400, 480, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
 };
