@@ -30,7 +30,7 @@ def detect(save_img=True):
     #image_id maps the Roboflow ids to the actual ids
     robo_id_list = list(map(str, range(1, 16)))  #used with Roboflow ids, not the actual ids
     
-    bimodal_img_loc_dict = {str(i) : [] for i in range(1, 16)}   
+    bimodal_img_loc_dict = {str(i) : [] for i in range(1, 16)}      #create dict for storing locations for each id
     
 
     webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
@@ -155,6 +155,8 @@ def detect(save_img=True):
                         if img_w < 0.12 and img_h < 0.21:       #finetune estimation!!
                             distance = 3
                         
+                        # partitioning image 
+                        
                         if(img_x<=0.4):
                             print("%d, %d : image %s ahead by %d distance"%(robot_info['x'], robot_info['y'], image_id[img_id], distance))
                             loc = image_ahead(robot_info, distance)
@@ -168,27 +170,27 @@ def detect(save_img=True):
                             loc = image_behind(robot_info, distance)
                        
                         
-                        label = '%s %f %.3f %.3f' % (image_id[img_id], conf, img_x, img_y)  #changed to display x, y values
+                        label = '%s %f %.3f %.3f' % (image_id[img_id], conf, img_x, img_y)
                         plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=3)
                         
                         
                         
-                        if(len(bimodial_img_loc_list) == 0):
+                        if(len(bimodial_img_loc_list) == 0):            #take only 1 photo per id    
                             cv2.imwrite(save_path+str(num)+".jpg", im0)
                             num+=1
                                 
-                        bimodial_img_loc_list.append((loc['x'], loc['y']))
-                        print(bimodial_img_loc_list)
-                        bimodial_tuple = tuple(bimodial_img_loc_list)
-                        bimod_x, bimod_y = Counter(bimodial_tuple).most_common()[0][0][0], Counter(bimodial_tuple).most_common()[0][0][1]
+                        bimodial_img_loc_list.append((loc['x'], loc['y']))  
+                        #print(bimodial_img_loc_list)
+                        bimodial_tuple = tuple(bimodial_img_loc_list)   #convert list to tuple, Counter needs hashable
+                        bimod_x, bimod_y = Counter(bimodial_tuple).most_common()[0][0][0], Counter(bimodial_tuple).most_common()[0][0][1]   #find most occuring (x, y)
                         print(bimod_x, bimod_y)
                         
                         
                             #send image location
                         data = {'id':image_id[img_id], 'x':bimod_x, 'y':bimod_y}
                         send_time = str(time.time())
-                        if(len(bimodial_img_loc_list)%2!=0):
-                            tx.send_json({"type": "detection", "data": data, "id": send_time})
+                        #if(len(bimodial_img_loc_list)%2!=0):
+                        tx.send_json({"type": "detection", "data": data, "id": send_time})
                             
                         with open(txt_path + '.txt', 'a') as f:
                             f.write('%s locx:%d locy:%d'%(send_time, bimod_x, bimod_y) +'\n\n')
@@ -301,7 +303,7 @@ if __name__ == '__main__':
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     opt = parser.parse_args()
     print(opt)
-
+    
     with torch.no_grad():
         count = 0
         im_path = os.path.join(os.getcwd(),'runs\exp')
