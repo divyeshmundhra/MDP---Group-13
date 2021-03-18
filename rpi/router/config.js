@@ -11,4 +11,9 @@ module.exports = {
     configAddress: "tcp://0.0.0.0:3002",
   },
   dataStoreFileName: "data.json",
+  imageRecognition: {
+    // send terminate signal after how many detections
+    detectCount: 5,
+    maxRuntime: 350000,
+  },
 };
