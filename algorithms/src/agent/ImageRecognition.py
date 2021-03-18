@@ -13,6 +13,7 @@ class RightWallHuggingAlgo():
         self.cur_direction = None
         self.move_towards_island = False
         self.rwh_last_four = []
+        self.rwh_looped = False
 
     def get_next_step(self, arena: Arena, robot_info: RobotInfo) -> Coord:
         self.arena = arena
@@ -20,16 +21,20 @@ class RightWallHuggingAlgo():
         self.cur_direction = robot_info.get_orientation()
 
         # check for looping in RWH
-        rwh_looped = False
-        if len(self.rwh_last_four) == 4 and lf[0].is_equal(lf[3]):
-            rwh_looped = True
-        if rwh_looped:
+        
+        if len(self.rwh_last_four) == 4 and self.rwh_last_four[0].is_equal(self.cur_coord):
+            self.rwh_looped = True
+
+        if self.rwh_looped:
             next_step = self.move_back()
+            self.rwh_looped = False
+            self.rwh_last_four = []
         else:
             next_step = self.right_wall_hug()
 
-        if len(self.rwh_last_four) >= 3:
+        if len(self.rwh_last_four) >= 4:
             self.rwh_last_four.pop(0)
+
         self.rwh_last_four.append(self.cur_coord)   
 
         return next_step
