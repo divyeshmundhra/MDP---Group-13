@@ -62,6 +62,9 @@ class AgentInterface:
             elif data['type'] == 'waypoint':
                 self.waypoint = Coord(data['data']['x'], data['data']['y'])
                 print('got waypoint')
+            elif data['type'] == 'terminate':
+                print('got terminate, quitting')
+                return
             
             print('received message ', i)
             i += 1
