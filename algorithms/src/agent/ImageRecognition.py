@@ -21,7 +21,6 @@ class RightWallHuggingAlgo():
 
         # check for looping in RWH
         rwh_looped = False
-        cell = self.arena.get_cell_at_coord(self.cur_coord)
         if len(self.rwh_last_four) == 4 and lf[0].is_equal(lf[3]):
             rwh_looped = True
         if rwh_looped:
@@ -31,7 +30,7 @@ class RightWallHuggingAlgo():
 
         if len(self.rwh_last_four) >= 3:
             self.rwh_last_four.pop(0)
-        self.rwh_last_four.append(cell)   
+        self.rwh_last_four.append(self.cur_coord)   
 
         return next_step
 
