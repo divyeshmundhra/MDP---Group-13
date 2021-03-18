@@ -69,6 +69,9 @@ class AgentInterface:
                 print('got waypoint')
             elif data['type'] == 'ping':
                 self.tx.send_json({'type': 'pong'})
+            elif data['type'] == 'terminate':
+                print('got terminate, quitting')
+                return
             
             print('received message ', i)
             i += 1

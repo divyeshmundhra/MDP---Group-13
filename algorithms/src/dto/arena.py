@@ -173,9 +173,14 @@ class Arena:
                 distance = rwh_vantage.subtract(cur_coord).manhattan_distance()
                 rwh_vantage_list.append((distance, rwh_vantage, obstacle))
 
-        target = sorted(rwh_vantage_list, key=lambda x: x[0])[0]
+        try:
+            target = sorted(rwh_vantage_list, key=lambda x: x[0])[0]
+            return target[1], target[2]
+        except IndexError:
+            print("NO MORE UNSEEN OBSTACLES")
+            return None, None
 
-        return target[1], target[2]
+        
 
 
     def calculate_rwh_vantage(self, ue: Coord) -> list:

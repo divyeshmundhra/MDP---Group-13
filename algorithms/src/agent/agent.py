@@ -74,9 +74,13 @@ class Agent:
             else:
                 # Image rec target coord returns None if the FP has reached its goal
                 # Once we use FP to reach the next obstacle, we need to align it with the wall before we can start RWH
-                message = f'Reached dangerous obstacle, commencing right wall hugging!'
-                next_step = self.algo.align_right_wall(self.arena, self.robot_info, self.target_obstacle)
-                move_command = self.calculate_move(cur_coord, next_step)
+                if self.RWH_start_coord == None:
+                    message = f'Image Recognition Right Wall Hugging complete!'
+                    move_command = None
+                else:
+                    message = f'Reached dangerous obstacle, commencing right wall hugging!'
+                    next_step = self.algo.align_right_wall(self.arena, self.robot_info, self.target_obstacle)
+                    move_command = self.calculate_move(cur_coord, next_step)
                 
         elif self.task == AgentTask.FAST and self.robot_info.get_coord().is_equal(self.end_coord):
             message = f'Fastest path complete!'
@@ -119,6 +123,9 @@ class Agent:
                 self.image_rec_going_to_next_obstacle = True
                 self.RWH_start_coord, self.target_obstacle = self.arena.get_nearest_obstacle_adj_coord(cur_coord)
                 self.image_rec_back_to_start = False # once you reset the start coord, need to set the flag back to false
+
+            if self.RWH_start_coord == None:
+                return None
 
             if self.image_rec_going_to_next_obstacle: # need this because image_rec_back_to_start doesn't tell you if we are currently running RWH or going to nearest obstacle using FP
                 next_step = FastestPathAlgo().get_next_step(self.arena,self.robot_info, self.RWH_start_coord)
