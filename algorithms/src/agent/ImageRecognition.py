@@ -12,14 +12,27 @@ class RightWallHuggingAlgo():
         self.cur_coord = None
         self.cur_direction = None
         self.move_towards_island = False
+        self.rwh_last_four = []
 
     def get_next_step(self, arena: Arena, robot_info: RobotInfo) -> Coord:
         self.arena = arena
         self.cur_coord = robot_info.get_coord()
         self.cur_direction = robot_info.get_orientation()
 
-        next_step = self.right_wall_hug() # keep trying right wall hugging
-        
+        # check for looping in RWH
+        rwh_looped = False
+        cell = self.arena.get_cell_at_coord(self.cur_coord)
+        if len(self.rwh_last_four) == 4 and lf[0].is_equal(lf[3]):
+            rwh_looped = True
+        if rwh_looped:
+            next_step = self.move_back()
+        else:
+            next_step = self.right_wall_hug()
+
+        if len(self.rwh_last_four) >= 3:
+            self.rwh_last_four.pop(0)
+            self.rwh_last_four.append(self.arena.get_cell_at_coord(next_step))   
+
         return next_step
 
     def right_wall_hug(self) -> Coord:
