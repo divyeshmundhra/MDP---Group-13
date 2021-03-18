@@ -698,12 +698,25 @@ void parse_next_move() {
       // cycle through front sensors to compute offset
       int16_t offset_move_distance = get_forward_offset(FRONT_FRONT_MID, 0);
 
+      if (offset_move_distance != 0) {
+        Serial.print(F("Correct with FRONT_MID: "));
+        Serial.println(offset_move_distance);
+      }
+
       if (offset_move_distance == 0) {
         offset_move_distance = get_forward_offset(FRONT_FRONT_LEFT, 1);
+        if (offset_move_distance != 0) {
+          Serial.print(F("Correct with FRONT_LEFT: "));
+          Serial.println(offset_move_distance);
+        }
       }
 
       if (offset_move_distance == 0) {
         offset_move_distance = get_forward_offset(FRONT_FRONT_RIGHT, 2);
+        if (offset_move_distance != 0) {
+          Serial.print(F("Correct with FRONT_RIGHT: "));
+          Serial.println(offset_move_distance);
+        }
       }
 
       target = buffered_moves[pos_moves_start].target + offset_move_distance;
