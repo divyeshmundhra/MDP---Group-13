@@ -63,8 +63,12 @@ controller.on("data", (data) => {
         },
       },
     });
-    comms.send({ type: "start" });
     robot.send("D0");
+    robot.once("sensors", () => {
+      comms.send({ type: "start" });
+    });
+
+    robot.send("Qa");
   } else if (data.startsWith("WP:")) {
     const match = data.match(/WP:(\d+),(\d+)/);
     if (!match) {
