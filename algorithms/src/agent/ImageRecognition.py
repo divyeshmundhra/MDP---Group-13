@@ -60,9 +60,18 @@ class RightWallHuggingAlgo():
         if self.check_left_free(True).is_equal(target_obstacle):
             target = self.move_back()
         elif self.check_front_free(True).is_equal(target_obstacle):
-            target = self.move_left()
+            if self.check_left_free():
+                target = self.move_left()
+            else:
+                target = self.move_back()
         elif self.check_right_free(True).is_equal(target_obstacle):
-            target = self.move_forward()
+            if self.check_front_free():
+                target = self.move_forward()
+            elif self.check_left_free():
+                target = self.move_left()
+            else:
+                target = self.move_back()
+        
         return target
 
     def check_front_free(self, return_coords: bool = False) -> bool:
