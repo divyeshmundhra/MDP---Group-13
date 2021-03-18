@@ -50,6 +50,25 @@ controller.on("data", (data) => {
       },
     });
     comms.send({ type: "start" });
+  } else if (data === "IR") {
+    state.mode = "EX";
+    logger.info(`Mode set to ${state.mode}`);
+    comms.send({
+      type: "init",
+      data: {
+        task: "IR",
+        arena: {
+          P1: "0",
+          P2: "0",
+        },
+      },
+    });
+    robot.send("D0");
+    robot.once("sensors", () => {
+      comms.send({ type: "start" });
+    });
+
+    robot.send("Qa");
   } else if (data.startsWith("WP:")) {
     const match = data.match(/WP:(\d+),(\d+)/);
     if (!match) {
@@ -70,6 +89,8 @@ controller.on("data", (data) => {
     robot.once("data", () => {
       controller.send("Pong from robot");
     });
+  } else if (data === "TX") {
+    comms.send({ type: "terminate" });
   }
 });
 
@@ -139,6 +160,8 @@ comms.on("data", ({ type, data }) => {
     comms.send({ type: "robotinfo", data: data["robot_info"] });
   } else if (type === "pong") {
     controller.send("Pong from algo");
+  } else if (type === "detection") {
+    controller.send(`NumberedBlock:${data["x"]},${data["y"]},${data["id"]}`);
   }
 });
 
