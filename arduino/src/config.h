@@ -162,9 +162,9 @@ const int16_t kA_min_output = -200;
 // same order as sensor_position_t
 const double kSensor_constants[6][3] = {
   {-108.795, 1030808.35, 627.38},  // FRONT_FRONT_MID
-  {-219.6, 1885000, -90}, // FRONT_FRONT_RIGHT
+  {-392.01, 3091256.55, 1892.62}, // FRONT_FRONT_RIGHT
   {-104.83, 797470.16, -44.35},   // LEFT_REAR
-  {-219.6, 1885000, -90},  // FRONT_FRONT_LEFT
+  {-392.01, 3091256.55, 1892.62},  // FRONT_FRONT_LEFT
   {-104.83, 797470.16, -44.35},   // LEFT_FRONT
   {-117.70, 833191.25, -10.73}      // RIGHT_FRONT
 };
