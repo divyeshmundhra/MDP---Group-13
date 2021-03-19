@@ -2,7 +2,6 @@
 
 #include "motion.h"
 #include "motion_init.h"
-#include "motion_profile.h"
 #include "config.h"
 #include "board.h"
 #include "sensors.h"
@@ -19,7 +18,6 @@ typedef enum {
 
 typedef enum {
   DISTANCE,
-  DISTANCE_UNPLANNED,
   OBSTACLE,
   ALIGN_EQUAL
 } move_type_t;
@@ -76,28 +74,6 @@ int16_t controllerTrackLeft(int32_t encoder_left, int32_t encoder_right) {
 
 pid_state_t state_straight_left;
 pid_state_t state_straight_right;
-int16_t controllerMotionProfile(pid_state_t *state, int32_t encoder, setpoint_t *sp) {
-  // controller aiming to make encoder track setpoint
-  int32_t error = sp->pos - encoder;
-
-  int16_t power = (
-    (int32_t) kV_mp * sp->vel +
-    (int32_t) kA_mp * sp->accel +
-    (int32_t) kP_mp * error +
-    (int32_t) kD_mp * (error - state->last_input)
-  ) >> 8;
-
-  state->last_input = error;
-
-  if (power > kMP_max_output) {
-    return kMP_max_output;
-  } else if (power < kMP_min_output) {
-    return kMP_min_output;
-  }
-
-  return power;
-}
-
 int16_t controllerStraight(pid_state_t *state, int32_t encoder, int32_t target) {
   // controller aiming to make encoder track target
   int32_t error = target - encoder;
@@ -264,8 +240,6 @@ uint8_t get_base_wall_align_offset(align_type_t align_type, int16_t val) {
   return val;
 }
 
-Motion_Profile mp;
-
 // triggers at 100Hz
 ISR(TIMER2_COMPA_vect) {
   // reset timer counter
@@ -311,7 +285,7 @@ ISR(TIMER2_COMPA_vect) {
     if (!straight_enabled || (diff_err > -kMax_encoder_diff_error && diff_err < kMax_encoder_diff_error)) {
       // if the error between both encoders are really similar, we can check for the
       // move-specific terminating condition
-      if (move_type == DISTANCE_UNPLANNED) {
+      if (move_type == DISTANCE) {
         // DISTANCE terminates when both encoders are close to target
         int32_t diff_left = encoder_left - target_left;
         int32_t diff_right = encoder_right - target_right;
@@ -360,12 +334,12 @@ ISR(TIMER2_COMPA_vect) {
       resetControllerState(&state_wall_align_equal, sensor_distances[LEFT_FRONT]);
     } else {
       resetControllerState(&state_tl, encoder_right);
-      if (move_type == DISTANCE || move_type == DISTANCE_UNPLANNED) {
+      if (move_type == DISTANCE) {
         resetControllerState(&state_straight_left, encoder_left);
         resetControllerState(&state_straight_right, encoder_right);
         has_ebraked = false;
 
-        mp.init(target_left);
+        straight_enabled = true;
       } else if (move_type == OBSTACLE) {
         resetControllerState(&state_obstacle, sensor_distances[FRONT_FRONT_LEFT]);
       }
@@ -375,34 +349,6 @@ ISR(TIMER2_COMPA_vect) {
 
   int16_t power_left = 0, power_right = 0;
   if (move_type == DISTANCE) {
-    setpoint_t sp;
-
-    if (!mp.step(&sp)) {
-      display.move_distance_done = 1;
-
-      switch(move_dir) {
-        case FORWARD:
-          display.update_f = 1;
-          break;
-        case REVERSE:
-          display.update_b = 1;
-          break;
-        case LEFT:
-          display.update_l = 1;
-          break;
-        case RIGHT:
-          display.update_r = 1;
-          break;
-      }
-
-      state = REPORT_SENSOR_INIT;
-      axis_left.setBrake(400);
-      axis_right.setBrake(400);
-      return;
-    }
-    base_left = controllerMotionProfile(&state_straight_left, encoder_left, &sp);
-    base_right = controllerMotionProfile(&state_straight_right, encoder_right, &sp);
-  } else if (move_type == DISTANCE_UNPLANNED) {
     base_left = controllerStraight(&state_straight_left, encoder_left, target_left);
     base_right = controllerStraight(&state_straight_right, encoder_right, target_right);
   } else if (move_type == OBSTACLE) {
@@ -540,8 +486,6 @@ ISR(TIMER2_COMPA_vect) {
         }
       }
     }
-    correction = 0;
-  } else if (move_type == DISTANCE_UNPLANNED) {
     correction = controllerTrackLeft(encoder_left, encoder_right);
   } else {
     correction = 0;
@@ -550,8 +494,8 @@ ISR(TIMER2_COMPA_vect) {
   power_left = base_left - correction;
   power_right = base_right + correction;
 
-  axis_left.setPower(power_left, move_type == DISTANCE_UNPLANNED);
-  axis_right.setPower(power_right, move_type == DISTANCE_UNPLANNED);
+  axis_left.setPower(power_left, true);
+  axis_right.setPower(power_right, true);
 }
 
 bool get_motion_done() {
@@ -627,7 +571,7 @@ void start_motion_distance(motion_direction_t _direction, uint32_t distance) {
     return;
   }
 
-  buffered_moves[pos_moves_end].type = DISTANCE_UNPLANNED;
+  buffered_moves[pos_moves_end].type = DISTANCE;
   buffered_moves[pos_moves_end].direction = _direction;
   buffered_moves[pos_moves_end].target = distance;
   buffered_moves[pos_moves_end].unit = 0;
@@ -685,10 +629,7 @@ void parse_next_move() {
   axis_right.resetEncoder();
   state = MOVE_COMMANDED;
 
-  if (
-    buffered_moves[pos_moves_start].type == DISTANCE ||
-    buffered_moves[pos_moves_start].type == DISTANCE_UNPLANNED
-  ) {
+  if (buffered_moves[pos_moves_start].type == DISTANCE) {
     move_type = buffered_moves[pos_moves_start].type;
     move_dir = buffered_moves[pos_moves_start].direction;
 
