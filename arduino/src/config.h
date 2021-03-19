@@ -54,21 +54,12 @@ extern int16_t kP_wall_offset_left;
 
 extern int16_t kP_wall_diff_forward;
 
-extern int16_t kP_wall_offset_right;
-
 // wall offsets: target offset to align to when distance to object is < (index * 100)
 #define kWall_offset_count 4
 const uint8_t kWall_offsets_left[kWall_offset_count] = {
   50,
   60,
   50,
-  40
-};
-
-const uint8_t kWall_offsets_right[kWall_offset_count] = {
-  40,
-  55,
-  60,
   40
 };
 

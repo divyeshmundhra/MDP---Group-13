@@ -123,8 +123,6 @@ static bool parse_buf() {
       kP_wall_offset_left = val;
     } else if (cmd1 == 'c') {
       kP_wall_diff_forward = val;
-    } else if (cmd1 == 'd') {
-      kP_wall_offset_right = val;
     }
   } else if (cmd == 'w') {
     if (cmd1 == 'p') {
