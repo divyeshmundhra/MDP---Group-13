@@ -61,6 +61,7 @@ class SensorParser():
             detectedobstacle = currentPos.add(sensor_displacement).add(
                 displacement_per_step.multiply(sensor_value-1))
             if(arena.coord_is_valid(detectedobstacle)):
-                obstacle.append(detectedobstacle)
+                obs_and_distance = (detectedobstacle, sensor_value)
+                obstacle.append(obs_and_distance)
 
         return obstacle, empty

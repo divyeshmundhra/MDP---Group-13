@@ -96,8 +96,8 @@ class AgentInterface:
             obstacle_coord_list, no_obs_coord_list = [], []
         print('obstacle list: ')
         obstacle_str = ''
-        for coord in obstacle_coord_list:
-            obstacle_str += f'({coord.get_x()}, {coord.get_y()}), '
+        for coord, distance in obstacle_coord_list:
+            obstacle_str += f'({coord.get_x()}, {coord.get_y()}), {distance}, '
         print(obstacle_str)
         return obstacle_coord_list, no_obs_coord_list
     

@@ -17,7 +17,7 @@ class ArenaStringParser:
                 if cl[i] == '\n':
                     i = i + 1
                 if cl[i] == '1':
-                    arena.get_cell_at_coord(coord).increment_is_obstacle()
+                    arena.get_cell_at_coord(coord).increment_is_obstacle(delta=4)
                     obstacle_list.append(coord)
                 elif cl[i] == '0':
                     pass # not obstacle assumed
