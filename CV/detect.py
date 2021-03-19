@@ -106,10 +106,6 @@ def detect(save_img=True):
         if classify:
             pred = apply_classifier(pred, modelc, img, im0s)
             
-        # finish if detected all images
-        #if num == 5:                          
-        #            print("finished all detections")
-        #            return
         # Process detections
         
         for i, det in enumerate(pred):  # detections per image
@@ -152,7 +148,7 @@ def detect(save_img=True):
 
                     if save_img or view_img:  # Add bbox to image
                     
-                        if img_w < 0.12 and img_h < 0.21:       #finetune estimation!!
+                        if img_w < 0.10: #and img_h < 0.17:       #finetune estimation!!
                             distance = 3
                         
                         # partitioning image 
