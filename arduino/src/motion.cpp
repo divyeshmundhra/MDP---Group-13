@@ -557,8 +557,13 @@ void parse_next_move() {
   Serial.println(pos_moves_start);
 
   cli();
-  axis_left.resetEncoder();
-  axis_right.resetEncoder();
+  axis_left.resetEncoderForNextMove(target_left - axis_left.getEncoder());
+  axis_right.resetEncoderForNextMove(target_right - axis_right.getEncoder());
+
+  // Serial.print("Start move with left=");
+  // Serial.print(axis_left.getEncoder());
+  // Serial.print(" right=");
+  // Serial.println(axis_right.getEncoder());
   state = MOVE_COMMANDED;
 
   if (buffered_moves[pos_moves_start].type == DISTANCE) {
