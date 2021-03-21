@@ -679,11 +679,24 @@ void start_align(uint8_t mode) {
     }
 
     if (error_sensors > 0) {
-      start_motion_distance(LEFT, pgm_read_byte_near(align_LUT + error_sensors));
+      start_motion_distance(LEFT, pgm_read_word_near(align_left_LUT + error_sensors));
     } else {
-      start_motion_distance(RIGHT, pgm_read_byte_near(align_LUT - error_sensors));
+      start_motion_distance(RIGHT, pgm_read_word_near(align_left_LUT - error_sensors));
     }
   } else if (mode == 1) {
+    int16_t error_sensors = sensor_distances[FRONT_FRONT_RIGHT] - sensor_distances[FRONT_FRONT_LEFT];
+
+    if (abs(error_sensors) >= align_LUT_len) {
+      Serial.println("Offset too much to correct");
+      return;
+    }
+
+    if (error_sensors > 0) {
+      start_motion_distance(LEFT, pgm_read_word_near(align_forward_LUT + error_sensors));
+    } else {
+      start_motion_distance(RIGHT, pgm_read_word_near(align_forward_LUT - error_sensors));
+    }
+  } else if (mode == 2) {
     cli();
     state = MOVE_COMMANDED;
     move_type = ALIGN_EQUAL;
