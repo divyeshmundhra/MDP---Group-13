@@ -71,7 +71,7 @@ const int16_t kEmergency_brake_threshold = 0;
 const int16_t kEmergency_brake_correction = -300;
 
 // max axis acceleration/deceleration
-const int16_t kMax_axis_accel = 64;
+const int16_t kMax_axis_accel = 16;
 const int16_t kMax_axis_decel = -128;
 
 // if a forward movement is started while the current sensor value is offset from the ideal position,
@@ -125,15 +125,6 @@ const int16_t kMS_integral_max = 100;
 
 const int16_t kMS_max_output = 400;
 const int16_t kMS_min_output = -400;
-
-// controller parameters for controller tracking the motion profile
-extern int16_t kV_mp;
-extern int16_t kA_mp;
-extern int16_t kP_mp;
-extern int16_t kD_mp;
-
-const int16_t kMP_max_output = 400;
-const int16_t kMP_min_output = -400;
 
 // controller parameters for move-until-obstacle controller
 extern int16_t kP_obstacle;
