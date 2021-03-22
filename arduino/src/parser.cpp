@@ -99,14 +99,12 @@ static bool parse_buf() {
       kD_offset = val;
     }
   } else if (cmd == 's') {
-    if (cmd1 == 'v') {
-      kV_mp = val;
-    } else if (cmd1 == 'a') {
-      kA_mp = val;
-    } else if (cmd1 == 'p') {
-      kP_mp = val;
+    if (cmd1 == 'p') {
+      kP_straight = val;
+    } else if (cmd1 == 'i') {
+      kI_straight = val;
     } else if (cmd1 == 'd') {
-      kD_mp = val;
+      kD_straight = val;
     }
   } else if (cmd == 'b') {
     if (cmd1 == 'p') {
