@@ -233,9 +233,6 @@ ISR(TIMER2_COMPA_vect) {
   pEncoder_left = encoder_left;
   pEncoder_right = encoder_right;
 
-  // whether the left motor has reached max power
-  static bool reached_max_power = false;
-
   // whether the encoder has changed from the last update
   bool has_encoder_delta = (delta_left < -kEncoder_move_threshold) || (delta_left > kEncoder_move_threshold) ||
                   (delta_right < -kEncoder_move_threshold) || (delta_right > kEncoder_move_threshold);
@@ -415,6 +412,8 @@ ISR(TIMER2_COMPA_vect) {
             
             break;
           }
+          case ALIGN_IDLE:
+            break;
         }
       }
     }
