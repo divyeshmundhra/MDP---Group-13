@@ -44,6 +44,7 @@ typedef struct {
 struct {
   uint16_t move_distance_done : 1;
   uint16_t move_obstacle_done : 1;
+  uint16_t align_done : 1;
   uint16_t decelerating : 1;
   uint16_t update_f : 1;
   uint16_t update_b : 1;
@@ -292,6 +293,18 @@ ISR(TIMER2_COMPA_vect) {
           axis_right.setBrake(400);
           return;
         }
+      } else if (move_type == ALIGN_EQUAL) {
+        int16_t diff_err = sensor_distances[LEFT_FRONT] - sensor_distances[LEFT_REAR];
+
+        if (diff_err > -kMax_align_error && diff_err < kMax_align_error) {
+          display.align_done = 1;
+          state = IDLE;
+          axis_left.setBrake(400);
+          axis_right.setBrake(400);
+          return;
+        }
+
+        Serial.println(diff_err);
       }
     }
   } else if (state == MOVE_COMMANDED) {
@@ -777,6 +790,10 @@ void loop_motion() {
   if (display.move_obstacle_done) {
     Serial.println(F("move obstacle done"));
     display.move_obstacle_done = 0;
+  }
+  if (display.align_done) {
+    Serial.println(F("align equal done"));
+    display.align_done = 0;
   }
   if (display.decelerating) {
     Serial.println(F("decelerating"));

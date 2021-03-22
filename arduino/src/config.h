@@ -8,7 +8,7 @@ const uint8_t kMin_motor_threshold = 16;
 
 // alpha for exponential filter used to smooth sensor data
 // [0-255], lower for more filtering
-const uint8_t kSensor_filter_alpha = 120;
+const uint8_t kSensor_filter_alpha = 180;
 // if the raw ADC values are below this threshold, we treat it as no obstacle found
 // without even trying to convert. This handles a potential int16_t overflow
 const uint16_t kSensor_min_value = 300;
@@ -26,6 +26,8 @@ const int8_t kMax_encoder_error = 5;
 const int8_t kMax_obstacle_error = 5;
 // max difference between both axis for moves to be completed
 const int8_t kMax_encoder_diff_error = 5;
+// max error for align-equal to be completed
+const int8_t kMax_align_error = 3;
 
 // time after a move to wait before reporting sensor values
 const int16_t kSensor_report_delay = 100;
@@ -142,11 +144,11 @@ extern int16_t kP_align;
 extern int16_t kI_align;
 extern int16_t kD_align;
 
-const int16_t kA_integral_min = -100;
-const int16_t kA_integral_max = 100;
+const int16_t kA_integral_min = -50;
+const int16_t kA_integral_max = 50;
 
-const int16_t kA_max_output = 200;
-const int16_t kA_min_output = -200;
+const int16_t kA_max_output = 150;
+const int16_t kA_min_output = -150;
 
 // constants for sensor conversion
 // each array corresponds to the constants for one sensor
