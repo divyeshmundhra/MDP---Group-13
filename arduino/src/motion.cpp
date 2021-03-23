@@ -281,6 +281,8 @@ ISR(TIMER2_COMPA_vect) {
           }
 
           state = REPORT_SENSOR_INIT;
+          axis_left.resetEncoderForNextMove(target_left - axis_left.getEncoder());
+          axis_right.resetEncoderForNextMove(target_right - axis_right.getEncoder());
           axis_left.setBrake(400);
           axis_right.setBrake(400);
           return;
@@ -314,12 +316,12 @@ ISR(TIMER2_COMPA_vect) {
         if (diff_err > -kMax_align_error && diff_err < kMax_align_error) {
           display.align_done = 1;
           state = IDLE;
+          axis_left.resetEncoder();
+          axis_right.resetEncoder();
           axis_left.setBrake(400);
           axis_right.setBrake(400);
           return;
         }
-
-        Serial.println(diff_err);
       }
     }
   } else if (state == MOVE_COMMANDED) {
@@ -604,9 +606,6 @@ void parse_next_move() {
   Serial.println(pos_moves_start);
 
   cli();
-  axis_left.resetEncoderForNextMove(target_left - axis_left.getEncoder());
-  axis_right.resetEncoderForNextMove(target_right - axis_right.getEncoder());
-
   // Serial.print("Start move with left=");
   // Serial.print(axis_left.getEncoder());
   // Serial.print(" right=");
