@@ -27,12 +27,13 @@ const int8_t kMax_obstacle_error = 3;
 // max difference between both axis for moves to be completed
 const int8_t kMax_encoder_diff_error = 5;
 // max error for align-equal to be completed
+const int8_t kMax_align_error = 2;
 // if zero movement seen for this amount of time, end the move
 // this should be longer than the report/align delays
 const uint16_t kZero_movement_timeout = 200;
 
 // time after a move to wait before reporting sensor values
-const int16_t kSensor_report_delay = 100;
+const int16_t kSensor_report_delay = 50;
 // time to delay after an align is complete
 const int16_t kAlign_delay = 100;
 const int16_t kMax_encoder_correction = 64;
@@ -71,7 +72,7 @@ const uint8_t kWall_offsets_left[kWall_offset_count] = {
 
 // parameters for auto-starting an alignment after a move
 // max distance under which an alignment will be started
-const int16_t kAuto_align_threshold = 400;
+const int16_t kAuto_align_threshold = 300;
 const int16_t kAuto_align_max_diff = 30;
 
 // on axis direction change, add this as a correction to compensate for backlash
@@ -82,36 +83,33 @@ const int16_t kEmergency_brake_threshold = 0;
 const int16_t kEmergency_brake_correction = -300;
 
 // max axis acceleration/deceleration
-const int16_t kMax_axis_accel = 16;
-const int16_t kMax_axis_decel = -128;
+const int16_t kMax_axis_accel = 20;
+const int16_t kMax_axis_decel = -400;
 
 // if a forward movement is started while the current sensor value is offset from the ideal position,
 // offset the move to try to compensate for the error
-#define kForward_align_count 5
+#define kForward_align_count 4
 const int16_t kForward_align_target[3][kForward_align_count] = {
   // FRONT_FRONT_MID offsets
   {
     0,
     160,
     250,
-    330,
-    INT16_MAX
+    330
   },
   // FRONT_FRONT_LEFT offsets
   {
     0,
-    140,
-    250,
-    360,
-    480
+    145,
+    260,
+    310
   },
   // FRONT_FRONT_RIGHT offsets
   {
     0,
-    140,
-    250,
-    350,
-    460
+    145,
+    245,
+    330
   }
 };
 
@@ -156,8 +154,8 @@ extern int16_t kD_align;
 const int16_t kA_integral_min = -50;
 const int16_t kA_integral_max = 50;
 
-const int16_t kA_max_output = 150;
-const int16_t kA_min_output = -150;
+const int16_t kA_max_output = 100;
+const int16_t kA_min_output = -100;
 
 // constants for sensor conversion
 // each array corresponds to the constants for one sensor
@@ -190,10 +188,10 @@ const int16_t kSensor_max[6] = {
 const int16_t kSensor_thresholds[6][kSensor_threshold_count] = {
   // 2    3    4    5    6    7    8    9    A    B
   { 100, 200, 300, 400, 480, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
-  {  80, 180, 290, 380, 480, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
+  {  80, 180, 300, 400, 500, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
   { 100, 200, 300, 400, 550, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
   {  80, 180, 290, 380, 480, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
-  { 120, 250, 350, 450, 550, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
+  { 100, 200, 300, 400, 500, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
   { 100, 200, 300, 400, 480, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
 };
 
