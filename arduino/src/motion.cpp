@@ -92,7 +92,8 @@ int16_t controllerStraight(pid_state_t *state, int32_t encoder, int32_t target) 
   return power;
 }
 
-pid_state_t state_obstacle;
+pid_state_t state_obstacle_left;
+pid_state_t state_obstacle_right;
 int16_t controllerObstacle(pid_state_t *state, uint16_t distance, uint16_t target) {
   int16_t error = distance - target;
 
@@ -286,10 +287,17 @@ ISR(TIMER2_COMPA_vect) {
         }
       } else if (move_type == OBSTACLE) {
         // OBSTACLE terminates when the sensor distance is really close to target
-        int16_t diff_err = sensor_distances[FRONT_FRONT_MID] - target_obstacle;
-        if (diff_err > -kMax_obstacle_error && diff_err < kMax_obstacle_error) {
+        int16_t diff_err_left = sensor_distances[FRONT_FRONT_LEFT] - target_obstacle;
+        int16_t diff_err_right = sensor_distances[FRONT_FRONT_RIGHT] - target_obstacle;
+
+        if (
+          diff_err_left > -kMax_obstacle_error && diff_err_left < kMax_obstacle_error &&
+          diff_err_right > -kMax_obstacle_error && diff_err_right < kMax_obstacle_error
+        ) {
           display.move_obstacle_done = 1;
           state = IDLE;
+          axis_left.resetEncoder();
+          axis_right.resetEncoder();
           axis_left.setBrake(400);
           axis_right.setBrake(400);
           return;
@@ -336,7 +344,9 @@ ISR(TIMER2_COMPA_vect) {
 
         straight_enabled = true;
       } else if (move_type == OBSTACLE) {
-        resetControllerState(&state_obstacle, sensor_distances[FRONT_FRONT_LEFT]);
+        resetControllerState(&state_obstacle_left, sensor_distances[FRONT_FRONT_LEFT]);
+        resetControllerState(&state_obstacle_right, sensor_distances[FRONT_FRONT_RIGHT]);
+        straight_enabled = false;
       }
       state = MOVING;
     }
@@ -347,9 +357,9 @@ ISR(TIMER2_COMPA_vect) {
     base_left = controllerStraight(&state_straight_left, encoder_left, target_left);
     base_right = controllerStraight(&state_straight_right, encoder_right, target_right);
   } else if (move_type == OBSTACLE) {
-    base_left = controllerObstacle(&state_obstacle, sensor_distances[FRONT_FRONT_LEFT], target_obstacle);
-    base_right = base_left;
-  } else if (move_type == ALIGN_EQUAL) {
+    base_left = controllerObstacle(&state_obstacle_left, sensor_distances[FRONT_FRONT_LEFT], target_obstacle);
+    base_right = controllerObstacle(&state_obstacle_right, sensor_distances[FRONT_FRONT_RIGHT], target_obstacle);
+  } else if (move_type == ALIGN_EQUAL_LEFT || move_type == ALIGN_EQUAL_FORWARD) {
     static uint8_t tick_count = 0;
     tick_count ++;
 

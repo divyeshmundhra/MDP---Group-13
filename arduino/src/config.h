@@ -23,7 +23,7 @@ const int16_t kSensor_delta_threshold = 1;
 // maximum error for move-distance to be completed
 const int8_t kMax_encoder_error = 5;
 // maximum error for move-obstacle to be completed
-const int8_t kMax_obstacle_error = 5;
+const int8_t kMax_obstacle_error = 3;
 // max difference between both axis for moves to be completed
 const int8_t kMax_encoder_diff_error = 5;
 // max error for align-equal to be completed
@@ -138,11 +138,11 @@ extern int16_t kP_obstacle;
 extern int16_t kI_obstacle;
 extern int16_t kD_obstacle;
 
-const int16_t kMO_integral_min = -400;
-const int16_t kMO_integral_max = 400;
+const int16_t kMO_integral_min = -50;
+const int16_t kMO_integral_max = 50;
 
-const int16_t kMO_max_output = 400;
-const int16_t kMO_min_output = -400;
+const int16_t kMO_max_output = 100;
+const int16_t kMO_min_output = -100;
 
 // controller parameters for align controller
 extern int16_t kP_align;
