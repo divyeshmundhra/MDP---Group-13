@@ -19,7 +19,8 @@ typedef enum {
 typedef enum {
   DISTANCE,
   OBSTACLE,
-  ALIGN_EQUAL
+  ALIGN_EQUAL_LEFT,
+  ALIGN_EQUAL_FORWARD,
 } move_type_t;
 
 typedef enum {
@@ -293,8 +294,14 @@ ISR(TIMER2_COMPA_vect) {
           axis_right.setBrake(400);
           return;
         }
-      } else if (move_type == ALIGN_EQUAL) {
-        int16_t diff_err = sensor_distances[LEFT_FRONT] - sensor_distances[LEFT_REAR];
+      } else if (move_type == ALIGN_EQUAL_LEFT || move_type == ALIGN_EQUAL_FORWARD) {
+        int16_t diff_err;
+
+        if (move_type == ALIGN_EQUAL_LEFT) {
+          diff_err = sensor_distances[LEFT_FRONT] - sensor_distances[LEFT_REAR];
+        } else if (move_type == ALIGN_EQUAL_FORWARD) {
+          diff_err = sensor_distances[FRONT_FRONT_RIGHT] - sensor_distances[FRONT_FRONT_LEFT];
+        }
 
         if (diff_err > -kMax_align_error && diff_err < kMax_align_error) {
           display.align_done = 1;
@@ -308,10 +315,18 @@ ISR(TIMER2_COMPA_vect) {
       }
     }
   } else if (state == MOVE_COMMANDED) {
-    if (move_type == ALIGN_EQUAL) {
+    if (move_type == ALIGN_EQUAL_LEFT || move_type == ALIGN_EQUAL_FORWARD) {
       state = MOVING;
       straight_enabled = false;
-      resetControllerState(&state_wall_align_equal, sensor_distances[LEFT_FRONT]);
+
+      int16_t init_val;
+      if (move_type == ALIGN_EQUAL_LEFT) {
+        init_val = sensor_distances[LEFT_FRONT];
+      } else if (move_type == ALIGN_EQUAL_FORWARD) {
+        init_val = sensor_distances[FRONT_FRONT_RIGHT];
+      }
+
+      resetControllerState(&state_wall_align_equal, init_val);
     } else {
       resetControllerState(&state_tl, encoder_right);
       if (move_type == DISTANCE) {
@@ -341,7 +356,17 @@ ISR(TIMER2_COMPA_vect) {
     if (tick_count > 4) {
       tick_count = 0;
 
-      int16_t power = controllerWallAlignEqual(&state_wall_align_equal, sensor_distances[LEFT_FRONT], sensor_distances[LEFT_REAR]);
+      int16_t val_slave, val_target;
+      
+      if (move_type == ALIGN_EQUAL_LEFT) {
+        val_slave = sensor_distances[LEFT_FRONT];
+        val_target = sensor_distances[LEFT_REAR];
+      } else if (move_type == ALIGN_EQUAL_FORWARD) {
+        val_slave = sensor_distances[FRONT_FRONT_RIGHT];
+        val_target = sensor_distances[FRONT_FRONT_LEFT];
+      }
+
+      int16_t power = controllerWallAlignEqual(&state_wall_align_equal, val_slave, val_target);
       base_left = -power;
       base_right = power;
     }
@@ -713,15 +738,20 @@ void start_align(uint8_t mode) {
     } else {
       start_motion_distance(RIGHT, pgm_read_word_near(align_forward_LUT - error_sensors));
     }
-  } else if (mode == 2) {
+  } else if (mode == 2 || mode == 3) {
     cli();
     state = MOVE_COMMANDED;
-    move_type = ALIGN_EQUAL;
+    if (mode == 2) {
+      move_type = ALIGN_EQUAL_LEFT;
+    } else if (mode == 3) {
+      move_type = ALIGN_EQUAL_FORWARD;
+    }
     axis_left.setReverse(false);
     axis_right.setReverse(false);
     sei();
 
-    Serial.println("Start align equal");
+    Serial.print("Start align equal: ");
+    Serial.println(mode);
   }
 }
 
