@@ -27,7 +27,9 @@ const int8_t kMax_obstacle_error = 3;
 // max difference between both axis for moves to be completed
 const int8_t kMax_encoder_diff_error = 5;
 // max error for align-equal to be completed
-const int8_t kMax_align_error = 3;
+// if zero movement seen for this amount of time, end the move
+// this should be longer than the report/align delays
+const uint16_t kZero_movement_timeout = 200;
 
 // time after a move to wait before reporting sensor values
 const int16_t kSensor_report_delay = 100;

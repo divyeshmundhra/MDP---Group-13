@@ -54,6 +54,7 @@ struct {
   uint16_t update_l : 1;
   uint16_t update_r : 1;
   uint16_t emergency_stop : 1;
+  uint16_t force_end : 1;
 } display;
 
 pid_state_t state_tl;
@@ -251,10 +252,28 @@ ISR(TIMER2_COMPA_vect) {
     }
   }
 
-  if (state == MOVING && !has_encoder_delta) {
+  static uint32_t zero_movement_since = 0;
+
+  // whether we have seen zero movement for too long and should force end the move
+  bool force_end = false;
+  if (delta_left == 0 && delta_right == 0) {
+    if (zero_movement_since == 0) {
+      zero_movement_since = millis();
+    }
+
+    if ((millis() - zero_movement_since) > kZero_movement_timeout) {
+      force_end = true;
+      display.force_end = 1;
+      zero_movement_since = 0;
+    }
+  } else {
+    zero_movement_since = 0;
+  }
+
+  if (state == MOVING && (!has_encoder_delta || force_end)) {
     // encoder delta has slowed to almost zero - lets check if we should finish the move
     int32_t diff_err = encoder_left - encoder_right;
-    if (!straight_enabled || (diff_err > -kMax_encoder_diff_error && diff_err < kMax_encoder_diff_error)) {
+    if (force_end || !straight_enabled || (diff_err > -kMax_encoder_diff_error && diff_err < kMax_encoder_diff_error)) {
       // if the error between both encoders are really similar, we can check for the
       // move-specific terminating condition
       if (move_type == DISTANCE) {
@@ -262,8 +281,10 @@ ISR(TIMER2_COMPA_vect) {
         int32_t diff_left = encoder_left - target_left;
         int32_t diff_right = encoder_right - target_right;
         if (
-          (diff_left > -kMax_encoder_error && diff_left < kMax_encoder_error) && 
-          (diff_right > -kMax_encoder_error && diff_right < kMax_encoder_error)
+          (
+            (diff_left > -kMax_encoder_error && diff_left < kMax_encoder_error) && 
+            (diff_right > -kMax_encoder_error && diff_right < kMax_encoder_error)
+          ) || force_end
         ) {
           display.move_distance_done = 1;
 
@@ -295,8 +316,10 @@ ISR(TIMER2_COMPA_vect) {
         int16_t diff_err_right = sensor_distances[FRONT_FRONT_RIGHT] - target_obstacle;
 
         if (
-          diff_err_left > -kMax_obstacle_error && diff_err_left < kMax_obstacle_error &&
-          diff_err_right > -kMax_obstacle_error && diff_err_right < kMax_obstacle_error
+          (
+            diff_err_left > -kMax_obstacle_error && diff_err_left < kMax_obstacle_error &&
+            diff_err_right > -kMax_obstacle_error && diff_err_right < kMax_obstacle_error
+          ) || force_end
         ) {
           display.move_obstacle_done = 1;
           state = IDLE;
@@ -315,7 +338,7 @@ ISR(TIMER2_COMPA_vect) {
           diff_err = sensor_distances[FRONT_FRONT_RIGHT] - sensor_distances[FRONT_FRONT_LEFT];
         }
 
-        if (diff_err > -kMax_align_error && diff_err < kMax_align_error) {
+        if ((diff_err > -kMax_align_error && diff_err < kMax_align_error) || force_end) {
           display.align_done = 1;
           state = ALIGN_DELAY;
           axis_left.resetEncoder();
@@ -866,6 +889,10 @@ void loop_motion() {
   if (display.update_r) {
     Serial.println(F("$UR"));
     display.update_r = 0;
+  }
+  if (display.force_end) {
+    Serial.println(F("force ended move"));
+    display.force_end = 0;
   }
 
   if (state == REPORT_SENSOR && (millis() - report_delay_start) > kSensor_report_delay) {
