@@ -65,6 +65,11 @@ const uint8_t kWall_offsets_left[kWall_offset_count] = {
   40
 };
 
+// parameters for auto-starting an alignment after a move
+// max distance under which an alignment will be started
+const int16_t kAuto_align_threshold = 400;
+const int16_t kAuto_align_max_diff = 30;
+
 // on axis direction change, add this as a correction to compensate for backlash
 const int16_t kBacklash_compensation = -20;
 

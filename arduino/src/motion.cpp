@@ -848,6 +848,30 @@ void loop_motion() {
 
   if (state == REPORT_SENSOR && (millis() - report_delay_start) > kSensor_report_delay) {
     log_all_sensors();
-    state = IDLE;
+
+    if (
+      sensor_distances[FRONT_FRONT_LEFT] < kAuto_align_threshold &&
+      sensor_distances[FRONT_FRONT_RIGHT] < kAuto_align_threshold
+    ) {
+      int16_t diff_err = sensor_distances[FRONT_FRONT_LEFT] - sensor_distances[FRONT_FRONT_RIGHT];
+
+      if (diff_err > -kAuto_align_max_diff && diff_err < kAuto_align_max_diff) {
+        start_align(3);
+      }
+    } else if (
+      sensor_distances[LEFT_FRONT] < kAuto_align_threshold &&
+      sensor_distances[LEFT_REAR] < kAuto_align_threshold
+    ) {
+      int16_t diff_err = sensor_distances[LEFT_FRONT] - sensor_distances[LEFT_REAR];
+
+      if (diff_err > -kAuto_align_max_diff && diff_err < kAuto_align_max_diff) {
+        start_align(2);
+      }
+    }
+
+    // met none of the align conditions
+    if (state == REPORT_SENSOR) {
+      state = IDLE;
+    }
   }
 }
