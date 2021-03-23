@@ -364,26 +364,19 @@ ISR(TIMER2_COMPA_vect) {
     base_left = controllerObstacle(&state_obstacle_left, sensor_distances[FRONT_FRONT_LEFT], target_obstacle);
     base_right = controllerObstacle(&state_obstacle_right, sensor_distances[FRONT_FRONT_RIGHT], target_obstacle);
   } else if (move_type == ALIGN_EQUAL_LEFT || move_type == ALIGN_EQUAL_FORWARD) {
-    static uint8_t tick_count = 0;
-    tick_count ++;
-
-    if (tick_count > 4) {
-      tick_count = 0;
-
-      int16_t val_slave, val_target;
-      
-      if (move_type == ALIGN_EQUAL_LEFT) {
-        val_slave = sensor_distances[LEFT_FRONT];
-        val_target = sensor_distances[LEFT_REAR];
-      } else if (move_type == ALIGN_EQUAL_FORWARD) {
-        val_slave = sensor_distances[FRONT_FRONT_RIGHT];
-        val_target = sensor_distances[FRONT_FRONT_LEFT];
-      }
-
-      int16_t power = controllerWallAlignEqual(&state_wall_align_equal, val_slave, val_target);
-      base_left = -power;
-      base_right = power;
+    int16_t val_slave, val_target;
+    
+    if (move_type == ALIGN_EQUAL_LEFT) {
+      val_slave = sensor_distances[LEFT_FRONT];
+      val_target = sensor_distances[LEFT_REAR];
+    } else if (move_type == ALIGN_EQUAL_FORWARD) {
+      val_slave = sensor_distances[FRONT_FRONT_RIGHT];
+      val_target = sensor_distances[FRONT_FRONT_LEFT];
     }
+
+    int16_t power = controllerWallAlignEqual(&state_wall_align_equal, val_slave, val_target);
+    base_left = -power;
+    base_right = power;
   }
 
   #ifdef DO_LIVE_ALIGNMENT
