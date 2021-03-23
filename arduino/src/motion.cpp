@@ -13,7 +13,9 @@ typedef enum {
   MOVE_COMMANDED,
   MOVING,
   REPORT_SENSOR_INIT,
-  REPORT_SENSOR
+  REPORT_SENSOR,
+  ALIGN_DELAY_INIT,
+  ALIGN_DELAY
 } state_t;
 
 typedef enum {
@@ -315,7 +317,7 @@ ISR(TIMER2_COMPA_vect) {
 
         if (diff_err > -kMax_align_error && diff_err < kMax_align_error) {
           display.align_done = 1;
-          state = IDLE;
+          state = ALIGN_DELAY;
           axis_left.resetEncoder();
           axis_right.resetEncoder();
           axis_left.setBrake(400);
@@ -770,10 +772,16 @@ bool parse_moves = true;
 void loop_motion() {
   static align_type_t pAlign_type = ALIGN_IDLE;
   static uint32_t report_delay_start = 0;
+  static uint32_t align_delay = 0;
 
   if (state == REPORT_SENSOR_INIT) {
     report_delay_start = millis();
     state = REPORT_SENSOR;
+  } else if (state == ALIGN_DELAY_INIT) {
+    align_delay = millis();
+    state = ALIGN_DELAY;
+  } else if (state == ALIGN_DELAY && (millis() - align_delay) > kAlign_delay) {
+    state = IDLE;
   }
 
   if (pAlign_type != align_type) {

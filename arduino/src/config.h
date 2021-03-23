@@ -31,6 +31,8 @@ const int8_t kMax_align_error = 3;
 
 // time after a move to wait before reporting sensor values
 const int16_t kSensor_report_delay = 100;
+// time to delay after an align is complete
+const int16_t kAlign_delay = 100;
 const int16_t kMax_encoder_correction = 64;
 const int16_t kMin_encoder_correction = -64;
 
