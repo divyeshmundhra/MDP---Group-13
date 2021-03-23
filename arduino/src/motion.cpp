@@ -386,93 +386,105 @@ ISR(TIMER2_COMPA_vect) {
     }
   }
 
-  if (straight_enabled && move_type == DISTANCE) {
-    static uint8_t tick_count = 0;
-    tick_count ++;
+  #ifdef DO_LIVE_ALIGNMENT
+    if (straight_enabled && move_type == DISTANCE) {
+      static uint8_t tick_count = 0;
+      tick_count ++;
 
-    if (tick_count > 4 && (base_left > kWall_align_min_power) && (base_right > kWall_align_min_power)) {
-      tick_count = 0;
+      if (tick_count > 4 && (base_left > kWall_align_min_power) && (base_right > kWall_align_min_power)) {
+        tick_count = 0;
 
-      if (move_dir == FORWARD) {
-        static uint8_t ticks_since_align_selected = 0;
-        ticks_since_align_selected ++;
+        if (move_dir == FORWARD) {
+          static uint8_t ticks_since_align_selected = 0;
+          ticks_since_align_selected ++;
 
-        if (align_type == ALIGN_IDLE && ticks_since_align_selected >= 5) {
-          ticks_since_align_selected = 0;
+          if (align_type == ALIGN_IDLE && ticks_since_align_selected >= 5) {
+            ticks_since_align_selected = 0;
 
-          if (move_type != OBSTACLE) {
-            int16_t base_offset = 0;
-            int16_t diff = 0;
-            int16_t sensor_val = 0;
+            if (move_type != OBSTACLE) {
+              int16_t base_offset = 0;
+              int16_t diff = 0;
+              int16_t sensor_val = 0;
 
-            if (is_valid_align_target(ALIGN_LEFT)) {
-              align_type = ALIGN_LEFT;
-              sensor_val = sensor_distances[LEFT_FRONT] % 100;
-              base_offset = get_base_wall_align_offset(ALIGN_LEFT, sensor_distances[LEFT_FRONT]);
-            }
+              if (is_valid_align_target(ALIGN_LEFT)) {
+                align_type = ALIGN_LEFT;
+                sensor_val = sensor_distances[LEFT_FRONT] % 100;
+                base_offset = get_base_wall_align_offset(ALIGN_LEFT, sensor_distances[LEFT_FRONT]);
+              }/* else if (is_valid_align_target(ALIGN_FORWARD)) {
+                align_type = ALIGN_FORWARD;
+                sensor_val = sensor_distances[FRONT_FRONT_RIGHT] % 100;
+                base_offset = get_base_wall_align_offset(ALIGN_FORWARD, sensor_distances[FRONT_FRONT_RIGHT]);
+              }*/
 
-            // compute diff between current sensor reading and the ideal offset
-            // if too far, use the current sensor reading as the offset target instead
-            diff = sensor_val - base_offset;
-            if (diff > -kWall_align_max_offset_delta && diff < kWall_align_max_offset_delta) {
-              align_target_offset = base_offset;
+              // compute diff between current sensor reading and the ideal offset
+              // if too far, use the current sensor reading as the offset target instead
+              diff = sensor_val - base_offset;
+              if (diff > -kWall_align_max_offset_delta && diff < kWall_align_max_offset_delta) {
+                align_target_offset = base_offset;
+              } else {
+                // align_target_offset = sensor_val;
+                align_type = ALIGN_IDLE;
+              }
             } else {
-              // align_target_offset = sensor_val;
-              align_type = ALIGN_IDLE;
+              // obstacle will only align forwards
+              if (is_valid_align_target(ALIGN_FORWARD)) {
+                align_type = ALIGN_FORWARD;
+              }
             }
           } else {
-            // obstacle will only align forwards
-            if (is_valid_align_target(ALIGN_FORWARD)) {
-              align_type = ALIGN_FORWARD;
+            if (!is_valid_align_target(align_type)) {
+              align_type = ALIGN_IDLE;
             }
           }
-        } else {
-          if (!is_valid_align_target(align_type)) {
-            align_type = ALIGN_IDLE;
-          }
-        }
 
-        switch (align_type) {
-          case ALIGN_LEFT: {
-            int16_t sensor_left_front_block = sensor_distances[LEFT_FRONT] % 100;
-            int16_t sensor_left_rear_block = sensor_distances[LEFT_REAR] % 100;
+          switch (align_type) {
+            case ALIGN_LEFT: {
+              int16_t sensor_left_front_block = sensor_distances[LEFT_FRONT] % 100;
+              int16_t sensor_left_rear_block = sensor_distances[LEFT_REAR] % 100;
 
-            int16_t wall_diff = sensor_left_front_block - sensor_left_rear_block;
-            int16_t wall_offset = sensor_left_front_block - align_target_offset;
+              int16_t wall_diff = sensor_left_front_block - sensor_left_rear_block;
+              int16_t wall_offset = sensor_left_front_block - align_target_offset;
 
-            int32_t wall_correction = ((int32_t) kP_wall_diff_left * wall_diff + (int32_t) kP_wall_offset_left * wall_offset) >> 8;
+              int32_t wall_correction = ((int32_t) kP_wall_diff_left * wall_diff + (int32_t) kP_wall_offset_left * wall_offset) >> 8;
 
-            if (wall_correction > 0) {
-              axis_right.incrementEncoder(-wall_correction);
-            } else {
-              axis_left.incrementEncoder(wall_correction);
+              if (wall_correction > 0) {
+                axis_right.incrementEncoder(-wall_correction);
+              } else {
+                axis_left.incrementEncoder(wall_correction);
+              }
+
+              break;
             }
+            case ALIGN_FORWARD:
+            {
+              int16_t wall_diff = sensor_distances[FRONT_FRONT_RIGHT] - sensor_distances[FRONT_FRONT_LEFT];
 
-            break;
-          }
-          case ALIGN_FORWARD:
-          {
-            int16_t wall_diff = sensor_distances[FRONT_FRONT_RIGHT] - sensor_distances[FRONT_FRONT_LEFT];
+              int32_t wall_correction = ((int32_t) kP_wall_diff_forward * wall_diff) >> 8;
 
-            int32_t wall_correction = ((int32_t) kP_wall_diff_forward * wall_diff) >> 8;
-
-            if (wall_correction > 0) {
-              axis_right.incrementEncoder(-wall_correction);
-            } else {
-              axis_left.incrementEncoder(wall_correction);
+              if (wall_correction > 0) {
+                axis_right.incrementEncoder(-wall_correction);
+              } else {
+                axis_left.incrementEncoder(wall_correction);
+              }
+              
+              break;
             }
-            
-            break;
+            case ALIGN_IDLE:
+              break;
           }
-          case ALIGN_IDLE:
-            break;
         }
       }
+      correction = controllerTrackLeft(encoder_left, encoder_right);
+    } else {
+      correction = 0;
     }
-    correction = controllerTrackLeft(encoder_left, encoder_right);
-  } else {
-    correction = 0;
-  }
+  #else
+    if (straight_enabled) {
+      correction = controllerTrackLeft(encoder_left, encoder_right);
+    } else {
+      correction = 0;
+    }
+  #endif
 
   power_left = base_left - correction;
   power_right = base_right + correction;
