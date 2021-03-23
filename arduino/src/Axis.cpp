@@ -46,6 +46,6 @@ void Axis::resetEncoderForNextMove(int32_t error) {
   } else {
     _encoder_count = -error;
   }
-
+  _encoder_count = 0;
   _encoder_correction = 0;
 }
