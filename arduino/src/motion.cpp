@@ -632,7 +632,10 @@ int16_t get_forward_offset(sensor_position_t sensor, uint8_t data_index) {
   }
 
   int8_t delta = sensor_distances[sensor] - kForward_align_target[data_index][blocks_away];
-  if (delta <= -kForward_align_max_error || delta > kForward_align_max_error) {
+  if (
+    (delta <= -kForward_align_max_error || delta > kForward_align_max_error) &&
+    sensor_distances[sensor] > kForward_align_always_align_threshold
+  ) {
     return 0;
   }
 

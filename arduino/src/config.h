@@ -72,7 +72,7 @@ const uint8_t kWall_offsets_left[kWall_offset_count] = {
 
 // parameters for auto-starting an alignment after a move
 // max distance under which an alignment will be started
-const int16_t kAuto_align_threshold = 300;
+const int16_t kAuto_align_threshold = 200;
 const int16_t kAuto_align_max_diff = 30;
 const int16_t kAuto_align_min_diff = 2;
 
@@ -101,7 +101,7 @@ const int16_t kForward_align_target[3][kForward_align_count] = {
   // FRONT_FRONT_LEFT offsets
   {
     0,
-    145,
+    160,
     260,
     310
   },
@@ -116,6 +116,8 @@ const int16_t kForward_align_target[3][kForward_align_count] = {
 
 // offset move only if error is within this value
 const uint8_t kForward_align_max_error = 20;
+// always do a offset move if the distance measured by the sensor is less than this value
+const int16_t kForward_align_always_align_threshold = 190;
 
 // controller parameters for offset (minimise error between encoder readings) controller
 extern int16_t kP_offset;
