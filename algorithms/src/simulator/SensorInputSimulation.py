@@ -33,13 +33,15 @@ class SensorInputSimulation:
 
     def update_explored_coord_lists(self, coords: list) -> None:
         # gets cell at coord and adds it to the self blocked and self unblocked lists
+        distance = 2 # detected cells start from 2 units away from center of robot
         for coord in coords:
             cell = self.arena.get_cell_at_coord(coord)
             if cell.is_obstacle():
-                self.obstacles_coord_list.append(coord)
+                self.obstacles_coord_list.append((coord, distance))
                 break
             else:
                 self.no_obs_coord_list.append(coord)
+            distance += 1
     
     def get_coords_in_line(self, sensor_displacement: Coord, displacement_per_step: Coord, view_range: int) -> list:
         all_possible_visible_coords = []

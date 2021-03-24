@@ -43,7 +43,7 @@ class Simulator:
         # calculate agent percepts
         sis = SensorInputSimulation(self.robot_info, self.arena)
         obstacle_coord_list, no_obs_coord_list = sis.calculate_percepts()
-        for coord in obstacle_coord_list:
+        for coord, _ in obstacle_coord_list: # distance is not used, hence renamed to _
             self.arena.get_cell_at_coord(coord).set_is_explored(True)
         for coord in no_obs_coord_list:
             self.arena.get_cell_at_coord(coord).set_is_explored(True)
