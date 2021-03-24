@@ -39,3 +39,13 @@ void Axis::setReverse(bool reverse) {
 
   _reverse = reverse;
 }
+
+void Axis::resetEncoderForNextMove(int32_t error) {
+  if (_invert ^ _reverse) {
+    _encoder_count = error;
+  } else {
+    _encoder_count = -error;
+  }
+  _encoder_count = 0;
+  _encoder_correction = 0;
+}

@@ -36,26 +36,26 @@ static bool parse_buf() {
   }
 
   if (cmd == 'F') {
-    start_motion_unit(FORWARD, val);
+    start_motion_unit(FORWARD, val, false);
   } else if (cmd == 'B') {
-    start_motion_unit(REVERSE, val);
+    start_motion_unit(REVERSE, val, false);
   } else if (cmd == 'L') {
-    start_motion_unit(LEFT, val);
+    start_motion_unit(LEFT, val, false);
   } else if (cmd == 'R') {
-    start_motion_unit(RIGHT, val);
+    start_motion_unit(RIGHT, val, false);
   } else if (cmd == 'O') {
     start_motion_obstacle(val);
   } else if (cmd == 'l') {
     if (cmd1 == 'r') {
-      start_motion_distance(LEFT, val);
+      start_motion_distance(LEFT, val, false);
     } else {
-      start_motion_distance(LEFT, angleToTicks(val));
+      start_motion_distance(LEFT, angleToTicks(val), false);
     }
   } else if (cmd == 'r') {
     if (cmd1 == 'r') {
-      start_motion_distance(RIGHT, val);
+      start_motion_distance(RIGHT, val, false);
     } else {
-      start_motion_distance(RIGHT, angleToTicks(val));
+      start_motion_distance(RIGHT, angleToTicks(val), false);
     }
   } else if (cmd == 'Q') {
     if (cmd1 == 'A') {
@@ -99,14 +99,12 @@ static bool parse_buf() {
       kD_offset = val;
     }
   } else if (cmd == 's') {
-    if (cmd1 == 'v') {
-      kV_mp = val;
-    } else if (cmd1 == 'a') {
-      kA_mp = val;
-    } else if (cmd1 == 'p') {
-      kP_mp = val;
+    if (cmd1 == 'p') {
+      kP_straight = val;
+    } else if (cmd1 == 'i') {
+      kI_straight = val;
     } else if (cmd1 == 'd') {
-      kD_mp = val;
+      kD_straight = val;
     }
   } else if (cmd == 'b') {
     if (cmd1 == 'p') {
@@ -123,8 +121,6 @@ static bool parse_buf() {
       kP_wall_offset_left = val;
     } else if (cmd1 == 'c') {
       kP_wall_diff_forward = val;
-    } else if (cmd1 == 'd') {
-      kP_wall_offset_right = val;
     }
   } else if (cmd == 'w') {
     if (cmd1 == 'p') {

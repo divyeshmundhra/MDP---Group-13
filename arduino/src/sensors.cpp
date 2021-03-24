@@ -4,7 +4,9 @@
 #include "config.h"
 
 volatile uint16_t adc_val[6] = {0};
+volatile uint16_t filtered_adc_val[6] = {0};
 int16_t sensor_distances[6] = {0};
+int16_t filtered_sensor_distances[6];
 int8_t sensor_obstacles[6] = {0};
 
 bool sensor_stable[6] = {0};
@@ -29,7 +31,10 @@ ISR(ADC_vect) {
 
   // we take 4^3 samples, giving us a 13 bit result
   if (sum_count[channel] >= 64) {
-    adc_val[channel] = ((uint32_t) kSensor_filter_alpha * (sum[channel] >> 3) + (uint32_t) (255 - kSensor_filter_alpha) * adc_val[channel]) >> 8;
+    uint16_t val = sum[channel] >> 3;
+
+    adc_val[channel] = val;
+    filtered_adc_val[channel] = ((uint32_t) kSensor_filter_alpha * val + (uint32_t) (255 - kSensor_filter_alpha) * adc_val[channel]) >> 8;
     sum[channel] = 0;
     sum_count[channel] = 0;
 
@@ -76,11 +81,15 @@ void convert_sensor_data() {
 
     cli();
     int16_t val = adc_val[i];
+    int16_t filtered_val = filtered_adc_val[i];
     has_new_val[i] = false;
     sei();
 
     sensor_distances[i] = (kSensor_constants[i][0] * val + kSensor_constants[i][1]) / (val + kSensor_constants[i][2]);
     sensor_distances[i] += kSensor_offset[i];
+
+    int16_t distance = (kSensor_constants[i][0] * filtered_val + kSensor_constants[i][1]) / (filtered_val + kSensor_constants[i][2]);
+    distance += kSensor_offset[i];
 
     int16_t delta = sensor_distances[i] - pSensor_distances[i];
     sensor_stable[i] = (delta > -kSensor_stable_threshold) && (delta < kSensor_stable_threshold);
@@ -89,14 +98,18 @@ void convert_sensor_data() {
       sensor_distances[i] = 0;
     }
 
+    if (distance < 0) {
+      distance = 0;
+    }
+
     sensor_obstacles[i] = -1;
 
-    if (sensor_distances[i] > kSensor_max[i]) {
+    if (distance > kSensor_max[i]) {
       continue;
     }
 
     for (uint8_t u = 0; u < kSensor_threshold_count; u++) {
-      if (sensor_distances[i] < kSensor_thresholds[i][u]) {
+      if (distance < kSensor_thresholds[i][u]) {
         sensor_obstacles[i] = 2 + u;
         break;
       }

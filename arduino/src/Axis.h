@@ -65,6 +65,8 @@ class Axis {
       _encoder_correction = 0;
     }
 
+    void resetEncoderForNextMove(int32_t error);
+
     void incrementEncoder(int32_t delta) {
       if (_invert) {
         _encoder_correction -= delta;

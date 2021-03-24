@@ -2,7 +2,6 @@
 
 #include "motion.h"
 #include "motion_init.h"
-#include "motion_profile.h"
 #include "config.h"
 #include "board.h"
 #include "sensors.h"
@@ -14,29 +13,36 @@ typedef enum {
   MOVE_COMMANDED,
   MOVING,
   REPORT_SENSOR_INIT,
-  REPORT_SENSOR
+  REPORT_SENSOR,
+  ALIGN_DELAY_INIT,
+  ALIGN_DELAY
 } state_t;
 
 typedef enum {
   DISTANCE,
-  DISTANCE_UNPLANNED,
   OBSTACLE,
-  ALIGN_EQUAL
+  ALIGN_EQUAL_LEFT,
+  ALIGN_EQUAL_FORWARD,
 } move_type_t;
 
 typedef enum {
   ALIGN_IDLE,
   ALIGN_LEFT,
-  ALIGN_LEFT_FRONT,
-  ALIGN_RIGHT_FRONT,
   ALIGN_FORWARD
 } align_type_t;
+
+typedef enum {
+  ALIGN_AUTO_IDLE,
+  ALIGN_AUTO_STATIC,
+  ALIGN_AUTO_DYNAMIC
+} align_auto_state_t;
 
 typedef struct {
   move_type_t type;
   motion_direction_t direction;
   int32_t target;
   uint8_t unit;
+  bool align;
 } move_t;
 
 typedef struct {
@@ -48,12 +54,14 @@ typedef struct {
 struct {
   uint16_t move_distance_done : 1;
   uint16_t move_obstacle_done : 1;
+  uint16_t align_done : 1;
   uint16_t decelerating : 1;
   uint16_t update_f : 1;
   uint16_t update_b : 1;
   uint16_t update_l : 1;
   uint16_t update_r : 1;
   uint16_t emergency_stop : 1;
+  uint16_t force_end : 1;
 } display;
 
 pid_state_t state_tl;
@@ -76,28 +84,6 @@ int16_t controllerTrackLeft(int32_t encoder_left, int32_t encoder_right) {
 
 pid_state_t state_straight_left;
 pid_state_t state_straight_right;
-int16_t controllerMotionProfile(pid_state_t *state, int32_t encoder, setpoint_t *sp) {
-  // controller aiming to make encoder track setpoint
-  int32_t error = sp->pos - encoder;
-
-  int16_t power = (
-    (int32_t) kV_mp * sp->vel +
-    (int32_t) kA_mp * sp->accel +
-    (int32_t) kP_mp * error +
-    (int32_t) kD_mp * (error - state->last_input)
-  ) >> 8;
-
-  state->last_input = error;
-
-  if (power > kMP_max_output) {
-    return kMP_max_output;
-  } else if (power < kMP_min_output) {
-    return kMP_min_output;
-  }
-
-  return power;
-}
-
 int16_t controllerStraight(pid_state_t *state, int32_t encoder, int32_t target) {
   // controller aiming to make encoder track target
   int32_t error = target - encoder;
@@ -116,7 +102,8 @@ int16_t controllerStraight(pid_state_t *state, int32_t encoder, int32_t target) 
   return power;
 }
 
-pid_state_t state_obstacle;
+pid_state_t state_obstacle_left;
+pid_state_t state_obstacle_right;
 int16_t controllerObstacle(pid_state_t *state, uint16_t distance, uint16_t target) {
   int16_t error = distance - target;
 
@@ -154,6 +141,7 @@ uint8_t pos_moves_end = 0;
 static state_t state = IDLE;
 static move_type_t move_type = DISTANCE;
 static motion_direction_t move_dir;
+static bool move_align;
 
 static int32_t target_left = 0;
 static int32_t target_right = 0;
@@ -193,26 +181,6 @@ bool is_valid_align_target(align_type_t type) {
 
         return true;
       }
-    case ALIGN_LEFT_FRONT:
-      if (!sensor_stable[LEFT_FRONT]) {
-        return false;
-      }
-
-      if (sensor_distances[LEFT_FRONT] > kWall_align_max_absolute_threshold) {
-        return false;
-      }
-      
-      return true;
-    case ALIGN_RIGHT_FRONT:
-      if (!sensor_stable[RIGHT_FRONT]) {
-        return false;
-      }
-
-      if (sensor_distances[RIGHT_FRONT] > kWall_align_max_absolute_threshold) {
-        return false;
-      }
-      
-      return true;
     case ALIGN_FORWARD:
       {
         if (!sensor_stable[FRONT_FRONT_LEFT] || !sensor_stable[FRONT_FRONT_RIGHT]) {
@@ -243,19 +211,11 @@ volatile int16_t align_target_offset = 0;
 uint8_t get_base_wall_align_offset(align_type_t align_type, int16_t val) {
   switch (align_type) {
     case ALIGN_LEFT:
-    case ALIGN_LEFT_FRONT:
       if (val > 400) {
         return val;
       }
 
       return kWall_offsets_left[val / 100];
-      break;
-    case ALIGN_RIGHT_FRONT:
-      if (val > 400) {
-        return val;
-      }
-
-      return kWall_offsets_right[val / 100];
       break;
     default:
       break;
@@ -263,8 +223,6 @@ uint8_t get_base_wall_align_offset(align_type_t align_type, int16_t val) {
 
   return val;
 }
-
-Motion_Profile mp;
 
 // triggers at 100Hz
 ISR(TIMER2_COMPA_vect) {
@@ -289,9 +247,6 @@ ISR(TIMER2_COMPA_vect) {
   pEncoder_left = encoder_left;
   pEncoder_right = encoder_right;
 
-  // whether the left motor has reached max power
-  static bool reached_max_power = false;
-
   // whether the encoder has changed from the last update
   bool has_encoder_delta = (delta_left < -kEncoder_move_threshold) || (delta_left > kEncoder_move_threshold) ||
                   (delta_right < -kEncoder_move_threshold) || (delta_right > kEncoder_move_threshold);
@@ -305,48 +260,99 @@ ISR(TIMER2_COMPA_vect) {
     }
   }
 
-  if (state == MOVING && !has_encoder_delta) {
+  static uint32_t zero_movement_since = 0;
+
+  // whether we have seen zero movement for too long and should force end the move
+  bool force_end = false;
+  if (delta_left == 0 && delta_right == 0) {
+    if (zero_movement_since == 0) {
+      zero_movement_since = millis();
+    }
+
+    if ((millis() - zero_movement_since) > kZero_movement_timeout) {
+      force_end = true;
+      display.force_end = 1;
+      zero_movement_since = 0;
+    }
+  } else {
+    zero_movement_since = 0;
+  }
+
+  if (state == MOVING && (!has_encoder_delta || force_end)) {
     // encoder delta has slowed to almost zero - lets check if we should finish the move
     int32_t diff_err = encoder_left - encoder_right;
-    if (!straight_enabled || (diff_err > -kMax_encoder_diff_error && diff_err < kMax_encoder_diff_error)) {
+    if (force_end || !straight_enabled || (diff_err > -kMax_encoder_diff_error && diff_err < kMax_encoder_diff_error)) {
       // if the error between both encoders are really similar, we can check for the
       // move-specific terminating condition
-      if (move_type == DISTANCE_UNPLANNED) {
+      if (move_type == DISTANCE) {
         // DISTANCE terminates when both encoders are close to target
         int32_t diff_left = encoder_left - target_left;
         int32_t diff_right = encoder_right - target_right;
         if (
-          (diff_left > -kMax_encoder_error && diff_left < kMax_encoder_error) && 
-          (diff_right > -kMax_encoder_error && diff_right < kMax_encoder_error)
+          (
+            (diff_left > -kMax_encoder_error && diff_left < kMax_encoder_error) && 
+            (diff_right > -kMax_encoder_error && diff_right < kMax_encoder_error)
+          ) || force_end
         ) {
           display.move_distance_done = 1;
 
-          switch(move_dir) {
-            case FORWARD:
-              display.update_f = 1;
-              break;
-            case REVERSE:
-              display.update_b = 1;
-              break;
-            case LEFT:
-              display.update_l = 1;
-              break;
-            case RIGHT:
-              display.update_r = 1;
-              break;
+          if (!move_align) {
+            switch(move_dir) {
+              case FORWARD:
+                display.update_f = 1;
+                break;
+              case REVERSE:
+                display.update_b = 1;
+                break;
+              case LEFT:
+                display.update_l = 1;
+                break;
+              case RIGHT:
+                display.update_r = 1;
+                break;
+            }
           }
 
           state = REPORT_SENSOR_INIT;
+          axis_left.resetEncoderForNextMove(target_left - axis_left.getEncoder());
+          axis_right.resetEncoderForNextMove(target_right - axis_right.getEncoder());
           axis_left.setBrake(400);
           axis_right.setBrake(400);
           return;
         }
       } else if (move_type == OBSTACLE) {
         // OBSTACLE terminates when the sensor distance is really close to target
-        int16_t diff_err = sensor_distances[FRONT_FRONT_MID] - target_obstacle;
-        if (diff_err > -kMax_obstacle_error && diff_err < kMax_obstacle_error) {
+        int16_t diff_err_left = sensor_distances[FRONT_FRONT_LEFT] - target_obstacle;
+        int16_t diff_err_right = sensor_distances[FRONT_FRONT_RIGHT] - target_obstacle;
+
+        if (
+          (
+            diff_err_left > -kMax_obstacle_error && diff_err_left < kMax_obstacle_error &&
+            diff_err_right > -kMax_obstacle_error && diff_err_right < kMax_obstacle_error
+          ) || force_end
+        ) {
           display.move_obstacle_done = 1;
           state = IDLE;
+          axis_left.resetEncoder();
+          axis_right.resetEncoder();
+          axis_left.setBrake(400);
+          axis_right.setBrake(400);
+          return;
+        }
+      } else if (move_type == ALIGN_EQUAL_LEFT || move_type == ALIGN_EQUAL_FORWARD) {
+        int16_t diff_err;
+
+        if (move_type == ALIGN_EQUAL_LEFT) {
+          diff_err = sensor_distances[LEFT_FRONT] - sensor_distances[LEFT_REAR];
+        } else if (move_type == ALIGN_EQUAL_FORWARD) {
+          diff_err = sensor_distances[FRONT_FRONT_RIGHT] - sensor_distances[FRONT_FRONT_LEFT];
+        }
+
+        if ((diff_err > -kMax_align_error && diff_err < kMax_align_error) || force_end) {
+          display.align_done = 1;
+          state = ALIGN_DELAY_INIT;
+          axis_left.resetEncoder();
+          axis_right.resetEncoder();
           axis_left.setBrake(400);
           axis_right.setBrake(400);
           return;
@@ -354,20 +360,30 @@ ISR(TIMER2_COMPA_vect) {
       }
     }
   } else if (state == MOVE_COMMANDED) {
-    if (move_type == ALIGN_EQUAL) {
+    if (move_type == ALIGN_EQUAL_LEFT || move_type == ALIGN_EQUAL_FORWARD) {
       state = MOVING;
       straight_enabled = false;
-      resetControllerState(&state_wall_align_equal, sensor_distances[LEFT_FRONT]);
+
+      int16_t init_val;
+      if (move_type == ALIGN_EQUAL_LEFT) {
+        init_val = sensor_distances[LEFT_FRONT];
+      } else if (move_type == ALIGN_EQUAL_FORWARD) {
+        init_val = sensor_distances[FRONT_FRONT_RIGHT];
+      }
+
+      resetControllerState(&state_wall_align_equal, init_val);
     } else {
       resetControllerState(&state_tl, encoder_right);
-      if (move_type == DISTANCE || move_type == DISTANCE_UNPLANNED) {
+      if (move_type == DISTANCE) {
         resetControllerState(&state_straight_left, encoder_left);
         resetControllerState(&state_straight_right, encoder_right);
         has_ebraked = false;
 
-        mp.init(target_left);
+        straight_enabled = true;
       } else if (move_type == OBSTACLE) {
-        resetControllerState(&state_obstacle, sensor_distances[FRONT_FRONT_LEFT]);
+        resetControllerState(&state_obstacle_left, sensor_distances[FRONT_FRONT_LEFT]);
+        resetControllerState(&state_obstacle_right, sensor_distances[FRONT_FRONT_RIGHT]);
+        straight_enabled = false;
       }
       state = MOVING;
     }
@@ -375,183 +391,132 @@ ISR(TIMER2_COMPA_vect) {
 
   int16_t power_left = 0, power_right = 0;
   if (move_type == DISTANCE) {
-    setpoint_t sp;
-
-    if (!mp.step(&sp)) {
-      display.move_distance_done = 1;
-
-      switch(move_dir) {
-        case FORWARD:
-          display.update_f = 1;
-          break;
-        case REVERSE:
-          display.update_b = 1;
-          break;
-        case LEFT:
-          display.update_l = 1;
-          break;
-        case RIGHT:
-          display.update_r = 1;
-          break;
-      }
-
-      state = REPORT_SENSOR_INIT;
-      axis_left.setBrake(400);
-      axis_right.setBrake(400);
-      return;
-    }
-    base_left = controllerMotionProfile(&state_straight_left, encoder_left, &sp);
-    base_right = controllerMotionProfile(&state_straight_right, encoder_right, &sp);
-  } else if (move_type == DISTANCE_UNPLANNED) {
     base_left = controllerStraight(&state_straight_left, encoder_left, target_left);
     base_right = controllerStraight(&state_straight_right, encoder_right, target_right);
   } else if (move_type == OBSTACLE) {
-    base_left = controllerObstacle(&state_obstacle, sensor_distances[FRONT_FRONT_LEFT], target_obstacle);
-    base_right = base_left;
-  } else if (move_type == ALIGN_EQUAL) {
-    static uint8_t tick_count = 0;
-    tick_count ++;
-
-    if (tick_count > 4) {
-      tick_count = 0;
-
-      int16_t power = controllerWallAlignEqual(&state_wall_align_equal, sensor_distances[LEFT_FRONT], sensor_distances[LEFT_REAR]);
-      base_left = -power;
-      base_right = power;
+    base_left = controllerObstacle(&state_obstacle_left, sensor_distances[FRONT_FRONT_LEFT], target_obstacle);
+    base_right = controllerObstacle(&state_obstacle_right, sensor_distances[FRONT_FRONT_RIGHT], target_obstacle);
+  } else if (move_type == ALIGN_EQUAL_LEFT || move_type == ALIGN_EQUAL_FORWARD) {
+    int16_t val_slave, val_target;
+    
+    if (move_type == ALIGN_EQUAL_LEFT) {
+      val_slave = sensor_distances[LEFT_FRONT];
+      val_target = sensor_distances[LEFT_REAR];
+    } else if (move_type == ALIGN_EQUAL_FORWARD) {
+      val_slave = sensor_distances[FRONT_FRONT_RIGHT];
+      val_target = sensor_distances[FRONT_FRONT_LEFT];
     }
+
+    int16_t power = controllerWallAlignEqual(&state_wall_align_equal, val_slave, val_target);
+    base_left = -power;
+    base_right = power;
   }
 
-  if (straight_enabled && move_type == DISTANCE) {
-    static uint8_t tick_count = 0;
-    tick_count ++;
+  #ifdef DO_LIVE_ALIGNMENT
+    if (straight_enabled && move_type == DISTANCE) {
+      static uint8_t tick_count = 0;
+      tick_count ++;
 
-    if (tick_count > 4 && (base_left > kWall_align_min_power) && (base_right > kWall_align_min_power)) {
-      tick_count = 0;
+      if (tick_count > 4 && (base_left > kWall_align_min_power) && (base_right > kWall_align_min_power)) {
+        tick_count = 0;
 
-      if (move_dir == FORWARD) {
-        static uint8_t ticks_since_align_selected = 0;
-        ticks_since_align_selected ++;
+        if (move_dir == FORWARD) {
+          static uint8_t ticks_since_align_selected = 0;
+          ticks_since_align_selected ++;
 
-        if (align_type == ALIGN_IDLE && ticks_since_align_selected >= 5) {
-          ticks_since_align_selected = 0;
+          if (align_type == ALIGN_IDLE && ticks_since_align_selected >= 5) {
+            ticks_since_align_selected = 0;
 
-          if (move_type != OBSTACLE) {
-            int16_t base_offset = 0;
-            int16_t diff = 0;
-            int16_t sensor_val = 0;
+            if (move_type != OBSTACLE) {
+              int16_t base_offset = 0;
+              int16_t diff = 0;
+              int16_t sensor_val = 0;
 
-            if (is_valid_align_target(ALIGN_LEFT)) {
-              align_type = ALIGN_LEFT;
-              sensor_val = sensor_distances[LEFT_FRONT] % 100;
-              base_offset = get_base_wall_align_offset(ALIGN_LEFT, sensor_distances[LEFT_FRONT]);
-            } else if (is_valid_align_target(ALIGN_LEFT_FRONT)) {
-              align_type = ALIGN_LEFT_FRONT;
-              sensor_val = sensor_distances[LEFT_FRONT] % 100;
-              base_offset = get_base_wall_align_offset(ALIGN_LEFT_FRONT, sensor_distances[LEFT_FRONT]);
-            } else if (is_valid_align_target(ALIGN_RIGHT_FRONT)) {
-              align_type = ALIGN_RIGHT_FRONT;
-              sensor_val = sensor_distances[RIGHT_FRONT] % 100;
-              base_offset = get_base_wall_align_offset(ALIGN_RIGHT_FRONT, sensor_distances[RIGHT_FRONT]);
-            }
+              if (is_valid_align_target(ALIGN_LEFT)) {
+                align_type = ALIGN_LEFT;
+                sensor_val = sensor_distances[LEFT_FRONT] % 100;
+                base_offset = get_base_wall_align_offset(ALIGN_LEFT, sensor_distances[LEFT_FRONT]);
+              }/* else if (is_valid_align_target(ALIGN_FORWARD)) {
+                align_type = ALIGN_FORWARD;
+                sensor_val = sensor_distances[FRONT_FRONT_RIGHT] % 100;
+                base_offset = get_base_wall_align_offset(ALIGN_FORWARD, sensor_distances[FRONT_FRONT_RIGHT]);
+              }*/
 
-            // compute diff between current sensor reading and the ideal offset
-            // if too far, use the current sensor reading as the offset target instead
-            diff = sensor_val - base_offset;
-            if (diff > -kWall_align_max_offset_delta && diff < kWall_align_max_offset_delta) {
-              align_target_offset = base_offset;
+              // compute diff between current sensor reading and the ideal offset
+              // if too far, use the current sensor reading as the offset target instead
+              diff = sensor_val - base_offset;
+              if (diff > -kWall_align_max_offset_delta && diff < kWall_align_max_offset_delta) {
+                align_target_offset = base_offset;
+              } else {
+                // align_target_offset = sensor_val;
+                align_type = ALIGN_IDLE;
+              }
             } else {
-              // align_target_offset = sensor_val;
-              align_type = ALIGN_IDLE;
+              // obstacle will only align forwards
+              if (is_valid_align_target(ALIGN_FORWARD)) {
+                align_type = ALIGN_FORWARD;
+              }
             }
           } else {
-            // obstacle will only align forwards
-            if (is_valid_align_target(ALIGN_FORWARD)) {
-              align_type = ALIGN_FORWARD;
+            if (!is_valid_align_target(align_type)) {
+              align_type = ALIGN_IDLE;
             }
           }
-        } else {
-          if (!is_valid_align_target(align_type)) {
-            align_type = ALIGN_IDLE;
-          }
-        }
 
-        switch (align_type) {
-          case ALIGN_LEFT: {
-            int16_t sensor_left_front_block = sensor_distances[LEFT_FRONT] % 100;
-            int16_t sensor_left_rear_block = sensor_distances[LEFT_REAR] % 100;
+          switch (align_type) {
+            case ALIGN_LEFT: {
+              int16_t sensor_left_front_block = sensor_distances[LEFT_FRONT] % 100;
+              int16_t sensor_left_rear_block = sensor_distances[LEFT_REAR] % 100;
 
-            int16_t wall_diff = sensor_left_front_block - sensor_left_rear_block;
-            int16_t wall_offset = sensor_left_front_block - align_target_offset;
+              int16_t wall_diff = sensor_left_front_block - sensor_left_rear_block;
+              int16_t wall_offset = sensor_left_front_block - align_target_offset;
 
-            int32_t wall_correction = ((int32_t) kP_wall_diff_left * wall_diff + (int32_t) kP_wall_offset_left * wall_offset) >> 8;
+              int32_t wall_correction = ((int32_t) kP_wall_diff_left * wall_diff + (int32_t) kP_wall_offset_left * wall_offset) >> 8;
 
-            if (wall_correction > 0) {
-              axis_right.incrementEncoder(-wall_correction);
-            } else {
-              axis_left.incrementEncoder(wall_correction);
+              if (wall_correction > 0) {
+                axis_right.incrementEncoder(-wall_correction);
+              } else {
+                axis_left.incrementEncoder(wall_correction);
+              }
+
+              break;
             }
+            case ALIGN_FORWARD:
+            {
+              int16_t wall_diff = sensor_distances[FRONT_FRONT_RIGHT] - sensor_distances[FRONT_FRONT_LEFT];
 
-            break;
-          }
-          case ALIGN_FORWARD:
-          {
-            int16_t wall_diff = sensor_distances[FRONT_FRONT_RIGHT] - sensor_distances[FRONT_FRONT_LEFT];
+              int32_t wall_correction = ((int32_t) kP_wall_diff_forward * wall_diff) >> 8;
 
-            int32_t wall_correction = ((int32_t) kP_wall_diff_forward * wall_diff) >> 8;
-
-            if (wall_correction > 0) {
-              axis_right.incrementEncoder(-wall_correction);
-            } else {
-              axis_left.incrementEncoder(wall_correction);
+              if (wall_correction > 0) {
+                axis_right.incrementEncoder(-wall_correction);
+              } else {
+                axis_left.incrementEncoder(wall_correction);
+              }
+              
+              break;
             }
-            
-            break;
-          }
-          case ALIGN_LEFT_FRONT:
-          {
-            int16_t sensor_left_front_block = sensor_distances[LEFT_FRONT] % 100;
-            int16_t wall_offset = sensor_left_front_block - align_target_offset;
-
-            int32_t wall_correction = ((int32_t) kP_wall_offset_left * wall_offset) >> 8;
-
-            if (wall_correction > 0) {
-              axis_right.incrementEncoder(-wall_correction);
-            } else {
-              axis_left.incrementEncoder(wall_correction);
-            }
-
-            break;
-          }
-          case ALIGN_RIGHT_FRONT:
-          {
-            int16_t sensor_right_front_block = sensor_distances[RIGHT_FRONT] % 100;
-            int16_t wall_offset = sensor_right_front_block - align_target_offset;
-
-            int32_t wall_correction = ((int32_t) kP_wall_offset_right * wall_offset) >> 8;
-
-            if (wall_correction > 0) {
-              axis_left.incrementEncoder(-wall_correction);
-            } else {
-              axis_right.incrementEncoder(wall_correction);
-            }
-
-            break;
+            case ALIGN_IDLE:
+              break;
           }
         }
       }
+      correction = controllerTrackLeft(encoder_left, encoder_right);
+    } else {
+      correction = 0;
     }
-    correction = 0;
-  } else if (move_type == DISTANCE_UNPLANNED) {
-    correction = controllerTrackLeft(encoder_left, encoder_right);
-  } else {
-    correction = 0;
-  }
+  #else
+    if (straight_enabled) {
+      correction = controllerTrackLeft(encoder_left, encoder_right);
+    } else {
+      correction = 0;
+    }
+  #endif
 
   power_left = base_left - correction;
   power_right = base_right + correction;
 
-  axis_left.setPower(power_left, move_type == DISTANCE_UNPLANNED);
-  axis_right.setPower(power_right, move_type == DISTANCE_UNPLANNED);
+  axis_left.setPower(power_left, true);
+  axis_right.setPower(power_right, true);
 }
 
 bool get_motion_done() {
@@ -562,51 +527,52 @@ int32_t get_encoder_left() {
   return axis_left.getEncoder();
 }
 
-void start_motion_unit(motion_direction_t _direction, uint8_t unit) {
+void start_motion_unit(motion_direction_t _direction, uint8_t unit, bool align) {
   if (num_moves >= kMovement_buffer_size) {
     Serial.println("movement buffer full");
     return;
   }
 
-  if (num_moves == 0 && (state == MOVE_COMMANDED || state == MOVING) && move_type == DISTANCE && move_dir == _direction) {
-    int32_t new_move = 0;
-    if (_direction == FORWARD || _direction == REVERSE) {
-      new_move = unit * kBlock_distance;
-    } else if (_direction == LEFT || _direction == RIGHT) {
-      new_move = unit_turn_to_ticks(unit);
-    }
+  // if (num_moves == 0 && (state == MOVE_COMMANDED || state == MOVING) && move_type == DISTANCE && move_dir == _direction) {
+  //   int32_t new_move = 0;
+  //   if (_direction == FORWARD || _direction == REVERSE) {
+  //     new_move = unit * kBlock_distance;
+  //   } else if (_direction == LEFT || _direction == RIGHT) {
+  //     new_move = unit_turn_to_ticks(unit);
+  //   }
 
-    target_left += new_move;
-    target_right += new_move;
-    Serial.println("Combined move with active");
-    return;
-  }
+  //   target_left += new_move;
+  //   target_right += new_move;
+  //   Serial.println("Combined move with active");
+  //   return;
+  // }
 
-  // attempt to combine moves together if they are of the same type and direction
-  if (num_moves > 0) {
-    uint8_t prev_move = pos_moves_end == 0 ? (kMovement_buffer_size - 1) : pos_moves_end - 1;
+  // // attempt to combine moves together if they are of the same type and direction
+  // if (num_moves > 0) {
+  //   uint8_t prev_move = pos_moves_end == 0 ? (kMovement_buffer_size - 1) : pos_moves_end - 1;
 
-    if (
-      buffered_moves[prev_move].type == DISTANCE &&
-      buffered_moves[prev_move].direction == _direction
-    ) {
-      buffered_moves[prev_move].unit += unit;
+  //   if (
+  //     buffered_moves[prev_move].type == DISTANCE &&
+  //     buffered_moves[prev_move].direction == _direction
+  //   ) {
+  //     buffered_moves[prev_move].unit += unit;
 
-      if (_direction == FORWARD || _direction == REVERSE) {
-        buffered_moves[prev_move].target = buffered_moves[prev_move].unit * kBlock_distance;
-      } else if (_direction == LEFT || _direction == RIGHT) {
-        buffered_moves[prev_move].target = unit_turn_to_ticks(buffered_moves[prev_move].unit);
-      }
+  //     if (_direction == FORWARD || _direction == REVERSE) {
+  //       buffered_moves[prev_move].target = buffered_moves[prev_move].unit * kBlock_distance;
+  //     } else if (_direction == LEFT || _direction == RIGHT) {
+  //       buffered_moves[prev_move].target = unit_turn_to_ticks(buffered_moves[prev_move].unit);
+  //     }
 
-      Serial.print("Combined move with index=");
-      Serial.println(prev_move);
-      return;
-    }
-  }
+  //     Serial.print("Combined move with index=");
+  //     Serial.println(prev_move);
+  //     return;
+  //   }
+  // }
 
   buffered_moves[pos_moves_end].type = DISTANCE;
   buffered_moves[pos_moves_end].direction = _direction;
   buffered_moves[pos_moves_end].unit = unit;
+  buffered_moves[pos_moves_end].align = align;
 
   if (_direction == FORWARD || _direction == REVERSE) {
     buffered_moves[pos_moves_end].target = unit * kBlock_distance;
@@ -621,16 +587,17 @@ void start_motion_unit(motion_direction_t _direction, uint8_t unit) {
   }
 }
 
-void start_motion_distance(motion_direction_t _direction, uint32_t distance) {
+void start_motion_distance(motion_direction_t _direction, uint32_t distance, bool align) {
   if (num_moves >= kMovement_buffer_size) {
     Serial.println("movement buffer full");
     return;
   }
 
-  buffered_moves[pos_moves_end].type = DISTANCE_UNPLANNED;
+  buffered_moves[pos_moves_end].type = DISTANCE;
   buffered_moves[pos_moves_end].direction = _direction;
   buffered_moves[pos_moves_end].target = distance;
   buffered_moves[pos_moves_end].unit = 0;
+  buffered_moves[pos_moves_end].align = align;
 
   num_moves ++;
   pos_moves_end ++;
@@ -665,7 +632,10 @@ int16_t get_forward_offset(sensor_position_t sensor, uint8_t data_index) {
   }
 
   int8_t delta = sensor_distances[sensor] - kForward_align_target[data_index][blocks_away];
-  if (delta <= -kForward_align_max_error || delta > kForward_align_max_error) {
+  if (
+    (delta <= -kForward_align_max_error || delta > kForward_align_max_error) &&
+    sensor_distances[sensor] > kForward_align_always_align_threshold
+  ) {
     return 0;
   }
 
@@ -681,16 +651,16 @@ void parse_next_move() {
   Serial.println(pos_moves_start);
 
   cli();
-  axis_left.resetEncoder();
-  axis_right.resetEncoder();
+  // Serial.print("Start move with left=");
+  // Serial.print(axis_left.getEncoder());
+  // Serial.print(" right=");
+  // Serial.println(axis_right.getEncoder());
   state = MOVE_COMMANDED;
 
-  if (
-    buffered_moves[pos_moves_start].type == DISTANCE ||
-    buffered_moves[pos_moves_start].type == DISTANCE_UNPLANNED
-  ) {
+  if (buffered_moves[pos_moves_start].type == DISTANCE) {
     move_type = buffered_moves[pos_moves_start].type;
     move_dir = buffered_moves[pos_moves_start].direction;
+    move_align = buffered_moves[pos_moves_start].align;
 
     int32_t target = 0;
 
@@ -750,6 +720,9 @@ void parse_next_move() {
         Serial.println(target);
         break;
     }
+
+    Serial.print("move_align: ");
+    Serial.println(move_align);
     target_left = target;
     target_right = target;
   } else if (buffered_moves[pos_moves_start].type == OBSTACLE) {
@@ -806,19 +779,38 @@ void start_align(uint8_t mode) {
     }
 
     if (error_sensors > 0) {
-      start_motion_distance(LEFT, pgm_read_byte_near(align_LUT + error_sensors));
+      start_motion_distance(LEFT, pgm_read_word_near(align_left_LUT + error_sensors), true);
     } else {
-      start_motion_distance(RIGHT, pgm_read_byte_near(align_LUT - error_sensors));
+      start_motion_distance(RIGHT, pgm_read_word_near(align_left_LUT - error_sensors), true);
     }
   } else if (mode == 1) {
+    int16_t error_sensors = sensor_distances[FRONT_FRONT_RIGHT] - sensor_distances[FRONT_FRONT_LEFT];
+
+    if (abs(error_sensors) >= align_LUT_len) {
+      Serial.println("Offset too much to correct");
+      return;
+    }
+
+    if (error_sensors > 0) {
+      start_motion_distance(LEFT, pgm_read_word_near(align_forward_LUT + error_sensors), true);
+    } else {
+      start_motion_distance(RIGHT, pgm_read_word_near(align_forward_LUT - error_sensors), true);
+    }
+  } else if (mode == 2 || mode == 3) {
     cli();
     state = MOVE_COMMANDED;
-    move_type = ALIGN_EQUAL;
+    if (mode == 2) {
+      move_type = ALIGN_EQUAL_LEFT;
+    } else if (mode == 3) {
+      move_type = ALIGN_EQUAL_FORWARD;
+    }
+    move_align = false;
     axis_left.setReverse(false);
     axis_right.setReverse(false);
     sei();
 
-    Serial.println("Start align equal");
+    Serial.print("Start align equal: ");
+    Serial.println(mode);
   }
 }
 
@@ -828,10 +820,17 @@ bool parse_moves = true;
 void loop_motion() {
   static align_type_t pAlign_type = ALIGN_IDLE;
   static uint32_t report_delay_start = 0;
+  static uint32_t align_delay = 0;
 
   if (state == REPORT_SENSOR_INIT) {
     report_delay_start = millis();
     state = REPORT_SENSOR;
+  } else if (state == ALIGN_DELAY_INIT) {
+    align_delay = millis();
+    state = ALIGN_DELAY;
+  } else if (state == ALIGN_DELAY && (millis() - align_delay) > kAlign_delay) {
+    state = IDLE;
+    Serial.println(F("Align delay done"));
   }
 
   if (pAlign_type != align_type) {
@@ -888,6 +887,10 @@ void loop_motion() {
     Serial.println(F("move obstacle done"));
     display.move_obstacle_done = 0;
   }
+  if (display.align_done) {
+    Serial.println(F("align equal done"));
+    display.align_done = 0;
+  }
   if (display.decelerating) {
     Serial.println(F("decelerating"));
     display.decelerating = 0;
@@ -908,9 +911,57 @@ void loop_motion() {
     Serial.println(F("$UR"));
     display.update_r = 0;
   }
+  if (display.force_end) {
+    Serial.println(F("force ended move"));
+    display.force_end = 0;
+  }
 
+  static align_auto_state_t align_auto_state = ALIGN_AUTO_IDLE;
   if (state == REPORT_SENSOR && (millis() - report_delay_start) > kSensor_report_delay) {
-    log_all_sensors();
-    state = IDLE;
+    if (!move_align) {
+      log_all_sensors();
+      align_auto_state = ALIGN_AUTO_STATIC;
+    }
+
+    if (
+      sensor_distances[FRONT_FRONT_LEFT] < kAuto_align_threshold &&
+      sensor_distances[FRONT_FRONT_RIGHT] < kAuto_align_threshold
+    ) {
+      int16_t diff_err = sensor_distances[FRONT_FRONT_LEFT] - sensor_distances[FRONT_FRONT_RIGHT];
+
+      if (
+        (diff_err > -kAuto_align_max_diff && diff_err < kAuto_align_max_diff) &&
+        (diff_err <= -kAuto_align_min_diff || diff_err >= kAuto_align_min_diff)
+      ) {
+        if (align_auto_state == ALIGN_AUTO_STATIC) {
+          start_align(1);
+          align_auto_state = ALIGN_AUTO_DYNAMIC;
+        } else if (align_auto_state == ALIGN_AUTO_DYNAMIC) {
+          start_align(3);
+        }
+      }
+    } else if (
+      sensor_distances[LEFT_FRONT] < kAuto_align_threshold &&
+      sensor_distances[LEFT_REAR] < kAuto_align_threshold
+    ) {
+      int16_t diff_err = sensor_distances[LEFT_FRONT] - sensor_distances[LEFT_REAR];
+
+      if (
+        (diff_err > -kAuto_align_max_diff && diff_err < kAuto_align_max_diff) &&
+        (diff_err <= -kAuto_align_min_diff || diff_err >= kAuto_align_min_diff)
+      ) {
+        if (align_auto_state == ALIGN_AUTO_STATIC) {
+          start_align(0);
+          align_auto_state = ALIGN_AUTO_DYNAMIC;
+        } else if (align_auto_state == ALIGN_AUTO_DYNAMIC) {
+          start_align(2);
+        }
+      }
+    }
+
+    // met none of the align conditions
+    if (state == REPORT_SENSOR) {
+      state = IDLE;
+    }
   }
 }
