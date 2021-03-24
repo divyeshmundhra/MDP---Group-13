@@ -43,6 +43,7 @@ typedef struct {
   int32_t target;
   uint8_t unit;
   bool align;
+  bool report;
 } move_t;
 
 typedef struct {
@@ -141,7 +142,10 @@ uint8_t pos_moves_end = 0;
 static state_t state = IDLE;
 static move_type_t move_type = DISTANCE;
 static motion_direction_t move_dir;
+// whether alignment should be performed after this move
 static bool move_align;
+// whether the completion of this move should be reported
+static bool move_report;
 
 static int32_t target_left = 0;
 static int32_t target_right = 0;
@@ -296,7 +300,7 @@ ISR(TIMER2_COMPA_vect) {
         ) {
           display.move_distance_done = 1;
 
-          if (!move_align) {
+          if (move_report) {
             switch(move_dir) {
               case FORWARD:
                 display.update_f = 1;
@@ -527,7 +531,7 @@ int32_t get_encoder_left() {
   return axis_left.getEncoder();
 }
 
-void start_motion_unit(motion_direction_t _direction, uint8_t unit, bool align) {
+void start_motion_unit(motion_direction_t _direction, uint8_t unit, bool align, bool report) {
   if (num_moves >= kMovement_buffer_size) {
     Serial.println("movement buffer full");
     return;
@@ -573,6 +577,7 @@ void start_motion_unit(motion_direction_t _direction, uint8_t unit, bool align) 
   buffered_moves[pos_moves_end].direction = _direction;
   buffered_moves[pos_moves_end].unit = unit;
   buffered_moves[pos_moves_end].align = align;
+  buffered_moves[pos_moves_end].report = report;
 
   if (_direction == FORWARD || _direction == REVERSE) {
     buffered_moves[pos_moves_end].target = unit * kBlock_distance;
@@ -587,7 +592,7 @@ void start_motion_unit(motion_direction_t _direction, uint8_t unit, bool align) 
   }
 }
 
-void start_motion_distance(motion_direction_t _direction, uint32_t distance, bool align) {
+void start_motion_distance(motion_direction_t _direction, uint32_t distance, bool align, bool report) {
   if (num_moves >= kMovement_buffer_size) {
     Serial.println("movement buffer full");
     return;
@@ -598,6 +603,7 @@ void start_motion_distance(motion_direction_t _direction, uint32_t distance, boo
   buffered_moves[pos_moves_end].target = distance;
   buffered_moves[pos_moves_end].unit = 0;
   buffered_moves[pos_moves_end].align = align;
+  buffered_moves[pos_moves_end].report = report;
 
   num_moves ++;
   pos_moves_end ++;
@@ -661,6 +667,7 @@ void parse_next_move() {
     move_type = buffered_moves[pos_moves_start].type;
     move_dir = buffered_moves[pos_moves_start].direction;
     move_align = buffered_moves[pos_moves_start].align;
+    move_report = buffered_moves[pos_moves_start].report;
 
     int32_t target = 0;
 
@@ -779,9 +786,9 @@ void start_align(uint8_t mode) {
     }
 
     if (error_sensors > 0) {
-      start_motion_distance(LEFT, pgm_read_word_near(align_left_LUT + error_sensors), true);
+      start_motion_distance(LEFT, pgm_read_word_near(align_left_LUT + error_sensors), true, false);
     } else {
-      start_motion_distance(RIGHT, pgm_read_word_near(align_left_LUT - error_sensors), true);
+      start_motion_distance(RIGHT, pgm_read_word_near(align_left_LUT - error_sensors), true, false);
     }
   } else if (mode == 1) {
     int16_t error_sensors = sensor_distances[FRONT_FRONT_RIGHT] - sensor_distances[FRONT_FRONT_LEFT];
@@ -792,9 +799,9 @@ void start_align(uint8_t mode) {
     }
 
     if (error_sensors > 0) {
-      start_motion_distance(LEFT, pgm_read_word_near(align_forward_LUT + error_sensors), true);
+      start_motion_distance(LEFT, pgm_read_word_near(align_forward_LUT + error_sensors), true, false);
     } else {
-      start_motion_distance(RIGHT, pgm_read_word_near(align_forward_LUT - error_sensors), true);
+      start_motion_distance(RIGHT, pgm_read_word_near(align_forward_LUT - error_sensors), true, false);
     }
   } else if (mode == 2 || mode == 3) {
     cli();
@@ -805,6 +812,7 @@ void start_align(uint8_t mode) {
       move_type = ALIGN_EQUAL_FORWARD;
     }
     move_align = false;
+    move_report = false;
     axis_left.setReverse(false);
     axis_right.setReverse(false);
     sei();
@@ -918,7 +926,7 @@ void loop_motion() {
 
   static align_auto_state_t align_auto_state = ALIGN_AUTO_IDLE;
   if (state == REPORT_SENSOR && (millis() - report_delay_start) > kSensor_report_delay) {
-    if (!move_align) {
+    if (move_report) {
       log_all_sensors();
       align_auto_state = ALIGN_AUTO_STATIC;
     }
