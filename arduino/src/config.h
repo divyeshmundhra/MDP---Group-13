@@ -77,7 +77,7 @@ const int16_t kAuto_align_max_diff = 30;
 const int16_t kAuto_align_min_diff = 2;
 
 // on axis direction change, add this as a correction to compensate for backlash
-const int16_t kBacklash_compensation = -20;
+const int16_t kBacklash_compensation = 0;
 
 // if FRONT_FRONT_MID sees a value less than this, abort the move immediately
 const int16_t kEmergency_brake_threshold = 0;
