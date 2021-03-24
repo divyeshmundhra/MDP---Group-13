@@ -876,6 +876,7 @@ void loop_motion() {
 
   static uint8_t moves_since_turn_align = 0;
   static uint8_t solid_on_right = 0;
+  static uint8_t solid_right_distance = 0;
 
   if (state == REPORT_SENSOR_INIT) {
     report_delay_start = millis();
@@ -1155,8 +1156,15 @@ void loop_motion() {
 
       moves_since_turn_align ++;
 
-      if (sensor_obstacles[RIGHT_FRONT] == 2 && move_dir == FORWARD) {
-        solid_on_right ++;
+      if (move_dir == FORWARD) {
+        if ((sensor_obstacles[RIGHT_FRONT] - 2) < kAuto_align_obstacle_target_length) {
+          if (sensor_obstacles[RIGHT_FRONT] == solid_right_distance) {
+            solid_on_right ++;
+          } else {
+            solid_right_distance = sensor_obstacles[RIGHT_FRONT];
+            solid_on_right = 0;
+          }
+        }
       } else {
         solid_on_right = 0;
       }
