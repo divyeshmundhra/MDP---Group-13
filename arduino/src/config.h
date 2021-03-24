@@ -87,7 +87,7 @@ const int16_t kEmergency_brake_threshold = 0;
 const int16_t kEmergency_brake_correction = -300;
 
 // max axis acceleration/deceleration
-const int16_t kMax_axis_accel = 20;
+const int16_t kMax_axis_accel = 16;
 const int16_t kMax_axis_decel = -400;
 
 // if a forward movement is started while the current sensor value is offset from the ideal position,

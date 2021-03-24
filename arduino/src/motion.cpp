@@ -845,6 +845,17 @@ void loop_motion() {
   static align_type_t pAlign_type = ALIGN_IDLE;
   static uint32_t report_delay_start = 0;
   static uint32_t align_delay = 0;
+  static uint32_t time_since_idle = 0;
+
+  static state_t pState = IDLE;
+
+  if (pState != state) {
+    if (state == IDLE) {
+      time_since_idle = 0;
+    }
+
+    pState = state;
+  }
 
   static align_auto_state_t align_auto_state = ALIGN_AUTO_IDLE;
   // direction when the alignment was started
@@ -884,7 +895,7 @@ void loop_motion() {
     pAlign_type = align_type;
   }
 
-  if (state == IDLE && parse_moves) {
+  if (state == IDLE && parse_moves && (millis() - time_since_idle) > kAlign_delay) {
     switch (align_auto_state) {
       case ALIGN_AUTO_IDLE:
         parse_next_move();
