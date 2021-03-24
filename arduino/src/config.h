@@ -27,15 +27,15 @@ const int8_t kMax_obstacle_error = 3;
 // max difference between both axis for moves to be completed
 const int8_t kMax_encoder_diff_error = 5;
 // max error for align-equal to be completed
-const int8_t kMax_align_error = 2;
+const int8_t kMax_align_error = 1;
 // if zero movement seen for this amount of time, end the move
 // this should be longer than the report/align delays
-const uint16_t kZero_movement_timeout = 400;
+const uint16_t kZero_movement_timeout = 250;
 
 // time after a move to wait before reporting sensor values
 const int16_t kSensor_report_delay = 100;
 // time to delay after an align is complete
-const int16_t kAlign_delay = 200;
+const int16_t kAlign_delay = 100;
 const int16_t kMax_encoder_correction = 64;
 const int16_t kMin_encoder_correction = -64;
 
@@ -74,7 +74,14 @@ const uint8_t kWall_offsets_left[kWall_offset_count] = {
 // max distance under which an alignment will be started
 const int16_t kAuto_align_threshold = 200;
 const int16_t kAuto_align_max_diff = 30;
-const int16_t kAuto_align_min_diff = 2;
+const int16_t kAuto_align_min_diff = 3;
+
+const uint8_t kAuto_align_obstacle_target_length = 2;
+const int16_t kAuto_align_obstacle_targets[] = {
+  35,
+  150
+};
+const uint8_t kAuto_align_rate_limit = 3;
 
 // on axis direction change, add this as a correction to compensate for backlash
 const int16_t kBacklash_compensation = 0;
@@ -84,7 +91,7 @@ const int16_t kEmergency_brake_threshold = 0;
 const int16_t kEmergency_brake_correction = -300;
 
 // max axis acceleration/deceleration
-const int16_t kMax_axis_accel = 20;
+const int16_t kMax_axis_accel = 32;
 const int16_t kMax_axis_decel = -400;
 
 // if a forward movement is started while the current sensor value is offset from the ideal position,
@@ -135,16 +142,16 @@ extern int16_t kD_straight;
 const int16_t kMS_integral_min = -100;
 const int16_t kMS_integral_max = 100;
 
-const int16_t kMS_max_output = 400;
-const int16_t kMS_min_output = -400;
+const int16_t kMS_max_output = 300;
+const int16_t kMS_min_output = -300;
 
 // controller parameters for move-until-obstacle controller
 extern int16_t kP_obstacle;
 extern int16_t kI_obstacle;
 extern int16_t kD_obstacle;
 
-const int16_t kMO_integral_min = -50;
-const int16_t kMO_integral_max = 50;
+const int16_t kMO_integral_min = -32;
+const int16_t kMO_integral_max = 32;
 
 const int16_t kMO_max_output = 100;
 const int16_t kMO_min_output = -100;
@@ -154,8 +161,8 @@ extern int16_t kP_align;
 extern int16_t kI_align;
 extern int16_t kD_align;
 
-const int16_t kA_integral_min = -50;
-const int16_t kA_integral_max = 50;
+const int16_t kA_integral_min = -32;
+const int16_t kA_integral_max = 32;
 
 const int16_t kA_max_output = 100;
 const int16_t kA_min_output = -100;

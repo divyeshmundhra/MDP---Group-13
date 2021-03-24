@@ -36,26 +36,26 @@ static bool parse_buf() {
   }
 
   if (cmd == 'F') {
-    start_motion_unit(FORWARD, val, false);
+    start_motion_unit(FORWARD, val, true, true);
   } else if (cmd == 'B') {
-    start_motion_unit(REVERSE, val, false);
+    start_motion_unit(REVERSE, val, true, true);
   } else if (cmd == 'L') {
-    start_motion_unit(LEFT, val, false);
+    start_motion_unit(LEFT, val, true, true);
   } else if (cmd == 'R') {
-    start_motion_unit(RIGHT, val, false);
+    start_motion_unit(RIGHT, val, true, true);
   } else if (cmd == 'O') {
     start_motion_obstacle(val);
   } else if (cmd == 'l') {
     if (cmd1 == 'r') {
-      start_motion_distance(LEFT, val, false);
+      start_motion_distance(LEFT, val, true, true);
     } else {
-      start_motion_distance(LEFT, angleToTicks(val), false);
+      start_motion_distance(LEFT, angleToTicks(val), false, true);
     }
   } else if (cmd == 'r') {
     if (cmd1 == 'r') {
-      start_motion_distance(RIGHT, val, false);
+      start_motion_distance(RIGHT, val, true, true);
     } else {
-      start_motion_distance(RIGHT, angleToTicks(val), false);
+      start_motion_distance(RIGHT, angleToTicks(val), false, true);
     }
   } else if (cmd == 'Q') {
     if (cmd1 == 'A') {

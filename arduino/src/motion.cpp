@@ -34,7 +34,11 @@ typedef enum {
 typedef enum {
   ALIGN_AUTO_IDLE,
   ALIGN_AUTO_STATIC,
-  ALIGN_AUTO_DYNAMIC
+  ALIGN_AUTO_DYNAMIC,
+  ALIGN_AUTO_TURN,
+  ALIGN_AUTO_OBSTACLE,
+  ALIGN_AUTO_UNTURN,
+  ALIGN_AUTO_DONE,
 } align_auto_state_t;
 
 typedef struct {
@@ -43,6 +47,7 @@ typedef struct {
   int32_t target;
   uint8_t unit;
   bool align;
+  bool report;
 } move_t;
 
 typedef struct {
@@ -141,7 +146,10 @@ uint8_t pos_moves_end = 0;
 static state_t state = IDLE;
 static move_type_t move_type = DISTANCE;
 static motion_direction_t move_dir;
+// whether alignment should be performed after this move
 static bool move_align;
+// whether the completion of this move should be reported
+static bool move_report;
 
 static int32_t target_left = 0;
 static int32_t target_right = 0;
@@ -296,7 +304,7 @@ ISR(TIMER2_COMPA_vect) {
         ) {
           display.move_distance_done = 1;
 
-          if (!move_align) {
+          if (move_report) {
             switch(move_dir) {
               case FORWARD:
                 display.update_f = 1;
@@ -527,7 +535,7 @@ int32_t get_encoder_left() {
   return axis_left.getEncoder();
 }
 
-void start_motion_unit(motion_direction_t _direction, uint8_t unit, bool align) {
+void start_motion_unit(motion_direction_t _direction, uint8_t unit, bool align, bool report) {
   if (num_moves >= kMovement_buffer_size) {
     Serial.println("movement buffer full");
     return;
@@ -573,6 +581,7 @@ void start_motion_unit(motion_direction_t _direction, uint8_t unit, bool align) 
   buffered_moves[pos_moves_end].direction = _direction;
   buffered_moves[pos_moves_end].unit = unit;
   buffered_moves[pos_moves_end].align = align;
+  buffered_moves[pos_moves_end].report = report;
 
   if (_direction == FORWARD || _direction == REVERSE) {
     buffered_moves[pos_moves_end].target = unit * kBlock_distance;
@@ -587,7 +596,7 @@ void start_motion_unit(motion_direction_t _direction, uint8_t unit, bool align) 
   }
 }
 
-void start_motion_distance(motion_direction_t _direction, uint32_t distance, bool align) {
+void start_motion_distance(motion_direction_t _direction, uint32_t distance, bool align, bool report) {
   if (num_moves >= kMovement_buffer_size) {
     Serial.println("movement buffer full");
     return;
@@ -598,6 +607,7 @@ void start_motion_distance(motion_direction_t _direction, uint32_t distance, boo
   buffered_moves[pos_moves_end].target = distance;
   buffered_moves[pos_moves_end].unit = 0;
   buffered_moves[pos_moves_end].align = align;
+  buffered_moves[pos_moves_end].report = report;
 
   num_moves ++;
   pos_moves_end ++;
@@ -661,6 +671,7 @@ void parse_next_move() {
     move_type = buffered_moves[pos_moves_start].type;
     move_dir = buffered_moves[pos_moves_start].direction;
     move_align = buffered_moves[pos_moves_start].align;
+    move_report = buffered_moves[pos_moves_start].report;
 
     int32_t target = 0;
 
@@ -778,10 +789,22 @@ void start_align(uint8_t mode) {
       return;
     }
 
+    state = MOVE_COMMANDED;
+    move_type = DISTANCE;
     if (error_sensors > 0) {
-      start_motion_distance(LEFT, pgm_read_word_near(align_left_LUT + error_sensors), true);
+      move_dir = LEFT;
+      move_align = false;
+      move_report = false;
+      axis_left.setReverse(true);
+      axis_right.setReverse(false);
+      target_left = target_right = pgm_read_word_near(align_left_LUT + error_sensors);
     } else {
-      start_motion_distance(RIGHT, pgm_read_word_near(align_left_LUT - error_sensors), true);
+      move_dir = LEFT;
+      move_align = false;
+      move_report = false;
+      axis_left.setReverse(false);
+      axis_right.setReverse(true);
+      target_left = target_right = pgm_read_word_near(align_left_LUT - error_sensors);
     }
   } else if (mode == 1) {
     int16_t error_sensors = sensor_distances[FRONT_FRONT_RIGHT] - sensor_distances[FRONT_FRONT_LEFT];
@@ -791,10 +814,22 @@ void start_align(uint8_t mode) {
       return;
     }
 
+    state = MOVE_COMMANDED;
+    move_type = DISTANCE;
     if (error_sensors > 0) {
-      start_motion_distance(LEFT, pgm_read_word_near(align_forward_LUT + error_sensors), true);
+      move_dir = LEFT;
+      move_align = false;
+      move_report = false;
+      axis_left.setReverse(true);
+      axis_right.setReverse(false);
+      target_left = target_right = pgm_read_word_near(align_forward_LUT + error_sensors);
     } else {
-      start_motion_distance(RIGHT, pgm_read_word_near(align_forward_LUT - error_sensors), true);
+      move_dir = LEFT;
+      move_align = false;
+      move_report = false;
+      axis_left.setReverse(false);
+      axis_right.setReverse(true);
+      target_left = target_right = pgm_read_word_near(align_forward_LUT - error_sensors);
     }
   } else if (mode == 2 || mode == 3) {
     cli();
@@ -805,6 +840,7 @@ void start_align(uint8_t mode) {
       move_type = ALIGN_EQUAL_FORWARD;
     }
     move_align = false;
+    move_report = false;
     axis_left.setReverse(false);
     axis_right.setReverse(false);
     sei();
@@ -821,6 +857,26 @@ void loop_motion() {
   static align_type_t pAlign_type = ALIGN_IDLE;
   static uint32_t report_delay_start = 0;
   static uint32_t align_delay = 0;
+  static uint32_t time_since_idle = 0;
+
+  static state_t pState = IDLE;
+
+  if (pState != state) {
+    if (state == IDLE) {
+      time_since_idle = millis();
+    }
+
+    pState = state;
+  }
+
+  static align_auto_state_t align_auto_state = ALIGN_AUTO_IDLE;
+  // direction when the alignment was started
+  static motion_direction_t align_start_move_dir;
+  static motion_direction_t align_dir;
+
+  static uint8_t moves_since_turn_align = 0;
+  static uint8_t solid_on_right = 0;
+  static uint8_t solid_right_distance = 0;
 
   if (state == REPORT_SENSOR_INIT) {
     report_delay_start = millis();
@@ -831,6 +887,20 @@ void loop_motion() {
   } else if (state == ALIGN_DELAY && (millis() - align_delay) > kAlign_delay) {
     state = IDLE;
     Serial.println(F("Align delay done"));
+
+    if (align_auto_state == ALIGN_AUTO_DYNAMIC) {
+      Serial.println(F("Finished dynamic alignment, start turn"));
+      if (align_start_move_dir == FORWARD) {
+        align_auto_state = ALIGN_AUTO_TURN;
+      } else {
+        align_auto_state = ALIGN_AUTO_IDLE;
+      }
+    }
+  } else if (state == IDLE && move_type == OBSTACLE) {
+    if (align_auto_state == ALIGN_AUTO_OBSTACLE) {
+      Serial.println(F("Finished obstacle align, start unturn"));
+      align_auto_state = ALIGN_AUTO_UNTURN;
+    }
   }
 
   if (pAlign_type != align_type) {
@@ -840,8 +910,172 @@ void loop_motion() {
     pAlign_type = align_type;
   }
 
-  if (parse_moves) {
-    parse_next_move();
+  if (state == IDLE && parse_moves && (millis() - time_since_idle) > kAlign_delay) {
+    switch (align_auto_state) {
+      case ALIGN_AUTO_IDLE:
+        parse_next_move();
+        break;
+      case ALIGN_AUTO_STATIC:
+        if (state == IDLE) {
+          if (
+            sensor_distances[FRONT_FRONT_LEFT] < kAuto_align_threshold &&
+            sensor_distances[FRONT_FRONT_RIGHT] < kAuto_align_threshold
+          ) {
+            int16_t diff_err = sensor_distances[FRONT_FRONT_LEFT] - sensor_distances[FRONT_FRONT_RIGHT];
+
+            if (
+              (diff_err > -kAuto_align_max_diff && diff_err < kAuto_align_max_diff) &&
+              (diff_err <= -kAuto_align_min_diff || diff_err >= kAuto_align_min_diff)
+            ) {
+              start_align(1);
+            }
+          } else if (
+            sensor_distances[LEFT_FRONT] < kAuto_align_threshold &&
+            sensor_distances[LEFT_REAR] < kAuto_align_threshold
+          ) {
+            int16_t diff_err = sensor_distances[LEFT_FRONT] - sensor_distances[LEFT_REAR];
+
+            if (
+              (diff_err > -kAuto_align_max_diff && diff_err < kAuto_align_max_diff) &&
+              (diff_err <= -kAuto_align_min_diff || diff_err >= kAuto_align_min_diff)
+            ) {
+              start_align(0);
+            }
+          }
+
+          // no alignment was started, move on to offset alignment
+          if (state == IDLE) {
+            Serial.println(F("Did not start static alignment, moving to try forward alignment"));
+            align_auto_state = ALIGN_AUTO_TURN;
+          }
+        }
+        break;
+      case ALIGN_AUTO_DYNAMIC:
+        if (state == IDLE) {
+          if (
+            sensor_distances[FRONT_FRONT_LEFT] < kAuto_align_threshold &&
+            sensor_distances[FRONT_FRONT_RIGHT] < kAuto_align_threshold
+          ) {
+            int16_t diff_err = sensor_distances[FRONT_FRONT_LEFT] - sensor_distances[FRONT_FRONT_RIGHT];
+
+            if (
+              (diff_err > -kAuto_align_max_diff && diff_err < kAuto_align_max_diff) &&
+              (diff_err <= -kAuto_align_min_diff || diff_err >= kAuto_align_min_diff)
+            ) {
+              start_align(3);
+            }
+          } else if (
+            sensor_distances[LEFT_FRONT] < kAuto_align_threshold &&
+            sensor_distances[LEFT_REAR] < kAuto_align_threshold
+          ) {
+            int16_t diff_err = sensor_distances[LEFT_FRONT] - sensor_distances[LEFT_REAR];
+
+            if (
+              (diff_err > -kAuto_align_max_diff && diff_err < kAuto_align_max_diff) &&
+              (diff_err <= -kAuto_align_min_diff || diff_err >= kAuto_align_min_diff)
+            ) {
+              start_align(2);
+            }
+          }
+
+          // no alignment was started, move on to offset alignment
+          if (state == IDLE) {
+            Serial.println(F("Did not start dynamic alignment, moving to try forward alignment"));
+            if (align_start_move_dir == FORWARD) {
+              align_auto_state = ALIGN_AUTO_TURN;
+            } else {
+              align_auto_state = ALIGN_AUTO_IDLE;
+            }
+          }
+        }
+        break;
+      case ALIGN_AUTO_TURN:
+        if (state == IDLE) {
+          if (
+            sensor_obstacles[LEFT_FRONT] == sensor_obstacles[LEFT_REAR] &&
+            sensor_obstacles[LEFT_FRONT] > -1 &&
+            (sensor_obstacles[LEFT_FRONT] - 2) < kAuto_align_obstacle_target_length
+          ) {
+            align_dir = LEFT;
+          } else if (solid_on_right >= 3) {
+            align_dir = RIGHT;
+          } else {
+            Serial.println(F("Did not start turn because no suitable obstacles"));
+            align_auto_state = ALIGN_AUTO_IDLE;
+            break;
+          }
+
+          if (moves_since_turn_align >= kAuto_align_rate_limit) {
+            moves_since_turn_align = 0;
+          } else {
+            align_auto_state = ALIGN_AUTO_IDLE;
+            break;
+          }
+
+          // if both left sensors see an obstacle, we can turn and do a move-obstacle
+          align_auto_state = ALIGN_AUTO_OBSTACLE;
+
+          state = MOVE_COMMANDED;
+          move_type = DISTANCE;
+          move_dir = align_dir;
+          move_align = false;
+          move_report = false;
+
+          target_left = unit_turn_to_ticks(2);
+          target_right = unit_turn_to_ticks(2);
+
+          if (align_dir == LEFT) {
+            axis_left.setReverse(true);
+            axis_right.setReverse(false);
+          } else if (align_dir == RIGHT) {
+            axis_left.setReverse(false);
+            axis_right.setReverse(true);
+          }
+        }
+        break;
+      case ALIGN_AUTO_OBSTACLE:
+        if (state == IDLE) {
+          Serial.println(F("Start move obstacle for alignment"));
+
+          state = MOVE_COMMANDED;
+          move_type = OBSTACLE;
+          move_dir = FORWARD;
+          uint8_t blocks_away = sensor_distances[FRONT_FRONT_LEFT] / 100;
+          if (blocks_away < kAuto_align_obstacle_target_length) {
+            target_obstacle = kAuto_align_obstacle_targets[blocks_away];
+          } else {
+            Serial.println(F("Unexpected: we saw a wall before turning, but no wall after turning"));
+            align_auto_state = ALIGN_AUTO_IDLE;
+            break;
+          }
+          axis_left.setReverse(false);
+          axis_right.setReverse(false);
+        }
+        break;
+      case ALIGN_AUTO_UNTURN:
+        if (state == IDLE) {
+          align_auto_state = ALIGN_AUTO_DONE;
+
+          Serial.println(F("Start unturn for alignment"));
+          state = MOVE_COMMANDED;
+          move_type = DISTANCE;
+          move_dir = RIGHT;
+          move_align = false;
+          move_report = false;
+
+          target_left = unit_turn_to_ticks(2);
+          target_right = unit_turn_to_ticks(2);
+
+          if (align_dir == LEFT) {
+            axis_left.setReverse(false);
+            axis_right.setReverse(true);
+          } else if (align_dir == RIGHT) {
+            axis_left.setReverse(true);
+            axis_right.setReverse(false);
+          }
+        }
+        break;
+    }
   }
 
   if (log_motion) {
@@ -916,52 +1150,38 @@ void loop_motion() {
     display.force_end = 0;
   }
 
-  static align_auto_state_t align_auto_state = ALIGN_AUTO_IDLE;
   if (state == REPORT_SENSOR && (millis() - report_delay_start) > kSensor_report_delay) {
-    if (!move_align) {
+    if (move_report) {
       log_all_sensors();
+
+      moves_since_turn_align ++;
+
+      if (move_dir == FORWARD) {
+        if ((sensor_obstacles[RIGHT_FRONT] - 2) < kAuto_align_obstacle_target_length) {
+          if (sensor_obstacles[RIGHT_FRONT] == solid_right_distance) {
+            solid_on_right ++;
+          } else {
+            solid_right_distance = sensor_obstacles[RIGHT_FRONT];
+            solid_on_right = 0;
+          }
+        }
+      } else {
+        solid_on_right = 0;
+      }
+    }
+
+    if (move_align && align_auto_state == ALIGN_AUTO_IDLE) {
+      Serial.println(F("Finished move, starting static alignment"));
       align_auto_state = ALIGN_AUTO_STATIC;
+      align_start_move_dir = move_dir;
+    } else if (align_auto_state == ALIGN_AUTO_STATIC) {
+      // if we have just finished a distance for offset alignment, start dynamic
+      Serial.println(F("Finished static alignment, starting dynamic alignment"));
+      align_auto_state = ALIGN_AUTO_DYNAMIC;
+    } else if (align_auto_state == ALIGN_AUTO_DONE) {
+      align_auto_state = ALIGN_AUTO_IDLE;
     }
 
-    if (
-      sensor_distances[FRONT_FRONT_LEFT] < kAuto_align_threshold &&
-      sensor_distances[FRONT_FRONT_RIGHT] < kAuto_align_threshold
-    ) {
-      int16_t diff_err = sensor_distances[FRONT_FRONT_LEFT] - sensor_distances[FRONT_FRONT_RIGHT];
-
-      if (
-        (diff_err > -kAuto_align_max_diff && diff_err < kAuto_align_max_diff) &&
-        (diff_err <= -kAuto_align_min_diff || diff_err >= kAuto_align_min_diff)
-      ) {
-        if (align_auto_state == ALIGN_AUTO_STATIC) {
-          start_align(1);
-          align_auto_state = ALIGN_AUTO_DYNAMIC;
-        } else if (align_auto_state == ALIGN_AUTO_DYNAMIC) {
-          start_align(3);
-        }
-      }
-    } else if (
-      sensor_distances[LEFT_FRONT] < kAuto_align_threshold &&
-      sensor_distances[LEFT_REAR] < kAuto_align_threshold
-    ) {
-      int16_t diff_err = sensor_distances[LEFT_FRONT] - sensor_distances[LEFT_REAR];
-
-      if (
-        (diff_err > -kAuto_align_max_diff && diff_err < kAuto_align_max_diff) &&
-        (diff_err <= -kAuto_align_min_diff || diff_err >= kAuto_align_min_diff)
-      ) {
-        if (align_auto_state == ALIGN_AUTO_STATIC) {
-          start_align(0);
-          align_auto_state = ALIGN_AUTO_DYNAMIC;
-        } else if (align_auto_state == ALIGN_AUTO_DYNAMIC) {
-          start_align(2);
-        }
-      }
-    }
-
-    // met none of the align conditions
-    if (state == REPORT_SENSOR) {
-      state = IDLE;
-    }
+    state = IDLE;
   }
 }

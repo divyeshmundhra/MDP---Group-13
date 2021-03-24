@@ -8,7 +8,7 @@ int16_t kP_straight = 500;
 int16_t kI_straight = 100;
 int16_t kD_straight = 2000;
 
-int16_t kP_obstacle = 1500;
+int16_t kP_obstacle = 1000;
 int16_t kI_obstacle = 200;
 int16_t kD_obstacle = 300;
 
@@ -18,5 +18,5 @@ int16_t kP_wall_offset_left = 50;
 int16_t kP_wall_diff_forward = 100;
 
 int16_t kP_align = 300;
-int16_t kI_align = 200;
+int16_t kI_align = 300;
 int16_t kD_align = 128;
