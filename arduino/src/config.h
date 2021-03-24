@@ -30,12 +30,12 @@ const int8_t kMax_encoder_diff_error = 5;
 const int8_t kMax_align_error = 2;
 // if zero movement seen for this amount of time, end the move
 // this should be longer than the report/align delays
-const uint16_t kZero_movement_timeout = 200;
+const uint16_t kZero_movement_timeout = 400;
 
 // time after a move to wait before reporting sensor values
-const int16_t kSensor_report_delay = 50;
+const int16_t kSensor_report_delay = 100;
 // time to delay after an align is complete
-const int16_t kAlign_delay = 100;
+const int16_t kAlign_delay = 200;
 const int16_t kMax_encoder_correction = 64;
 const int16_t kMin_encoder_correction = -64;
 
