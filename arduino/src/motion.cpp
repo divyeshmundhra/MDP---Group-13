@@ -802,8 +802,8 @@ void start_align(uint8_t mode) {
       move_dir = LEFT;
       move_align = false;
       move_report = false;
-      axis_left.setReverse(true);
-      axis_right.setReverse(false);
+      axis_left.setReverse(false);
+      axis_right.setReverse(true);
       target_left = target_right = pgm_read_word_near(align_left_LUT - error_sensors);
     }
   } else if (mode == 1) {
@@ -814,10 +814,22 @@ void start_align(uint8_t mode) {
       return;
     }
 
+    state = MOVE_COMMANDED;
+    move_type = DISTANCE;
     if (error_sensors > 0) {
-      start_motion_distance(LEFT, pgm_read_word_near(align_forward_LUT + error_sensors), true, false);
+      move_dir = LEFT;
+      move_align = false;
+      move_report = false;
+      axis_left.setReverse(true);
+      axis_right.setReverse(false);
+      target_left = target_right = pgm_read_word_near(align_forward_LUT + error_sensors);
     } else {
-      start_motion_distance(RIGHT, pgm_read_word_near(align_forward_LUT - error_sensors), true, false);
+      move_dir = LEFT;
+      move_align = false;
+      move_report = false;
+      axis_left.setReverse(false);
+      axis_right.setReverse(true);
+      target_left = target_right = pgm_read_word_near(align_forward_LUT - error_sensors);
     }
   } else if (mode == 2 || mode == 3) {
     cli();
