@@ -976,7 +976,13 @@ void loop_motion() {
         break;
       case ALIGN_AUTO_TURN:
         if (state == IDLE) {
-          if (!(sensor_obstacles[LEFT_FRONT] == 2 && sensor_obstacles[LEFT_REAR] == 2)) {
+          if (
+            !(
+              sensor_obstacles[LEFT_FRONT] == sensor_obstacles[LEFT_REAR] &&
+              sensor_obstacles[LEFT_FRONT] > -1 &&
+              (sensor_obstacles[LEFT_FRONT] - 2) < kAuto_align_obstacle_target_length
+            )
+          ) {
             Serial.println(F("Did not start left turn because no obstacle on the left"));
             align_auto_state = ALIGN_AUTO_IDLE;
             break;
@@ -992,7 +998,8 @@ void loop_motion() {
           // if both left sensors see an obstacle, we can turn left and do a move-obstacle
           align_auto_state = ALIGN_AUTO_OBSTACLE;
 
-          Serial.println(F("Start left turn for alignment"));
+          Serial.print(F("Start left turn for alignment, left="));
+          Serial.println(sensor_obstacles[LEFT_FRONT]);
           state = MOVE_COMMANDED;
           move_type = DISTANCE;
           move_dir = LEFT;
@@ -1013,7 +1020,14 @@ void loop_motion() {
           state = MOVE_COMMANDED;
           move_type = OBSTACLE;
           move_dir = FORWARD;
-          target_obstacle = kAuto_align_obstacle_target;
+          uint8_t blocks_away = sensor_distances[FRONT_FRONT_LEFT] / 100;
+          if (blocks_away < kAuto_align_obstacle_target_length) {
+            target_obstacle = kAuto_align_obstacle_targets[blocks_away];
+          } else {
+            Serial.println(F("Unexpected: we saw a wall before turning, but no wall after turning"));
+            align_auto_state = ALIGN_AUTO_IDLE;
+            break;
+          }
           axis_left.setReverse(false);
           axis_right.setReverse(false);
         }

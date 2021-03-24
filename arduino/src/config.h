@@ -30,12 +30,12 @@ const int8_t kMax_encoder_diff_error = 5;
 const int8_t kMax_align_error = 2;
 // if zero movement seen for this amount of time, end the move
 // this should be longer than the report/align delays
-const uint16_t kZero_movement_timeout = 400;
+const uint16_t kZero_movement_timeout = 700;
 
 // time after a move to wait before reporting sensor values
-const int16_t kSensor_report_delay = 100;
+const int16_t kSensor_report_delay = 300;
 // time to delay after an align is complete
-const int16_t kAlign_delay = 200;
+const int16_t kAlign_delay = 300;
 const int16_t kMax_encoder_correction = 64;
 const int16_t kMin_encoder_correction = -64;
 
@@ -76,7 +76,11 @@ const int16_t kAuto_align_threshold = 200;
 const int16_t kAuto_align_max_diff = 30;
 const int16_t kAuto_align_min_diff = 2;
 
-const int16_t kAuto_align_obstacle_target = 35;
+const uint8_t kAuto_align_obstacle_target_length = 2;
+const int16_t kAuto_align_obstacle_targets[] = {
+  35,
+  150
+};
 const uint8_t kAuto_align_rate_limit = 3;
 
 // on axis direction change, add this as a correction to compensate for backlash
