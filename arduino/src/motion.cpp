@@ -926,7 +926,10 @@ void loop_motion() {
     ) {
       int16_t diff_err = sensor_distances[FRONT_FRONT_LEFT] - sensor_distances[FRONT_FRONT_RIGHT];
 
-      if (diff_err > -kAuto_align_max_diff && diff_err < kAuto_align_max_diff) {
+      if (
+        (diff_err > -kAuto_align_max_diff && diff_err < kAuto_align_max_diff) &&
+        (diff_err <= -kAuto_align_min_diff || diff_err >= kAuto_align_min_diff)
+      ) {
         if (align_auto_state == ALIGN_AUTO_STATIC) {
           start_align(1);
           align_auto_state = ALIGN_AUTO_DYNAMIC;
@@ -940,7 +943,10 @@ void loop_motion() {
     ) {
       int16_t diff_err = sensor_distances[LEFT_FRONT] - sensor_distances[LEFT_REAR];
 
-      if (diff_err > -kAuto_align_max_diff && diff_err < kAuto_align_max_diff) {
+      if (
+        (diff_err > -kAuto_align_max_diff && diff_err < kAuto_align_max_diff) &&
+        (diff_err <= -kAuto_align_min_diff || diff_err >= kAuto_align_min_diff)
+      ) {
         if (align_auto_state == ALIGN_AUTO_STATIC) {
           start_align(0);
           align_auto_state = ALIGN_AUTO_DYNAMIC;
