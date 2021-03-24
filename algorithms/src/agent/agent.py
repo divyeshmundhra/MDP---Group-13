@@ -10,6 +10,7 @@ from src.dto.ArenaStringParser import ArenaStringParser
 from src.agent.FastestPathAlgo import FastestPathAlgo
 from src.agent.ExplorationAlgo import ExplorationAlgo
 from src.agent.ExploreDangerousAlgo import ExploreDangerousAlgo
+from src.agent.LeftWallHug import LeftWallHuggingAlgo
 
 from src.dto.constants import AgentTask, START_COORD
 
@@ -26,14 +27,20 @@ class Agent:
         self.dangerous_exploration_path = None
         self.algo = None # initialized 3 lines below
 
+        self.LWH_start_coord = START_COORD
+        self.lwh_back_to_start = False
+        self.commencing_exploration = False
+
         if self.task == AgentTask.FAST:
             self.arena = ArenaStringParser.parse_arena_string(arena_string)
             self.algo = FastestPathAlgo()
             self.arena.set_all_explored()
         else:
             self.arena = Arena()
-            self.algo = ExplorationAlgo()
+            # self.algo = ExplorationAlgo()
+            self.algo = LeftWallHuggingAlgo()
             self.reached_waypoint = True
+
     def calc_percepts(self, obstacles_coord_list: list, no_obs_coord_list: list, move_q_size: int = 0) -> None:
         # update real robot info
         if self.expected_robot_info:
@@ -102,7 +109,17 @@ class Agent:
             waypoint = None if self.reached_waypoint else self.waypoint_coord
             next_step = self.algo.get_next_step(self.arena, self.robot_info, self.end_coord, waypoint)
         else:
-            next_step = self.algo.get_next_step(self.arena, self.robot_info) # pylint: disable=no-value-for-parameter
+            cur_coord = self.robot_info.get_coord()
+            if cur_coord.is_equal(self.LWH_start_coord) and not self.lwh_back_to_start: # first time robot has passed the start coord
+                self.lwh_back_to_start = True
+            elif cur_coord.is_equal(self.LWH_start_coord) and self.lwh_back_to_start:
+                self.commencing_exploration = True
+
+            if self.commencing_exploration:
+                next_step = ExplorationAlgo().get_next_step(self.arena, self.robot_info)
+            else:
+                next_step = self.algo.get_next_step(self.arena, self.robot_info)
+            
         return next_step
 
     def calculate_move(self, current_coord, target_coord) -> MoveCommand:
