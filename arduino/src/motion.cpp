@@ -860,8 +860,10 @@ void loop_motion() {
   static align_auto_state_t align_auto_state = ALIGN_AUTO_IDLE;
   // direction when the alignment was started
   static motion_direction_t align_start_move_dir;
+  static motion_direction_t align_dir;
 
   static uint8_t moves_since_turn_align = 0;
+  static uint8_t solid_on_right = 0;
 
   if (state == REPORT_SENSOR_INIT) {
     report_delay_start = millis();
@@ -977,13 +979,15 @@ void loop_motion() {
       case ALIGN_AUTO_TURN:
         if (state == IDLE) {
           if (
-            !(
-              sensor_obstacles[LEFT_FRONT] == sensor_obstacles[LEFT_REAR] &&
-              sensor_obstacles[LEFT_FRONT] > -1 &&
-              (sensor_obstacles[LEFT_FRONT] - 2) < kAuto_align_obstacle_target_length
-            )
+            sensor_obstacles[LEFT_FRONT] == sensor_obstacles[LEFT_REAR] &&
+            sensor_obstacles[LEFT_FRONT] > -1 &&
+            (sensor_obstacles[LEFT_FRONT] - 2) < kAuto_align_obstacle_target_length
           ) {
-            Serial.println(F("Did not start left turn because no obstacle on the left"));
+            align_dir = LEFT;
+          } else if (solid_on_right >= 3) {
+            align_dir = RIGHT;
+          } else {
+            Serial.println(F("Did not start turn because no suitable obstacles"));
             align_auto_state = ALIGN_AUTO_IDLE;
             break;
           }
@@ -995,22 +999,25 @@ void loop_motion() {
             break;
           }
 
-          // if both left sensors see an obstacle, we can turn left and do a move-obstacle
+          // if both left sensors see an obstacle, we can turn and do a move-obstacle
           align_auto_state = ALIGN_AUTO_OBSTACLE;
 
-          Serial.print(F("Start left turn for alignment, left="));
-          Serial.println(sensor_obstacles[LEFT_FRONT]);
           state = MOVE_COMMANDED;
           move_type = DISTANCE;
-          move_dir = LEFT;
+          move_dir = align_dir;
           move_align = false;
           move_report = false;
 
           target_left = unit_turn_to_ticks(2);
           target_right = unit_turn_to_ticks(2);
 
-          axis_left.setReverse(true);
-          axis_right.setReverse(false);
+          if (align_dir == LEFT) {
+            axis_left.setReverse(true);
+            axis_right.setReverse(false);
+          } else if (align_dir == RIGHT) {
+            axis_left.setReverse(false);
+            axis_right.setReverse(true);
+          }
         }
         break;
       case ALIGN_AUTO_OBSTACLE:
@@ -1036,7 +1043,7 @@ void loop_motion() {
         if (state == IDLE) {
           align_auto_state = ALIGN_AUTO_DONE;
 
-          Serial.println(F("Start right turn for alignment"));
+          Serial.println(F("Start unturn for alignment"));
           state = MOVE_COMMANDED;
           move_type = DISTANCE;
           move_dir = RIGHT;
@@ -1046,8 +1053,13 @@ void loop_motion() {
           target_left = unit_turn_to_ticks(2);
           target_right = unit_turn_to_ticks(2);
 
-          axis_left.setReverse(false);
-          axis_right.setReverse(true);
+          if (align_dir == LEFT) {
+            axis_left.setReverse(false);
+            axis_right.setReverse(true);
+          } else if (align_dir == RIGHT) {
+            axis_left.setReverse(true);
+            axis_right.setReverse(false);
+          }
         }
         break;
     }
@@ -1130,6 +1142,12 @@ void loop_motion() {
       log_all_sensors();
 
       moves_since_turn_align ++;
+
+      if (sensor_obstacles[RIGHT_FRONT] == 2 && move_dir == FORWARD) {
+        solid_on_right ++;
+      } else {
+        solid_on_right = 0;
+      }
     }
 
     if (move_align && align_auto_state == ALIGN_AUTO_IDLE) {
