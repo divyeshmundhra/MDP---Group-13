@@ -42,6 +42,7 @@ typedef struct {
   motion_direction_t direction;
   int32_t target;
   uint8_t unit;
+  bool align;
 } move_t;
 
 typedef struct {
@@ -140,6 +141,7 @@ uint8_t pos_moves_end = 0;
 static state_t state = IDLE;
 static move_type_t move_type = DISTANCE;
 static motion_direction_t move_dir;
+static bool move_align;
 
 static int32_t target_left = 0;
 static int32_t target_right = 0;
@@ -294,19 +296,21 @@ ISR(TIMER2_COMPA_vect) {
         ) {
           display.move_distance_done = 1;
 
-          switch(move_dir) {
-            case FORWARD:
-              display.update_f = 1;
-              break;
-            case REVERSE:
-              display.update_b = 1;
-              break;
-            case LEFT:
-              display.update_l = 1;
-              break;
-            case RIGHT:
-              display.update_r = 1;
-              break;
+          if (!move_align) {
+            switch(move_dir) {
+              case FORWARD:
+                display.update_f = 1;
+                break;
+              case REVERSE:
+                display.update_b = 1;
+                break;
+              case LEFT:
+                display.update_l = 1;
+                break;
+              case RIGHT:
+                display.update_r = 1;
+                break;
+            }
           }
 
           state = REPORT_SENSOR_INIT;
@@ -346,7 +350,7 @@ ISR(TIMER2_COMPA_vect) {
 
         if ((diff_err > -kMax_align_error && diff_err < kMax_align_error) || force_end) {
           display.align_done = 1;
-          state = ALIGN_DELAY;
+          state = ALIGN_DELAY_INIT;
           axis_left.resetEncoder();
           axis_right.resetEncoder();
           axis_left.setBrake(400);
@@ -523,7 +527,7 @@ int32_t get_encoder_left() {
   return axis_left.getEncoder();
 }
 
-void start_motion_unit(motion_direction_t _direction, uint8_t unit) {
+void start_motion_unit(motion_direction_t _direction, uint8_t unit, bool align) {
   if (num_moves >= kMovement_buffer_size) {
     Serial.println("movement buffer full");
     return;
@@ -568,6 +572,7 @@ void start_motion_unit(motion_direction_t _direction, uint8_t unit) {
   buffered_moves[pos_moves_end].type = DISTANCE;
   buffered_moves[pos_moves_end].direction = _direction;
   buffered_moves[pos_moves_end].unit = unit;
+  buffered_moves[pos_moves_end].align = align;
 
   if (_direction == FORWARD || _direction == REVERSE) {
     buffered_moves[pos_moves_end].target = unit * kBlock_distance;
@@ -582,9 +587,7 @@ void start_motion_unit(motion_direction_t _direction, uint8_t unit) {
   }
 }
 
-// whether this DISTANCE move is for alignment (ie dont report sensors after)
-bool distance_for_align = false;
-void start_motion_distance(motion_direction_t _direction, uint32_t distance) {
+void start_motion_distance(motion_direction_t _direction, uint32_t distance, bool align) {
   if (num_moves >= kMovement_buffer_size) {
     Serial.println("movement buffer full");
     return;
@@ -594,14 +597,13 @@ void start_motion_distance(motion_direction_t _direction, uint32_t distance) {
   buffered_moves[pos_moves_end].direction = _direction;
   buffered_moves[pos_moves_end].target = distance;
   buffered_moves[pos_moves_end].unit = 0;
+  buffered_moves[pos_moves_end].align = align;
 
   num_moves ++;
   pos_moves_end ++;
   if (pos_moves_end >= kMovement_buffer_size) {
     pos_moves_end = 0;
   }
-
-  distance_for_align = false;
 }
 
 void start_motion_obstacle(uint16_t distance) {
@@ -655,6 +657,7 @@ void parse_next_move() {
   if (buffered_moves[pos_moves_start].type == DISTANCE) {
     move_type = buffered_moves[pos_moves_start].type;
     move_dir = buffered_moves[pos_moves_start].direction;
+    move_align = buffered_moves[pos_moves_start].align;
 
     int32_t target = 0;
 
@@ -714,6 +717,9 @@ void parse_next_move() {
         Serial.println(target);
         break;
     }
+
+    Serial.print("move_align: ");
+    Serial.println(move_align);
     target_left = target;
     target_right = target;
   } else if (buffered_moves[pos_moves_start].type == OBSTACLE) {
@@ -770,11 +776,10 @@ void start_align(uint8_t mode) {
     }
 
     if (error_sensors > 0) {
-      start_motion_distance(LEFT, pgm_read_word_near(align_left_LUT + error_sensors));
+      start_motion_distance(LEFT, pgm_read_word_near(align_left_LUT + error_sensors), true);
     } else {
-      start_motion_distance(RIGHT, pgm_read_word_near(align_left_LUT - error_sensors));
+      start_motion_distance(RIGHT, pgm_read_word_near(align_left_LUT - error_sensors), true);
     }
-    distance_for_align = true;
   } else if (mode == 1) {
     int16_t error_sensors = sensor_distances[FRONT_FRONT_RIGHT] - sensor_distances[FRONT_FRONT_LEFT];
 
@@ -784,11 +789,10 @@ void start_align(uint8_t mode) {
     }
 
     if (error_sensors > 0) {
-      start_motion_distance(LEFT, pgm_read_word_near(align_forward_LUT + error_sensors));
+      start_motion_distance(LEFT, pgm_read_word_near(align_forward_LUT + error_sensors), true);
     } else {
-      start_motion_distance(RIGHT, pgm_read_word_near(align_forward_LUT - error_sensors));
+      start_motion_distance(RIGHT, pgm_read_word_near(align_forward_LUT - error_sensors), true);
     }
-    distance_for_align = true;
   } else if (mode == 2 || mode == 3) {
     cli();
     state = MOVE_COMMANDED;
@@ -797,6 +801,7 @@ void start_align(uint8_t mode) {
     } else if (mode == 3) {
       move_type = ALIGN_EQUAL_FORWARD;
     }
+    move_align = false;
     axis_left.setReverse(false);
     axis_right.setReverse(false);
     sei();
@@ -822,6 +827,7 @@ void loop_motion() {
     state = ALIGN_DELAY;
   } else if (state == ALIGN_DELAY && (millis() - align_delay) > kAlign_delay) {
     state = IDLE;
+    Serial.println(F("Align delay done"));
   }
 
   if (pAlign_type != align_type) {
@@ -886,23 +892,21 @@ void loop_motion() {
     Serial.println(F("decelerating"));
     display.decelerating = 0;
   }
-  if (!distance_for_align) {
-    if (display.update_f) {
-      Serial.println(F("$UF"));
-      display.update_f = 0;
-    }
-    if (display.update_b) {
-      Serial.println(F("$UB"));
-      display.update_b = 0;
-    }
-    if (display.update_l) {
-      Serial.println(F("$UL"));
-      display.update_l = 0;
-    }
-    if (display.update_r) {
-      Serial.println(F("$UR"));
-      display.update_r = 0;
-    }
+  if (display.update_f) {
+    Serial.println(F("$UF"));
+    display.update_f = 0;
+  }
+  if (display.update_b) {
+    Serial.println(F("$UB"));
+    display.update_b = 0;
+  }
+  if (display.update_l) {
+    Serial.println(F("$UL"));
+    display.update_l = 0;
+  }
+  if (display.update_r) {
+    Serial.println(F("$UR"));
+    display.update_r = 0;
   }
   if (display.force_end) {
     Serial.println(F("force ended move"));
@@ -911,7 +915,7 @@ void loop_motion() {
 
   static align_auto_state_t align_auto_state = ALIGN_AUTO_IDLE;
   if (state == REPORT_SENSOR && (millis() - report_delay_start) > kSensor_report_delay) {
-    if (!distance_for_align) {
+    if (!move_align) {
       log_all_sensors();
       align_auto_state = ALIGN_AUTO_STATIC;
     }
