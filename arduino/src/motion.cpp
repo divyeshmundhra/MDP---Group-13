@@ -421,7 +421,8 @@ ISR(TIMER2_COMPA_vect) {
   int16_t power_left = 0, power_right = 0;
   if (move_type == DISTANCE) {
     base_left = controllerStraight(&state_straight_left, encoder_left, target_left);
-    base_right = controllerStraight(&state_straight_right, encoder_right, target_right);
+    base_right = base_left;
+    // base_right = controllerStraight(&state_straight_right, encoder_right, target_right);
   } else if (move_type == OBSTACLE) {
     base_left = controllerObstacle(&state_obstacle_left, sensor_distances[FRONT_FRONT_LEFT], target_obstacle);
     base_right = controllerObstacle(&state_obstacle_right, sensor_distances[FRONT_FRONT_RIGHT], target_obstacle);
