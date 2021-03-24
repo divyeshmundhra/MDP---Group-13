@@ -34,7 +34,11 @@ typedef enum {
 typedef enum {
   ALIGN_AUTO_IDLE,
   ALIGN_AUTO_STATIC,
-  ALIGN_AUTO_DYNAMIC
+  ALIGN_AUTO_DYNAMIC,
+  ALIGN_AUTO_TURN,
+  ALIGN_AUTO_OBSTACLE,
+  ALIGN_AUTO_UNTURN,
+  ALIGN_AUTO_DONE,
 } align_auto_state_t;
 
 typedef struct {
@@ -785,10 +789,22 @@ void start_align(uint8_t mode) {
       return;
     }
 
+    state = MOVE_COMMANDED;
+    move_type = DISTANCE;
     if (error_sensors > 0) {
-      start_motion_distance(LEFT, pgm_read_word_near(align_left_LUT + error_sensors), true, false);
+      move_dir = LEFT;
+      move_align = false;
+      move_report = false;
+      axis_left.setReverse(true);
+      axis_right.setReverse(false);
+      target_left = target_right = pgm_read_word_near(align_left_LUT + error_sensors);
     } else {
-      start_motion_distance(RIGHT, pgm_read_word_near(align_left_LUT - error_sensors), true, false);
+      move_dir = LEFT;
+      move_align = false;
+      move_report = false;
+      axis_left.setReverse(true);
+      axis_right.setReverse(false);
+      target_left = target_right = pgm_read_word_near(align_left_LUT - error_sensors);
     }
   } else if (mode == 1) {
     int16_t error_sensors = sensor_distances[FRONT_FRONT_RIGHT] - sensor_distances[FRONT_FRONT_LEFT];
@@ -830,6 +846,10 @@ void loop_motion() {
   static uint32_t report_delay_start = 0;
   static uint32_t align_delay = 0;
 
+  static align_auto_state_t align_auto_state = ALIGN_AUTO_IDLE;
+  // direction when the alignment was started
+  static motion_direction_t align_start_move_dir;
+
   if (state == REPORT_SENSOR_INIT) {
     report_delay_start = millis();
     state = REPORT_SENSOR;
@@ -839,6 +859,20 @@ void loop_motion() {
   } else if (state == ALIGN_DELAY && (millis() - align_delay) > kAlign_delay) {
     state = IDLE;
     Serial.println(F("Align delay done"));
+
+    if (align_auto_state == ALIGN_AUTO_DYNAMIC) {
+      Serial.println(F("Finished dynamic alignment, start turn"));
+      if (align_start_move_dir == FORWARD) {
+        align_auto_state = ALIGN_AUTO_TURN;
+      } else {
+        align_auto_state = ALIGN_AUTO_IDLE;
+      }
+    }
+  } else if (state == IDLE && move_type == OBSTACLE) {
+    if (align_auto_state == ALIGN_AUTO_OBSTACLE) {
+      Serial.println(F("Finished obstacle align, start unturn"));
+      align_auto_state = ALIGN_AUTO_UNTURN;
+    }
   }
 
   if (pAlign_type != align_type) {
@@ -848,8 +882,141 @@ void loop_motion() {
     pAlign_type = align_type;
   }
 
-  if (parse_moves) {
-    parse_next_move();
+  if (state == IDLE && parse_moves) {
+    switch (align_auto_state) {
+      case ALIGN_AUTO_IDLE:
+        parse_next_move();
+        break;
+      case ALIGN_AUTO_STATIC:
+        if (state == IDLE) {
+          if (
+            sensor_distances[FRONT_FRONT_LEFT] < kAuto_align_threshold &&
+            sensor_distances[FRONT_FRONT_RIGHT] < kAuto_align_threshold
+          ) {
+            int16_t diff_err = sensor_distances[FRONT_FRONT_LEFT] - sensor_distances[FRONT_FRONT_RIGHT];
+
+            if (
+              (diff_err > -kAuto_align_max_diff && diff_err < kAuto_align_max_diff) &&
+              (diff_err <= -kAuto_align_min_diff || diff_err >= kAuto_align_min_diff)
+            ) {
+              start_align(1);
+            }
+          } else if (
+            sensor_distances[LEFT_FRONT] < kAuto_align_threshold &&
+            sensor_distances[LEFT_REAR] < kAuto_align_threshold
+          ) {
+            int16_t diff_err = sensor_distances[LEFT_FRONT] - sensor_distances[LEFT_REAR];
+
+            if (
+              (diff_err > -kAuto_align_max_diff && diff_err < kAuto_align_max_diff) &&
+              (diff_err <= -kAuto_align_min_diff || diff_err >= kAuto_align_min_diff)
+            ) {
+              start_align(0);
+            }
+          }
+
+          // no alignment was started, move on to offset alignment
+          if (state == IDLE) {
+            Serial.println(F("Did not start static alignment, moving to try forward alignment"));
+            align_auto_state = ALIGN_AUTO_TURN;
+          }
+        }
+        break;
+      case ALIGN_AUTO_DYNAMIC:
+        if (state == IDLE) {
+          if (
+            sensor_distances[FRONT_FRONT_LEFT] < kAuto_align_threshold &&
+            sensor_distances[FRONT_FRONT_RIGHT] < kAuto_align_threshold
+          ) {
+            int16_t diff_err = sensor_distances[FRONT_FRONT_LEFT] - sensor_distances[FRONT_FRONT_RIGHT];
+
+            if (
+              (diff_err > -kAuto_align_max_diff && diff_err < kAuto_align_max_diff) &&
+              (diff_err <= -kAuto_align_min_diff || diff_err >= kAuto_align_min_diff)
+            ) {
+              start_align(3);
+            }
+          } else if (
+            sensor_distances[LEFT_FRONT] < kAuto_align_threshold &&
+            sensor_distances[LEFT_REAR] < kAuto_align_threshold
+          ) {
+            int16_t diff_err = sensor_distances[LEFT_FRONT] - sensor_distances[LEFT_REAR];
+
+            if (
+              (diff_err > -kAuto_align_max_diff && diff_err < kAuto_align_max_diff) &&
+              (diff_err <= -kAuto_align_min_diff || diff_err >= kAuto_align_min_diff)
+            ) {
+              start_align(2);
+            }
+          }
+
+          // no alignment was started, move on to offset alignment
+          if (state == IDLE) {
+            Serial.println(F("Did not start dynamic alignment, moving to try forward alignment"));
+            if (align_start_move_dir == FORWARD) {
+              align_auto_state = ALIGN_AUTO_TURN;
+            } else {
+              align_auto_state = ALIGN_AUTO_IDLE;
+            }
+          }
+        }
+        break;
+      case ALIGN_AUTO_TURN:
+        if (state == IDLE) {
+          if (!(sensor_obstacles[LEFT_FRONT] == 2 && sensor_obstacles[LEFT_REAR] == 2)) {
+            Serial.println(F("Did not start left turn because no obstacle on the left"));
+            align_auto_state = ALIGN_AUTO_IDLE;
+            break;
+          }
+          
+          // if both left sensors see an obstacle, we can turn left and do a move-obstacle
+          align_auto_state = ALIGN_AUTO_OBSTACLE;
+
+          Serial.println(F("Start left turn for alignment"));
+          state = MOVE_COMMANDED;
+          move_type = DISTANCE;
+          move_dir = LEFT;
+          move_align = false;
+          move_report = false;
+
+          target_left = unit_turn_to_ticks(2);
+          target_right = unit_turn_to_ticks(2);
+
+          axis_left.setReverse(true);
+          axis_right.setReverse(false);
+        }
+        break;
+      case ALIGN_AUTO_OBSTACLE:
+        if (state == IDLE) {
+          Serial.println(F("Start move obstacle for alignment"));
+
+          state = MOVE_COMMANDED;
+          move_type = OBSTACLE;
+          move_dir = FORWARD;
+          target_obstacle = kAuto_align_obstacle_target;
+          axis_left.setReverse(false);
+          axis_right.setReverse(false);
+        }
+        break;
+      case ALIGN_AUTO_UNTURN:
+        if (state == IDLE) {
+          align_auto_state = ALIGN_AUTO_DONE;
+
+          Serial.println(F("Start right turn for alignment"));
+          state = MOVE_COMMANDED;
+          move_type = DISTANCE;
+          move_dir = RIGHT;
+          move_align = false;
+          move_report = false;
+
+          target_left = unit_turn_to_ticks(2);
+          target_right = unit_turn_to_ticks(2);
+
+          axis_left.setReverse(false);
+          axis_right.setReverse(true);
+        }
+        break;
+    }
   }
 
   if (log_motion) {
@@ -924,52 +1091,23 @@ void loop_motion() {
     display.force_end = 0;
   }
 
-  static align_auto_state_t align_auto_state = ALIGN_AUTO_IDLE;
   if (state == REPORT_SENSOR && (millis() - report_delay_start) > kSensor_report_delay) {
     if (move_report) {
       log_all_sensors();
+    }
+
+    if (move_align && align_auto_state == ALIGN_AUTO_IDLE) {
+      Serial.println(F("Finished move, starting static alignment"));
       align_auto_state = ALIGN_AUTO_STATIC;
+      align_start_move_dir = move_dir;
+    } else if (align_auto_state == ALIGN_AUTO_STATIC) {
+      // if we have just finished a distance for offset alignment, start dynamic
+      Serial.println(F("Finished static alignment, starting dynamic alignment"));
+      align_auto_state = ALIGN_AUTO_DYNAMIC;
+    } else if (align_auto_state == ALIGN_AUTO_DONE) {
+      align_auto_state = ALIGN_AUTO_IDLE;
     }
 
-    if (
-      sensor_distances[FRONT_FRONT_LEFT] < kAuto_align_threshold &&
-      sensor_distances[FRONT_FRONT_RIGHT] < kAuto_align_threshold
-    ) {
-      int16_t diff_err = sensor_distances[FRONT_FRONT_LEFT] - sensor_distances[FRONT_FRONT_RIGHT];
-
-      if (
-        (diff_err > -kAuto_align_max_diff && diff_err < kAuto_align_max_diff) &&
-        (diff_err <= -kAuto_align_min_diff || diff_err >= kAuto_align_min_diff)
-      ) {
-        if (align_auto_state == ALIGN_AUTO_STATIC) {
-          start_align(1);
-          align_auto_state = ALIGN_AUTO_DYNAMIC;
-        } else if (align_auto_state == ALIGN_AUTO_DYNAMIC) {
-          start_align(3);
-        }
-      }
-    } else if (
-      sensor_distances[LEFT_FRONT] < kAuto_align_threshold &&
-      sensor_distances[LEFT_REAR] < kAuto_align_threshold
-    ) {
-      int16_t diff_err = sensor_distances[LEFT_FRONT] - sensor_distances[LEFT_REAR];
-
-      if (
-        (diff_err > -kAuto_align_max_diff && diff_err < kAuto_align_max_diff) &&
-        (diff_err <= -kAuto_align_min_diff || diff_err >= kAuto_align_min_diff)
-      ) {
-        if (align_auto_state == ALIGN_AUTO_STATIC) {
-          start_align(0);
-          align_auto_state = ALIGN_AUTO_DYNAMIC;
-        } else if (align_auto_state == ALIGN_AUTO_DYNAMIC) {
-          start_align(2);
-        }
-      }
-    }
-
-    // met none of the align conditions
-    if (state == REPORT_SENSOR) {
-      state = IDLE;
-    }
+    state = IDLE;
   }
 }

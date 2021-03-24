@@ -76,6 +76,8 @@ const int16_t kAuto_align_threshold = 200;
 const int16_t kAuto_align_max_diff = 30;
 const int16_t kAuto_align_min_diff = 2;
 
+const int16_t kAuto_align_obstacle_target = 35;
+
 // on axis direction change, add this as a correction to compensate for backlash
 const int16_t kBacklash_compensation = 0;
 

@@ -8,7 +8,7 @@ int16_t kP_straight = 500;
 int16_t kI_straight = 100;
 int16_t kD_straight = 2000;
 
-int16_t kP_obstacle = 1500;
+int16_t kP_obstacle = 1000;
 int16_t kI_obstacle = 200;
 int16_t kD_obstacle = 300;
 
