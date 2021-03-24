@@ -850,6 +850,8 @@ void loop_motion() {
   // direction when the alignment was started
   static motion_direction_t align_start_move_dir;
 
+  static uint8_t moves_since_turn_align = 0;
+
   if (state == REPORT_SENSOR_INIT) {
     report_delay_start = millis();
     state = REPORT_SENSOR;
@@ -968,7 +970,14 @@ void loop_motion() {
             align_auto_state = ALIGN_AUTO_IDLE;
             break;
           }
-          
+
+          if (moves_since_turn_align >= kAuto_align_rate_limit) {
+            moves_since_turn_align = 0;
+          } else {
+            align_auto_state = ALIGN_AUTO_IDLE;
+            break;
+          }
+
           // if both left sensors see an obstacle, we can turn left and do a move-obstacle
           align_auto_state = ALIGN_AUTO_OBSTACLE;
 
@@ -1094,6 +1103,8 @@ void loop_motion() {
   if (state == REPORT_SENSOR && (millis() - report_delay_start) > kSensor_report_delay) {
     if (move_report) {
       log_all_sensors();
+
+      moves_since_turn_align ++;
     }
 
     if (move_align && align_auto_state == ALIGN_AUTO_IDLE) {
