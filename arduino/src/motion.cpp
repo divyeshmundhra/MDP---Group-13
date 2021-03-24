@@ -851,7 +851,7 @@ void loop_motion() {
 
   if (pState != state) {
     if (state == IDLE) {
-      time_since_idle = 0;
+      time_since_idle = millis();
     }
 
     pState = state;
