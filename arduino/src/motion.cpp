@@ -529,41 +529,41 @@ void start_motion_unit(motion_direction_t _direction, uint8_t unit) {
     return;
   }
 
-  if (num_moves == 0 && (state == MOVE_COMMANDED || state == MOVING) && move_type == DISTANCE && move_dir == _direction) {
-    int32_t new_move = 0;
-    if (_direction == FORWARD || _direction == REVERSE) {
-      new_move = unit * kBlock_distance;
-    } else if (_direction == LEFT || _direction == RIGHT) {
-      new_move = unit_turn_to_ticks(unit);
-    }
+  // if (num_moves == 0 && (state == MOVE_COMMANDED || state == MOVING) && move_type == DISTANCE && move_dir == _direction) {
+  //   int32_t new_move = 0;
+  //   if (_direction == FORWARD || _direction == REVERSE) {
+  //     new_move = unit * kBlock_distance;
+  //   } else if (_direction == LEFT || _direction == RIGHT) {
+  //     new_move = unit_turn_to_ticks(unit);
+  //   }
 
-    target_left += new_move;
-    target_right += new_move;
-    Serial.println("Combined move with active");
-    return;
-  }
+  //   target_left += new_move;
+  //   target_right += new_move;
+  //   Serial.println("Combined move with active");
+  //   return;
+  // }
 
-  // attempt to combine moves together if they are of the same type and direction
-  if (num_moves > 0) {
-    uint8_t prev_move = pos_moves_end == 0 ? (kMovement_buffer_size - 1) : pos_moves_end - 1;
+  // // attempt to combine moves together if they are of the same type and direction
+  // if (num_moves > 0) {
+  //   uint8_t prev_move = pos_moves_end == 0 ? (kMovement_buffer_size - 1) : pos_moves_end - 1;
 
-    if (
-      buffered_moves[prev_move].type == DISTANCE &&
-      buffered_moves[prev_move].direction == _direction
-    ) {
-      buffered_moves[prev_move].unit += unit;
+  //   if (
+  //     buffered_moves[prev_move].type == DISTANCE &&
+  //     buffered_moves[prev_move].direction == _direction
+  //   ) {
+  //     buffered_moves[prev_move].unit += unit;
 
-      if (_direction == FORWARD || _direction == REVERSE) {
-        buffered_moves[prev_move].target = buffered_moves[prev_move].unit * kBlock_distance;
-      } else if (_direction == LEFT || _direction == RIGHT) {
-        buffered_moves[prev_move].target = unit_turn_to_ticks(buffered_moves[prev_move].unit);
-      }
+  //     if (_direction == FORWARD || _direction == REVERSE) {
+  //       buffered_moves[prev_move].target = buffered_moves[prev_move].unit * kBlock_distance;
+  //     } else if (_direction == LEFT || _direction == RIGHT) {
+  //       buffered_moves[prev_move].target = unit_turn_to_ticks(buffered_moves[prev_move].unit);
+  //     }
 
-      Serial.print("Combined move with index=");
-      Serial.println(prev_move);
-      return;
-    }
-  }
+  //     Serial.print("Combined move with index=");
+  //     Serial.println(prev_move);
+  //     return;
+  //   }
+  // }
 
   buffered_moves[pos_moves_end].type = DISTANCE;
   buffered_moves[pos_moves_end].direction = _direction;
