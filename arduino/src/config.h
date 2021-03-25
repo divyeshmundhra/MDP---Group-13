@@ -83,8 +83,8 @@ const uint8_t kWall_offsets_alignment_front[kWall_offset_alignment_count] = {
 
 // parameters for auto-starting an alignment after a move
 // max distance under which an alignment will be started
-const int16_t kAuto_align_threshold = 300;
-const int16_t kAuto_align_max_diff = 300;
+extern int16_t kAuto_align_threshold;
+extern int16_t kAuto_align_max_diff;
 const int16_t kAuto_align_min_diff = 3;
 
 const uint8_t kAuto_align_obstacle_target_length = 2;

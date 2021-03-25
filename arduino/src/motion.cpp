@@ -1253,8 +1253,14 @@ void loop_motion() {
   if (moves_since_turn_align > (kAuto_align_rate_limit + 1)) {
     kMS_max_output = 350;
     kMS_min_output = -350;
+
+    kAuto_align_threshold = 200;
+    kAuto_align_max_diff = 200;
   } else {
     kMS_max_output = 400;
     kMS_min_output = -400;
+
+    kAuto_align_threshold = 300;
+    kAuto_align_max_diff = 300;
   }
 }

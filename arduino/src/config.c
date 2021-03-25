@@ -17,7 +17,9 @@ int16_t kP_wall_offset_left = 50;
 
 int16_t kP_wall_diff_forward = 100;
 
-int16_t kP_align = 300;
+int16_t kAuto_align_threshold = 300;
+int16_t kAuto_align_max_diff = 200;
+
 int16_t kI_align = 250;
 int16_t kD_align = 128;
 
