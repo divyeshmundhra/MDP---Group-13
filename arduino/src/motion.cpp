@@ -451,7 +451,7 @@ ISR(TIMER2_COMPA_vect) {
     base_right = power;
   }
 
-  #define DO_LIVE_ALIGNMENT
+  // #define DO_LIVE_ALIGNMENT
   #ifdef DO_LIVE_ALIGNMENT
     if (straight_enabled && move_type == DISTANCE) {
       if ((base_left > kWall_align_min_power) && (base_right > kWall_align_min_power)) {
@@ -1058,6 +1058,16 @@ void loop_motion() {
             Serial.println(F("Did not start turn because no suitable obstacles"));
             align_auto_state = ALIGN_AUTO_IDLE;
             break;
+          }
+
+          if (align_dir == LEFT) {
+            int16_t diff_err = sensor_distances[LEFT_FRONT] - kWall_offsets_left[sensor_distances[LEFT_FRONT] / 100];
+
+            if (diff_err < kAuto_align_min_diff) {
+              Serial.println(F("Did not start turn: LEFT_FRONT within tolerance"));
+              align_auto_state = ALIGN_AUTO_IDLE;
+              break;
+            }
           }
 
           if (moves_since_turn_align >= kAuto_align_rate_limit) {
