@@ -13,7 +13,7 @@ from src.agent.ExploreDangerousAlgo import ExploreDangerousAlgo
 from src.agent.LeftWallHug import LeftWallHuggingAlgo
 
 from src.dto.constants import AgentTask, START_COORD
-
+from threading import Timer
 
 class Agent:
     def __init__(self, arena_string: str, robot_info: RobotInfo, task: AgentTask, end_coord: Coord, waypoint_coord: Coord):
@@ -31,6 +31,10 @@ class Agent:
         self.lwh_back_to_start = False
         self.commencing_exploration = False
 
+        t = Timer(270, self.timeout)
+        self.time_ran_out = False
+        t.start()
+
         if self.task == AgentTask.FAST:
             self.arena = ArenaStringParser.parse_arena_string(arena_string)
             self.algo = FastestPathAlgo()
@@ -40,6 +44,9 @@ class Agent:
             # self.algo = ExplorationAlgo()
             self.algo = LeftWallHuggingAlgo()
             self.reached_waypoint = True
+
+    def timeout(self):
+        self.time_ran_out = True
 
     def calc_percepts(self, obstacles_coord_list: list, no_obs_coord_list: list, move_q_size: int = 0) -> None:
         # update real robot info
@@ -54,6 +61,18 @@ class Agent:
             self.reached_waypoint = True
 
     def step(self) -> AgentOutput:
+        cur_coord = self.robot_info.get_coord()
+
+        if self.time_ran_out:
+            message = f'4.5 minutes reached, returning to start!'
+            self.exploration_complete = True
+            target_coord = FastestPathAlgo().get_next_step(self.arena,self.robot_info, START_COORD)
+            move_command = self.calculate_move(cur_coord, target_coord)
+            return AgentOutput(
+                move_command,
+                message
+            )
+
         if self.exploration_complete:
             if self.robot_info.get_coord().is_equal(self.waypoint_coord):
                 self.waypoint_coord = self.dangerous_exploration_path.pop(0) if self.dangerous_exploration_path else None
@@ -65,7 +84,7 @@ class Agent:
             target_coord = FastestPathAlgo().get_next_step(self.arena,self.robot_info,self.waypoint_coord)
         else:
             target_coord = self.think()
-        cur_coord = self.robot_info.get_coord()
+        
         if target_coord == None:
             if self.task == AgentTask.FAST:
                 message = f'No valid path!'
