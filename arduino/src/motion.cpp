@@ -561,6 +561,8 @@ int32_t get_encoder_left() {
   return axis_left.getEncoder();
 }
 
+bool prior_left_front_has_obstacle = false;
+
 void start_motion_unit(motion_direction_t _direction, uint8_t unit, bool align, bool report) {
   if (num_moves >= kMovement_buffer_size) {
     Serial.println("movement buffer full");
@@ -613,6 +615,12 @@ void start_motion_unit(motion_direction_t _direction, uint8_t unit, bool align, 
     buffered_moves[pos_moves_end].target = unit * kBlock_distance;
   } else if (_direction == LEFT || _direction == RIGHT) {
     buffered_moves[pos_moves_end].target = unit_turn_to_ticks(unit);
+  }
+
+  if (_direction == FORWARD && sensor_obstacles[LEFT_FRONT] == 2) {
+    prior_left_front_has_obstacle = true;
+  } else {
+    prior_left_front_has_obstacle = false;
   }
 
   num_moves ++;
@@ -973,13 +981,19 @@ void loop_motion() {
             sensor_distances[LEFT_FRONT] < kAuto_align_threshold &&
             sensor_distances[LEFT_REAR] < kAuto_align_threshold
           ) {
-            int16_t diff_err = sensor_distances[LEFT_FRONT] - sensor_distances[LEFT_REAR];
+            if (!(
+              prior_left_front_has_obstacle &&
+              sensor_obstacles[LEFT_FRONT] == 3 &&
+              sensor_obstacles[LEFT_REAR] == 3
+            )) {
+              int16_t diff_err = sensor_distances[LEFT_FRONT] - sensor_distances[LEFT_REAR];
 
-            if (
-              (diff_err > -kAuto_align_max_diff && diff_err < kAuto_align_max_diff) &&
-              (diff_err <= -kAuto_align_min_diff || diff_err >= kAuto_align_min_diff)
-            ) {
-              start_align(0);
+              if (
+                (diff_err > -kAuto_align_max_diff && diff_err < kAuto_align_max_diff) &&
+                (diff_err <= -kAuto_align_min_diff || diff_err >= kAuto_align_min_diff)
+              ) {
+                start_align(0);
+              }
             }
           }
 
