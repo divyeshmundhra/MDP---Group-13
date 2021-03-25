@@ -45,6 +45,8 @@ class ExploreDangerousAlgo():
                         continue
                     if self.arena.get_cell_at_coord(vantage).is_dangerous():
                         continue
+                    if self.robot_info.get_coord().is_equal(vantage):
+                        continue
                     found_vantage = True
                     break
                 if found_vantage:
