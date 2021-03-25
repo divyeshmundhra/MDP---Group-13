@@ -130,10 +130,11 @@ class AgentInterface:
         # get agent output
         agent_output = self.agent.step()
         if self.agent_task == AgentTask.EXPLORE or self.agent_task == AgentTask.IMAGEREC:
-            if not agent_output.get_move_command().get_turn_angle() == 0: # NONE TYPE HAS NO ATTRIBUTE GET TURN ANGLE
-                self.q_size += 2
-            else:
-                self.q_size += 1
+            if agent_output.get_move_command():
+                if not agent_output.get_move_command().get_turn_angle() == 0:
+                    self.q_size += 2
+                else:
+                    self.q_size += 1
         self.log_agent_expected_move()
 
         # parse agent output
