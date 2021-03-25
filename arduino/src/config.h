@@ -70,10 +70,21 @@ const uint8_t kWall_offsets_left[kWall_offset_count] = {
   40
 };
 
+#define kWall_offset_alignment_count 3
+const uint8_t kWall_offsets_alignment_left[kWall_offset_alignment_count] = {
+  40,
+  160
+};
+
+const uint8_t kWall_offsets_alignment_front[kWall_offset_alignment_count] = {
+  35,
+  160
+};
+
 // parameters for auto-starting an alignment after a move
 // max distance under which an alignment will be started
-const int16_t kAuto_align_threshold = 200;
-const int16_t kAuto_align_max_diff = 30;
+const int16_t kAuto_align_threshold = 300;
+const int16_t kAuto_align_max_diff = 300;
 const int16_t kAuto_align_min_diff = 3;
 
 const uint8_t kAuto_align_obstacle_target_length = 2;
@@ -197,7 +208,7 @@ const int16_t kSensor_max[6] = {
 */
 const int16_t kSensor_thresholds[6][kSensor_threshold_count] = {
   // 2    3    4    5    6    7    8    9    A    B
-  { 100, 200, 300, 400, 480, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
+  { 100, 200, 300, 380, 480, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
   {  80, 180, 300, 400, 500, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
   { 100, 200, 300, 400, 550, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
   {  80, 180, 290, 380, 480, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
