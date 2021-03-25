@@ -106,7 +106,6 @@ class Agent:
             elif self.task == AgentTask.EXPLORE:
                 message = f'Explored all non-dangerous cells!'
                 self.exploration_complete = True
-                self.fill_remaining_unexplored_with_obstacles()
                 self.dangerous_exploration_path = ExploreDangerousAlgo(self.arena, self.robot_info).calculate_cheapest_path()
                 self.dangerous_exploration_path.append(START_COORD)
                 self.waypoint_coord = self.dangerous_exploration_path.pop(0)
