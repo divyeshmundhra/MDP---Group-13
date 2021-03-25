@@ -45,7 +45,7 @@ class Simulator:
         obstacle_coord_list, no_obs_coord_list = sis.calculate_percepts()
         for coord, _ in obstacle_coord_list: # distance is not used, hence renamed to _
             self.arena.get_cell_at_coord(coord).set_is_explored(True)
-        for coord in no_obs_coord_list:
+        for coord, _ in no_obs_coord_list:
             self.arena.get_cell_at_coord(coord).set_is_explored(True)
         self.arena.get_cell_at_coord(self.robot_info.get_coord()).set_is_visited(True)
 

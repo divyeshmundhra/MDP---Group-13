@@ -56,7 +56,7 @@ class SensorParser():
             cd = currentPos.add(sensor_displacement).add(
                 displacement_per_step.multiply(i))
             if(arena.coord_is_valid(cd)):
-                empty.append(cd)
+                empty.append((cd,i))
         if (flag==0):
             detectedobstacle = currentPos.add(sensor_displacement).add(
                 displacement_per_step.multiply(sensor_value-1))

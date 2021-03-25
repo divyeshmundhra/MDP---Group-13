@@ -19,8 +19,8 @@ class SensorInputSimulation:
         cur_coord = self.robot_info.get_coord()
 
         # cells within robot 3x3 are obviously explored and not obstacles
-        self.no_obs_coord_list.extend(self.arena.get_eight_adjacent_in_arena(cur_coord))
-        self.no_obs_coord_list.append(cur_coord)
+        # self.no_obs_coord_list.extend([(coord, 1) for coord in self.arena.get_eight_adjacent_in_arena(cur_coord)]) # distance is 1
+        # self.no_obs_coord_list.append((cur_coord, 0)) # distance is 0
 
         for sensor in SENSOR_CONSTANTS.values():
             sensor_abs_degree = (sensor['direction'] + OT.orientation_to_degree[orientation]) % 360
@@ -40,7 +40,7 @@ class SensorInputSimulation:
                 self.obstacles_coord_list.append((coord, distance))
                 break
             else:
-                self.no_obs_coord_list.append(coord)
+                self.no_obs_coord_list.append((coord, distance))
             distance += 1
     
     def get_coords_in_line(self, sensor_displacement: Coord, displacement_per_step: Coord, view_range: int) -> list:

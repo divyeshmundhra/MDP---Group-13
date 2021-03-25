@@ -137,9 +137,9 @@ class Agent:
     def update_arena(self, obstacles_coord_list: list, no_obs_coord_list: list) -> None:
         self.mark_robot_visited_cells(self.robot_info.get_coord())
         
-        for coord in no_obs_coord_list:
+        for coord, distance in no_obs_coord_list:
             # mark seen clear cells as explored
-            self.arena.get_cell_at_coord(coord).set_is_explored(True).decrement_is_obstacle(delta=3)
+            self.arena.get_cell_at_coord(coord).set_is_explored(True).decrement_is_obstacle(delta=4-(distance-2))
         for coord, distance in obstacles_coord_list:
             # mark seen obstacles as explored
             cell = self.arena.get_cell_at_coord(coord)
