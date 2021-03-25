@@ -1249,4 +1249,12 @@ void loop_motion() {
 
     state = IDLE;
   }
+
+  if (moves_since_turn_align > (kAuto_align_rate_limit + 1)) {
+    kMS_max_output = 350;
+    kMS_min_output = -350;
+  } else {
+    kMS_max_output = 400;
+    kMS_min_output = -400;
+  }
 }

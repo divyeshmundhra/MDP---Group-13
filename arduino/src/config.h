@@ -153,8 +153,8 @@ extern int16_t kD_straight;
 const int16_t kMS_integral_min = -100;
 const int16_t kMS_integral_max = 100;
 
-const int16_t kMS_max_output = 400;
-const int16_t kMS_min_output = -400;
+extern int16_t kMS_max_output;
+extern int16_t kMS_min_output;
 
 // controller parameters for move-until-obstacle controller
 extern int16_t kP_obstacle;
