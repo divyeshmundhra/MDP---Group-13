@@ -232,6 +232,27 @@ uint8_t get_base_wall_align_offset(align_type_t align_type, int16_t val) {
   return val;
 }
 
+int16_t get_normalised_wall_distance(sensor_position_t sensor) {
+  int16_t val = sensor_distances[sensor];
+
+  uint8_t blocks_away = val / 100;
+
+  if (blocks_away >= kWall_offset_alignment_count) {
+    return -1;
+  }
+
+  switch(sensor) {
+    case LEFT_FRONT:
+    case LEFT_REAR:
+      return val -= kWall_offsets_alignment_left[blocks_away];
+    case FRONT_FRONT_LEFT:
+    case FRONT_FRONT_RIGHT:
+      return val -= kWall_offsets_alignment_front[blocks_away];
+    default:
+      return -1;
+  }
+}
+
 // triggers at 100Hz
 ISR(TIMER2_COMPA_vect) {
   // reset timer counter
@@ -408,11 +429,20 @@ ISR(TIMER2_COMPA_vect) {
     int16_t val_slave, val_target;
     
     if (move_type == ALIGN_EQUAL_LEFT) {
-      val_slave = sensor_distances[LEFT_FRONT];
-      val_target = sensor_distances[LEFT_REAR];
+      val_slave = get_normalised_wall_distance(LEFT_FRONT);
+      val_target = get_normalised_wall_distance(LEFT_REAR);
     } else if (move_type == ALIGN_EQUAL_FORWARD) {
-      val_slave = sensor_distances[FRONT_FRONT_RIGHT];
-      val_target = sensor_distances[FRONT_FRONT_LEFT];
+      val_slave = get_normalised_wall_distance(FRONT_FRONT_RIGHT);
+      val_target = get_normalised_wall_distance(FRONT_FRONT_LEFT);
+    }
+
+    if (val_target == -1 || val_slave == -1) {
+      state = ALIGN_DELAY_INIT;
+      axis_left.resetEncoder();
+      axis_right.resetEncoder();
+      axis_left.setBrake(400);
+      axis_right.setBrake(400);
+      return;
     }
 
     int16_t power = controllerWallAlignEqual(&state_wall_align_equal, val_slave, val_target);
@@ -420,14 +450,10 @@ ISR(TIMER2_COMPA_vect) {
     base_right = power;
   }
 
+  #define DO_LIVE_ALIGNMENT
   #ifdef DO_LIVE_ALIGNMENT
     if (straight_enabled && move_type == DISTANCE) {
-      static uint8_t tick_count = 0;
-      tick_count ++;
-
-      if (tick_count > 4 && (base_left > kWall_align_min_power) && (base_right > kWall_align_min_power)) {
-        tick_count = 0;
-
+      if ((base_left > kWall_align_min_power) && (base_right > kWall_align_min_power)) {
         if (move_dir == FORWARD) {
           static uint8_t ticks_since_align_selected = 0;
           ticks_since_align_selected ++;
@@ -782,7 +808,14 @@ void combine_next_move() {
 
 void start_align(uint8_t mode) {
   if (mode == 0) {
-    int16_t error_sensors = sensor_distances[LEFT_FRONT] - sensor_distances[LEFT_REAR];
+    int16_t sensor_left_front = get_normalised_wall_distance(LEFT_FRONT);
+    int16_t sensor_left_rear = get_normalised_wall_distance(LEFT_REAR);
+
+    if (sensor_left_front == -1 || sensor_left_rear == -1 ) {
+      return;
+    }
+
+    int16_t error_sensors = sensor_left_front - sensor_left_rear;
 
     if (abs(error_sensors) >= align_LUT_len) {
       Serial.println("Offset too much to correct");
@@ -807,7 +840,14 @@ void start_align(uint8_t mode) {
       target_left = target_right = pgm_read_word_near(align_left_LUT - error_sensors);
     }
   } else if (mode == 1) {
-    int16_t error_sensors = sensor_distances[FRONT_FRONT_RIGHT] - sensor_distances[FRONT_FRONT_LEFT];
+    int16_t sensor_front_left = get_normalised_wall_distance(FRONT_FRONT_LEFT);
+    int16_t sensor_front_right = get_normalised_wall_distance(FRONT_FRONT_RIGHT);
+
+    if (sensor_front_left == -1 || sensor_front_right == -1 ) {
+      return;
+    }
+
+    int16_t error_sensors = sensor_front_right - sensor_front_left;
 
     if (abs(error_sensors) >= align_LUT_len) {
       Serial.println("Offset too much to correct");

@@ -27,15 +27,15 @@ const int8_t kMax_obstacle_error = 3;
 // max difference between both axis for moves to be completed
 const int8_t kMax_encoder_diff_error = 5;
 // max error for align-equal to be completed
-const int8_t kMax_align_error = 1;
+const int8_t kMax_align_error = 2;
 // if zero movement seen for this amount of time, end the move
 // this should be longer than the report/align delays
-const uint16_t kZero_movement_timeout = 250;
+const uint16_t kZero_movement_timeout = 200;
 
 // time after a move to wait before reporting sensor values
 const int16_t kSensor_report_delay = 100;
 // time to delay after an align is complete
-const int16_t kAlign_delay = 100;
+const int16_t kAlign_delay = 50;
 const int16_t kMax_encoder_correction = 64;
 const int16_t kMin_encoder_correction = -64;
 
@@ -70,10 +70,21 @@ const uint8_t kWall_offsets_left[kWall_offset_count] = {
   40
 };
 
+#define kWall_offset_alignment_count 3
+const uint8_t kWall_offsets_alignment_left[kWall_offset_alignment_count] = {
+  40,
+  160
+};
+
+const uint8_t kWall_offsets_alignment_front[kWall_offset_alignment_count] = {
+  35,
+  160
+};
+
 // parameters for auto-starting an alignment after a move
 // max distance under which an alignment will be started
-const int16_t kAuto_align_threshold = 200;
-const int16_t kAuto_align_max_diff = 30;
+const int16_t kAuto_align_threshold = 300;
+const int16_t kAuto_align_max_diff = 300;
 const int16_t kAuto_align_min_diff = 3;
 
 const uint8_t kAuto_align_obstacle_target_length = 2;
@@ -81,7 +92,7 @@ const int16_t kAuto_align_obstacle_targets[] = {
   35,
   150
 };
-const uint8_t kAuto_align_rate_limit = 3;
+const uint8_t kAuto_align_rate_limit = 5;
 
 // on axis direction change, add this as a correction to compensate for backlash
 const int16_t kBacklash_compensation = 0;
@@ -142,8 +153,8 @@ extern int16_t kD_straight;
 const int16_t kMS_integral_min = -100;
 const int16_t kMS_integral_max = 100;
 
-const int16_t kMS_max_output = 300;
-const int16_t kMS_min_output = -300;
+const int16_t kMS_max_output = 400;
+const int16_t kMS_min_output = -400;
 
 // controller parameters for move-until-obstacle controller
 extern int16_t kP_obstacle;
@@ -197,7 +208,7 @@ const int16_t kSensor_max[6] = {
 */
 const int16_t kSensor_thresholds[6][kSensor_threshold_count] = {
   // 2    3    4    5    6    7    8    9    A    B
-  { 100, 200, 300, 400, 480, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
+  { 100, 200, 300, 380, 480, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
   {  80, 180, 300, 400, 500, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
   { 100, 200, 300, 400, 550, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
   {  80, 180, 290, 380, 480, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN, INT16_MIN },
