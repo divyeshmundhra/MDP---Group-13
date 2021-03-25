@@ -76,9 +76,12 @@ class Agent:
 
         if self.time_ran_out:
             message = f'4.5 minutes reached, returning to start!'
-            self.exploration_complete = True
             target_coord = FastestPathAlgo().get_next_step(self.arena,self.robot_info, START_COORD)
-            move_command = self.calculate_move(cur_coord, target_coord)
+            if target_coord == None:
+                move_command = None
+                message = f'Exploration returned to start'
+            else:
+                move_command = self.calculate_move(cur_coord, target_coord)
             return AgentOutput(
                 move_command,
                 message
@@ -103,7 +106,7 @@ class Agent:
             elif self.task == AgentTask.EXPLORE:
                 message = f'Explored all non-dangerous cells!'
                 self.exploration_complete = True
-                # self.fill_remaining_unexplored_with_obstacles()
+                self.fill_remaining_unexplored_with_obstacles()
                 self.dangerous_exploration_path = ExploreDangerousAlgo(self.arena, self.robot_info).calculate_cheapest_path()
                 self.dangerous_exploration_path.append(START_COORD)
                 self.waypoint_coord = self.dangerous_exploration_path.pop(0)
@@ -159,7 +162,11 @@ class Agent:
                 self.commencing_exploration = True
 
             if self.commencing_exploration:
-                next_step = ExplorationAlgo().get_next_step(self.arena, self.robot_info)
+                # next_step = ExplorationAlgo().get_next_step(self.arena, self.robot_info)
+                self.dangerous_exploration_path = ExploreDangerousAlgo(self.arena, self.robot_info).calculate_cheapest_path()
+                self.dangerous_exploration_path.append(START_COORD)
+                self.waypoint_coord = self.dangerous_exploration_path.pop(0)
+                next_step = FastestPathAlgo().get_next_step(self.arena,self.robot_info, self.waypoint_coord)
             else:
                 next_step = self.algo.get_next_step(self.arena, self.robot_info)
                 
