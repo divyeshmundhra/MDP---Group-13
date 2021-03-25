@@ -135,6 +135,9 @@ class AgentInterface:
                     self.q_size += 2
                 else:
                     self.q_size += 1
+            else:
+                print('Quitting: Finished exploration.')
+                quit()
         self.log_agent_expected_move()
 
         # parse agent output

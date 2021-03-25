@@ -77,7 +77,6 @@ class Agent:
 
         if self.time_ran_out:
             message = '4.5 minutes reached, returning to start!'
-            self.exploration_complete = True
             target_coord = FastestPathAlgo().get_next_step(self.arena,self.robot_info, START_COORD)
             move_command = self.calculate_move(cur_coord, target_coord)
             return AgentOutput(
@@ -103,15 +102,18 @@ class Agent:
                 message = f'No valid path!'
                 move_command = None
             elif self.task == AgentTask.EXPLORE:
-                message = f'Explored all non-dangerous cells!'
-                # self.fill_remaining_unexplored_with_obstacles()
-                self.dangerous_exploration = True
-                self.dangerous_exploration_path = ExploreDangerousAlgo(self.arena, self.robot_info).calculate_cheapest_path()
-                self.dangerous_exploration_path.append(START_COORD)
-                self.waypoint_coord = self.dangerous_exploration_path.pop(0)
-                target_coord = FastestPathAlgo().get_next_step(self.arena,self.robot_info, self.waypoint_coord)
-                move_command = self.calculate_move(cur_coord, target_coord)
-                # move_command = None
+                if not self.arena.list_unexplored_cells():
+                    message = 'Explored all cells!'
+                    move_command = None
+                else:
+                    message = 'Explored all non-dangerous cells!'
+                    # self.fill_remaining_unexplored_with_obstacles()
+                    self.dangerous_exploration = True
+                    self.dangerous_exploration_path = ExploreDangerousAlgo(self.arena, self.robot_info).calculate_cheapest_path()
+                    self.dangerous_exploration_path.append(START_COORD)
+                    self.waypoint_coord = self.dangerous_exploration_path.pop(0)
+                    target_coord = FastestPathAlgo().get_next_step(self.arena,self.robot_info, self.waypoint_coord)
+                    move_command = self.calculate_move(cur_coord, target_coord)
             else:
                 # Image rec target coord returns None if the FP has reached its goal
                 # Once we use FP to reach the next obstacle, we need to align it with the wall before we can start RWH
