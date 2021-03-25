@@ -420,14 +420,10 @@ ISR(TIMER2_COMPA_vect) {
     base_right = power;
   }
 
+  #define DO_LIVE_ALIGNMENT
   #ifdef DO_LIVE_ALIGNMENT
     if (straight_enabled && move_type == DISTANCE) {
-      static uint8_t tick_count = 0;
-      tick_count ++;
-
-      if (tick_count > 4 && (base_left > kWall_align_min_power) && (base_right > kWall_align_min_power)) {
-        tick_count = 0;
-
+      if ((base_left > kWall_align_min_power) && (base_right > kWall_align_min_power)) {
         if (move_dir == FORWARD) {
           static uint8_t ticks_since_align_selected = 0;
           ticks_since_align_selected ++;
