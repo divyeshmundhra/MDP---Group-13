@@ -26,6 +26,7 @@ class Agent:
         self.waypoint_coord = waypoint_coord
         self.reached_waypoint = False
         self.exploration_complete = False
+        self.dangerous_exploration = False
         self.dangerous_exploration_path = None
         self.algo = None # initialized 3 lines below
 
@@ -75,8 +76,7 @@ class Agent:
         cur_coord = self.robot_info.get_coord()
 
         if self.time_ran_out:
-            message = f'4.5 minutes reached, returning to start!'
-            self.exploration_complete = True
+            message = '4.5 minutes reached, returning to start!'
             target_coord = FastestPathAlgo().get_next_step(self.arena,self.robot_info, START_COORD)
             move_command = self.calculate_move(cur_coord, target_coord)
             return AgentOutput(
@@ -84,14 +84,15 @@ class Agent:
                 message
             )
 
-        if self.exploration_complete:
-            if self.robot_info.get_coord().is_equal(self.waypoint_coord):
-                self.waypoint_coord = self.dangerous_exploration_path.pop(0) if self.dangerous_exploration_path else None
-                # look around
+        if self.dangerous_exploration:
+            if not self.dangerous_exploration_path and self.robot_info.get_coord().is_equal(START_COORD):
                 return AgentOutput(
-                    MoveCommand(360, 0),
-                    'Looking around to see unexplored dangerous cell'
+                    None,
+                    'Qutting: Done dangerous exploration and already back to start'
                 )
+            if self.robot_info.get_coord().is_equal(self.waypoint_coord):
+                self.waypoint_coord = self.dangerous_exploration_path.pop(0)
+                print('Going to next waypoint')
             target_coord = FastestPathAlgo().get_next_step(self.arena,self.robot_info,self.waypoint_coord)
         else:
             target_coord = self.think()
@@ -101,14 +102,18 @@ class Agent:
                 message = f'No valid path!'
                 move_command = None
             elif self.task == AgentTask.EXPLORE:
-                message = f'Explored all non-dangerous cells!'
-                self.exploration_complete = True
-                # self.fill_remaining_unexplored_with_obstacles()
-                self.dangerous_exploration_path = ExploreDangerousAlgo(self.arena, self.robot_info).calculate_cheapest_path()
-                self.dangerous_exploration_path.append(START_COORD)
-                self.waypoint_coord = self.dangerous_exploration_path.pop(0)
-                target_coord = FastestPathAlgo().get_next_step(self.arena,self.robot_info, self.waypoint_coord)
-                move_command = self.calculate_move(cur_coord, target_coord)
+                if not self.arena.list_unexplored_cells():
+                    message = 'Explored all cells!'
+                    move_command = None
+                else:
+                    message = 'Explored all non-dangerous cells!'
+                    # self.fill_remaining_unexplored_with_obstacles()
+                    self.dangerous_exploration = True
+                    self.dangerous_exploration_path = ExploreDangerousAlgo(self.arena, self.robot_info).calculate_cheapest_path()
+                    self.dangerous_exploration_path.append(START_COORD)
+                    self.waypoint_coord = self.dangerous_exploration_path.pop(0)
+                    target_coord = FastestPathAlgo().get_next_step(self.arena,self.robot_info, self.waypoint_coord)
+                    move_command = self.calculate_move(cur_coord, target_coord)
             else:
                 # Image rec target coord returns None if the FP has reached its goal
                 # Once we use FP to reach the next obstacle, we need to align it with the wall before we can start RWH

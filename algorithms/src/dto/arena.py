@@ -89,7 +89,11 @@ class Arena:
         for y in range(MAP_ROW):
             for x in range(MAP_COL):
                 cur = Coord(x, y)
-                self.get_cell_at_coord(cur).set_is_dangerous(False)
+                cell = self.get_cell_at_coord(cur)
+                if cell.is_obstacle():
+                    cell.set_is_dangerous(True)
+                else:
+                    cell.set_is_dangerous(False)
                 for displacement in Arena.EIGHT_ADJACENCY:
                     adj = cur.add(displacement)
                     if not self.coord_is_valid(adj):
