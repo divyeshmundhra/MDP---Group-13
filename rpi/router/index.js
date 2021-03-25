@@ -21,6 +21,9 @@ const state = {
   mode: false,
 };
 
+const detections = new Set();
+let terminateTimeout;
+
 controller.on("data", (data) => {
   if (data === "FP") {
     state.mode = "FP";
@@ -50,6 +53,31 @@ controller.on("data", (data) => {
       },
     });
     comms.send({ type: "start" });
+  } else if (data === "IR") {
+    state.mode = "EX";
+    logger.info(`Mode set to ${state.mode}`);
+    detections.clear();
+    clearTimeout(terminateTimeout);
+    terminateTimeout = setTimeout(() => {
+      logger.info("Terminating due to timeout");
+      comms.send({ type: "terminate" });
+    }, config.imageRecognition.maxRuntime);
+    comms.send({
+      type: "init",
+      data: {
+        task: "IR",
+        arena: {
+          P1: "0",
+          P2: "0",
+        },
+      },
+    });
+    robot.send("D0");
+    robot.once("sensors", () => {
+      comms.send({ type: "start" });
+    });
+
+    robot.send("Qa");
   } else if (data.startsWith("WP:")) {
     const match = data.match(/WP:(\d+),(\d+)/);
     if (!match) {
@@ -62,6 +90,16 @@ controller.on("data", (data) => {
 
     comms.send({ type: "waypoint", data: { x, y } });
     controller.send(`Grid:${store.get("fp_p2")}`);
+  } else if (data === "PING") {
+    // transmit message that algo should reply to
+    comms.send({ type: "ping" });
+    // transmit message that robot should reply to
+    robot.send("D0");
+    robot.once("data", () => {
+      controller.send("Pong from robot");
+    });
+  } else if (data === "TX") {
+    comms.send({ type: "terminate" });
   }
 });
 
@@ -126,6 +164,24 @@ comms.on("data", ({ type, data }) => {
       controller.send(`MapData:${P1},${P2},${x},${y},${orientation}`);
     } else {
       logger.warn("Received status while mode not set");
+    }
+
+    comms.send({ type: "robotinfo", data: data["robot_info"] });
+  } else if (type === "pong") {
+    controller.send("Pong from algo");
+  } else if (type === "detection") {
+    controller.send(`NumberedBlock:${data["x"]},${data["y"]},${data["id"]}`);
+  } else if (type === "detection") {
+    detections.add(data["id"]);
+    controller.send(`NumberedBlock:${data["x"]},${data["y"]},${data["id"]}`);
+
+    if (detections.size >= config.imageRecognition.detectCount) {
+      logger.info(
+        `Terminating because found ${
+          config.imageRecognition.detectCount
+        } detections: ${Array.from(detections).join(", ")}`
+      );
+      comms.send({ type: "terminate" });
     }
   }
 });

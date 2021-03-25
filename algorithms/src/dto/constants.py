@@ -10,6 +10,7 @@ red = [255, 0, 0]
 green = [0, 255, 0]
 yellow = [255, 255, 0]
 purple = [138, 43, 226]
+light_blue = [135,206,250]
 
 # Defining map dimensions
 MAP_ROW = 20
@@ -44,7 +45,7 @@ START_ORIENTATION = Orientation.NORTH
 class AgentTask(Enum):
     FAST = 0
     EXPLORE = 1
-
+    IMAGEREC = 2
 
 class TimeCosts:
     QUARTER_TURN = 1
@@ -52,9 +53,10 @@ class TimeCosts:
     # extendable: predefined times for larger turns and moves? linear equation to calculate time for larger turns and moves?
 
 SURE_VIEW_RANGE = 3
+
 SENSOR_CONSTANTS = {
     "FORWARD_FRONT_LEFT": {
-        "range": 3,
+        "range": 5,
         "direction": 0,  # degrees from forward face of robot
         "displacement_0": Coord(-1, 1),
         "displacement_1": Coord(1, 1),
@@ -62,7 +64,7 @@ SENSOR_CONSTANTS = {
         "displacement_3": Coord(-1, -1),
     },
     "FORWARD_FRONT_MID": {
-        "range": 3,
+        "range": 5,
         "direction": 0,
         "displacement_0": Coord(0, 1),
         "displacement_1": Coord(1, 0),
@@ -70,7 +72,7 @@ SENSOR_CONSTANTS = {
         "displacement_3": Coord(-1, 0)
     },
     "FORWARD_FRONT_RIGHT": {
-        "range": 3,
+        "range": 5,
         "direction": 0,
         "displacement_0": Coord(1, 1),
         "displacement_1": Coord(1, -1),
@@ -78,7 +80,7 @@ SENSOR_CONSTANTS = {
         "displacement_3": Coord(-1, 1)
     },
     "LEFT_FRONT": {
-        "range": 3,
+        "range": 5,
         "direction": 270,
         "displacement_0": Coord(-1, 1),
         "displacement_1": Coord(1, 1),
@@ -86,7 +88,7 @@ SENSOR_CONSTANTS = {
         "displacement_3": Coord(-1, -1)
     },
     "RIGHT_FRONT": {
-        "range": 3,
+        "range": 5,
         "direction": 90,
         "displacement_0": Coord(1, 1),
         "displacement_1": Coord(1, -1),
@@ -94,7 +96,7 @@ SENSOR_CONSTANTS = {
         "displacement_3": Coord(-1, 1)
     },
     "LEFT_REAR": {
-        "range": 3,
+        "range": 5,
         "direction": 270,
         "displacement_0": Coord(-1, -1),
         "displacement_1": Coord(-1, 1),

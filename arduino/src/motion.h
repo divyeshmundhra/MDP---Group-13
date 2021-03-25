@@ -21,7 +21,7 @@ void loop_motion();
  * @param direction Direction to move in
  * @param distance Distance to move for
  */
-void start_motion_distance(motion_direction_t direction, uint32_t distance);
+void start_motion_distance(motion_direction_t direction, uint32_t distance, bool align, bool report);
 /**
  * @brief Start forward movement until obstacle is seen at \p distance
  * 
@@ -36,8 +36,10 @@ void start_motion_obstacle(uint16_t distance);
  * 
  * @param _direction 
  * @param unit 
+ * @param align whether this move should be treated as an align (if align, sensors are not reported, if not align, an alignment w
+ *  will be triggered afterward)
  */
-void start_motion_unit(motion_direction_t _direction, uint8_t unit);
+void start_motion_unit(motion_direction_t _direction, uint8_t unit, bool align, bool report);
 
 void start_align(uint8_t mode);
 

@@ -138,3 +138,66 @@ class Arena:
                 if y in [0,MAP_ROW-1] or x in [0,MAP_COL-1]:
                     # cells at edge of arena are too close to the walls
                     self.get_cell_at_coord(Coord(x,y)).set_is_dangerous(True)
+
+
+# Used in Image Rec Algo:
+    def all_obstacles_seen(self) -> bool:
+        for coord in self.list_known_obstacles():
+            if not self.get_cell_at_coord(coord).is_seen():
+                return False
+        return True
+    
+    def list_known_obstacles(self) -> list:
+        l = []
+        for y in range(MAP_ROW):
+            for x in range(MAP_COL):
+                coord = Coord(x,y)
+                if self.get_cell_at_coord(coord).is_obstacle():
+                    l.append(coord)
+        return l
+
+    def get_nearest_obstacle_adj_coord(self, cur_coord: Coord) -> Coord: # if empty is true, return the adj coord, else return the obstacle itself
+        obstacle_coord_list = self.list_known_obstacles()
+        unseen_obstacles_list = []
+        target = None
+
+        for item in obstacle_coord_list:
+            if not self.get_cell_at_coord(item).is_seen():
+                if item.get_x() != 0 and item.get_x() != 14 and item.get_y() != 0 and item.get_y() != 19:
+                    unseen_obstacles_list.append(item)
+
+        # store a list of all vantages, then take the nearest one
+        rwh_vantage_list = []
+        for obstacle in unseen_obstacles_list:
+            for rwh_vantage in self.calculate_rwh_vantage(obstacle): # iterate through the obstacle's vantage points
+                if not self.coord_is_valid(rwh_vantage):
+                    continue
+                if self.get_cell_at_coord(rwh_vantage).is_obstacle():
+                    continue
+                if self.get_cell_at_coord(rwh_vantage).is_dangerous():
+                    continue
+                if not self.get_cell_at_coord(rwh_vantage).is_explored():
+                    continue
+
+                distance = rwh_vantage.subtract(cur_coord).manhattan_distance()
+                rwh_vantage_list.append((distance, rwh_vantage, obstacle))
+
+        try:
+            target = sorted(rwh_vantage_list, key=lambda x: x[0])[0]
+            return target[1], target[2]
+        except IndexError:
+            print("NO MORE UNSEEN OBSTACLES")
+            return None, None
+
+        
+
+
+    def calculate_rwh_vantage(self, ue: Coord) -> list:
+        # vantage points are cells where robot will stand next to an obstacle
+        rwh_vantage_points = []
+        
+        for disp in [(-2,0), (0,2), (0,-2), (2,0)]:
+            coord = Coord(disp[0], disp[1])
+            rwh_vantage_points.append(ue.add(coord))
+            
+        return rwh_vantage_points

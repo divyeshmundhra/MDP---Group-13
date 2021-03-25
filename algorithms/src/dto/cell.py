@@ -1,3 +1,5 @@
+from src.dto.constants import Orientation
+
 class Cell:
     def __init__(self, coord):
         self.coord = coord
@@ -5,6 +7,13 @@ class Cell:
         self.visited = False
         self.obstacle = 0
         self.danger = None # danger when too close to wall, thus danger of collision
+        self.seen = False
+        self.seen_surface = { # only for dangerous cells
+                Orientation.NORTH: False,
+                Orientation.EAST: False,
+                Orientation.SOUTH: False,
+                Orientation.WEST: False
+            }
 
     def get_coord(self):
         return self.coord
@@ -46,3 +55,27 @@ class Cell:
     def set_is_dangerous(self, danger):
         self.danger = danger
         return self
+
+    def is_seen(self):
+        return self.seen
+    
+    def set_is_seen(self, seen):
+        self.seen = seen
+        return self
+
+    def set_seen_surface(self, face):
+        if face == 0:
+            orientation = Orientation.NORTH
+        elif face == 90:
+            orientation = Orientation.EAST
+        elif face == 180:
+            orientation = Orientation.SOUTH
+        elif face == 270:
+            orientation = Orientation.WEST
+        else: raise Exception(f'Invalid surface orientation')
+
+        if self.obstacle:
+            self.seen_surface[orientation] = True
+
+    def get_seen_surfaces(self):
+        return self.seen_surface 

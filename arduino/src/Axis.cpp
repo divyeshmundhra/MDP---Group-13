@@ -3,16 +3,20 @@
 #include "Axis.h"
 #include "config.h"
 
-void Axis::setPower(int16_t target_power) {
+void Axis::setPower(int16_t target_power, bool cap_accel) {
   _target_power = target_power;
 
-  int16_t delta = _target_power - _power;
-  if (delta > kMax_axis_accel) {
-    _power += kMax_axis_accel;
-  } else if (delta < kMax_axis_decel) {
-    _power += kMax_axis_decel;
-  } else {
+  if (!cap_accel) {
     _power = _target_power;
+  } else {
+    int16_t delta = _target_power - _power;
+    if (delta > kMax_axis_accel) {
+      _power += kMax_axis_accel;
+    } else if (delta < kMax_axis_decel) {
+      _power += kMax_axis_decel;
+    } else {
+      _power = _target_power;
+    }
   }
 
   if (_power > 0) {
@@ -34,4 +38,14 @@ void Axis::setReverse(bool reverse) {
   pReverse = reverse;
 
   _reverse = reverse;
+}
+
+void Axis::resetEncoderForNextMove(int32_t error) {
+  if (_invert ^ _reverse) {
+    _encoder_count = error;
+  } else {
+    _encoder_count = -error;
+  }
+  _encoder_count = 0;
+  _encoder_correction = 0;
 }
