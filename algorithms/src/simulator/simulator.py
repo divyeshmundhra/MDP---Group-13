@@ -43,7 +43,7 @@ class Simulator:
         # calculate agent percepts
         sis = SensorInputSimulation(self.robot_info, self.arena)
         obstacle_coord_list, no_obs_coord_list = sis.calculate_percepts()
-        for coord in obstacle_coord_list:
+        for coord, _ in obstacle_coord_list: # distance is not used, hence renamed to _
             self.arena.get_cell_at_coord(coord).set_is_explored(True)
         for coord in no_obs_coord_list:
             self.arena.get_cell_at_coord(coord).set_is_explored(True)
@@ -70,7 +70,8 @@ class Simulator:
 
         if self.coverage <= self.arena.get_coverage_percentage():
             print("Coverage limit reached!")
-            self.quit()
+            if self.robot_info.get_coord().is_equal(START_COORD):
+                self.quit() # when exploring we need to go back to start point, so don't quit before
 
         self.update_robot_info(move_command)
 
@@ -139,8 +140,7 @@ class Simulator:
                 self.update_display()
 
         unit_move = OrientationTransform.orientation_to_unit_displacement(new_orientation)
-        # move = unit_move.multiply(move_command.get_cells_to_advance()) # enable this if robot can move multiple squares
-        move = unit_move # enable this if robot can move one square at a time
+        move = unit_move.multiply(move_command.get_cells_to_advance()) # enable this if robot can move multiple squares
         self.robot_info.set_coord(self.robot_info.get_coord().add(move))
 
     def quit(self):

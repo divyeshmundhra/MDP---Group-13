@@ -81,6 +81,7 @@ class AgentInterface:
         self.agent_task = agent_task
         self.agent = Agent(arena_string, robot_info, agent_task, end_coord, self.waypoint)
         self.agent.mark_robot_visited_cells(self.agent.get_robot_info().get_coord()) # temp solution
+
         ev = pygame.event.Event(E_INIT, {
             'robot_info': robot_info
         })
@@ -108,8 +109,8 @@ class AgentInterface:
             obstacle_coord_list, no_obs_coord_list = [], []
         print('obstacle list: ')
         obstacle_str = ''
-        for coord in obstacle_coord_list:
-            obstacle_str += f'({coord.get_x()}, {coord.get_y()}), '
+        for coord, distance in obstacle_coord_list:
+            obstacle_str += f'({coord.get_x()}, {coord.get_y()}), {distance}, '
         print(obstacle_str)
         return obstacle_coord_list, no_obs_coord_list
     
@@ -338,4 +339,5 @@ def test_connection():
 
 threading.Thread(target=AgentInterface().main, daemon=True).start()
 threading.Thread(target=test_connection, daemon=True).start()
+
 handle_ui()
