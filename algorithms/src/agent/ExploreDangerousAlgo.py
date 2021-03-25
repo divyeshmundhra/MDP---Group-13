@@ -14,7 +14,17 @@ class ExploreDangerousAlgo():
     def calculate_cheapest_path(self):
         # path = self.bfs() # solution is super slow
         path = self.greedy() # slightly suboptimal, but much faster
-        return path
+        path_filtered = []
+
+        # remove duplicates
+        for coord in path:
+            seen = False
+            for c in path_filtered:
+                if coord.is_equal(c):
+                    seen = True
+            if not seen:
+                path_filtered.append(coord)
+        return path_filtered
 
     def greedy(self):
         unvisited = self.unexplored_coords.copy()

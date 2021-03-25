@@ -90,9 +90,12 @@ class Agent:
                     None,
                     'Qutting: Done dangerous exploration and already back to start'
                 )
-            if self.robot_info.get_coord().is_equal(self.waypoint_coord):
-                self.waypoint_coord = self.dangerous_exploration_path.pop(0)
-                print('Going to next waypoint')
+            if not self.waypoint_coord.is_equal(START_COORD):
+                self.dangerous_exploration_path = ExploreDangerousAlgo(self.arena, self.robot_info).calculate_cheapest_path()
+                self.dangerous_exploration_path.append(START_COORD)
+                if self.robot_info.get_coord().is_equal(self.waypoint_coord) and self.dangerous_exploration_path:
+                    self.waypoint_coord = self.dangerous_exploration_path.pop(0)
+                    print('Going to next waypoint')
             target_coord = FastestPathAlgo().get_next_step(self.arena,self.robot_info,self.waypoint_coord)
         else:
             target_coord = self.think()
