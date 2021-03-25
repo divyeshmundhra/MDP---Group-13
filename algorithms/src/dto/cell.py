@@ -37,22 +37,22 @@ class Cell:
         return self
 
     def is_obstacle(self):
-        return self.obstacle > 0
+        return self.obstacle > 1
 
     def increment_is_obstacle(self, delta=1):
         if delta < 1:
             delta = 1
         self.obstacle += delta
-        if self.obstacle > 4:
-            self.obstacle = 4
+        if self.obstacle > 8:
+            self.obstacle = 8
         return self
 
     def decrement_is_obstacle(self, delta=1):
         if delta < 1:
             delta = 1
         self.obstacle -= delta
-        if self.obstacle < -3:
-            self.obstacle = -3
+        if self.obstacle < -7:
+            self.obstacle = -7
         return self
 
     def is_dangerous(self):

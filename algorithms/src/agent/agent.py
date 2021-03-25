@@ -147,11 +147,11 @@ class Agent:
         
         for coord, distance in no_obs_coord_list:
             # mark seen clear cells as explored
-            self.arena.get_cell_at_coord(coord).set_is_explored(True).decrement_is_obstacle(delta=4-(distance-2))
+            self.arena.get_cell_at_coord(coord).set_is_explored(True).decrement_is_obstacle(delta=5-(distance-2))
         for coord, distance in obstacles_coord_list:
             # mark seen obstacles as explored
             cell = self.arena.get_cell_at_coord(coord)
-            cell.increment_is_obstacle(delta=4-(distance-2)).set_is_explored(True)
+            cell.increment_is_obstacle(delta=5-(distance-2)).set_is_explored(True)
         self.arena.update_dangerous_cells()
 
     def think(self) -> Coord:
