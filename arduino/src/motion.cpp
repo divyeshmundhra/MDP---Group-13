@@ -421,7 +421,8 @@ ISR(TIMER2_COMPA_vect) {
   int16_t power_left = 0, power_right = 0;
   if (move_type == DISTANCE) {
     base_left = controllerStraight(&state_straight_left, encoder_left, target_left);
-    base_right = controllerStraight(&state_straight_right, encoder_right, target_right);
+    base_right = base_left;
+    // base_right = controllerStraight(&state_straight_right, encoder_right, target_right);
   } else if (move_type == OBSTACLE) {
     base_left = controllerObstacle(&state_obstacle_left, sensor_distances[FRONT_FRONT_LEFT], target_obstacle);
     base_right = controllerObstacle(&state_obstacle_right, sensor_distances[FRONT_FRONT_RIGHT], target_obstacle);
@@ -450,7 +451,7 @@ ISR(TIMER2_COMPA_vect) {
     base_right = power;
   }
 
-  #define DO_LIVE_ALIGNMENT
+  // #define DO_LIVE_ALIGNMENT
   #ifdef DO_LIVE_ALIGNMENT
     if (straight_enabled && move_type == DISTANCE) {
       if ((base_left > kWall_align_min_power) && (base_right > kWall_align_min_power)) {
@@ -1059,6 +1060,16 @@ void loop_motion() {
             break;
           }
 
+          if (align_dir == LEFT) {
+            int16_t diff_err = sensor_distances[LEFT_FRONT] - kWall_offsets_left[sensor_distances[LEFT_FRONT] / 100];
+
+            if (diff_err < kAuto_align_min_diff) {
+              Serial.println(F("Did not start turn: LEFT_FRONT within tolerance"));
+              align_auto_state = ALIGN_AUTO_IDLE;
+              break;
+            }
+          }
+
           if (moves_since_turn_align >= kAuto_align_rate_limit) {
             moves_since_turn_align = 0;
           } else {
@@ -1237,5 +1248,19 @@ void loop_motion() {
     }
 
     state = IDLE;
+  }
+
+  if (moves_since_turn_align > (kAuto_align_rate_limit + 1)) {
+    kMS_max_output = 350;
+    kMS_min_output = -350;
+
+    kAuto_align_threshold = 200;
+    kAuto_align_max_diff = 200;
+  } else {
+    kMS_max_output = 400;
+    kMS_min_output = -400;
+
+    kAuto_align_threshold = 300;
+    kAuto_align_max_diff = 300;
   }
 }

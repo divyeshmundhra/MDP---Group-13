@@ -20,8 +20,8 @@ const uint16_t kRobot_circumference = 3.14159 * kWheel_distance;
 
 // hardcode ticks to allow for tuning
 const uint16_t kTicks_per_45_degrees = 814;
-const uint16_t kTicks_per_90_degrees = 1600;
-const uint16_t kTicks_per_180_degrees = 3200;
+const uint16_t kTicks_per_90_degrees = 1600+12;
+const uint16_t kTicks_per_180_degrees = 3200+12;
 
 int32_t unit_turn_to_ticks(uint16_t units);
 
