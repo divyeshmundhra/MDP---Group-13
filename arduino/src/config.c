@@ -21,7 +21,7 @@ int16_t kAuto_align_threshold = 300;
 int16_t kAuto_align_max_diff = 200;
 
 int16_t kP_align = 200;
-int16_t kI_align = 250;
+int16_t kI_align = 200;
 int16_t kD_align = 128;
 
 int16_t kMS_max_output = 400;
