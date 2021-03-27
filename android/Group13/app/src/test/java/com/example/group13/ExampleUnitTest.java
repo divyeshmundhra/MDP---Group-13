@@ -1,4 +1,4 @@
-package com.example.group13_2;
+package com.example.group13;
 
 import org.junit.Test;
 
