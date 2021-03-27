@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    >
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="550dp"
+        android:orientation="horizontal">
+
+    <LinearLayout
+        android:layout_width="275dp"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:layout_marginStart="5dp">
+    <TextView
+        android:id="@+id/title_paired_devices"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#666"
+        android:paddingLeft="5dp"
+        android:text="@string/title_paired_devices"
+        android:textColor="#fff"
+        android:visibility="gone"
+        />
+
+        <ListView
+            android:id="@+id/paired_devices"
+            android:layout_width="291dp"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:stackFromBottom="false"
+            android:textColor="#33BEFF" />
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="275dp"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:layout_marginStart="5dp">
+
+    <TextView
+        android:id="@+id/title_new_devices"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#666"
+        android:paddingStart="5dp"
+        android:text="@string/title_other_devices"
+        android:textColor="#fff"
+        android:visibility="gone"
+        />
+
+    <ListView
+        android:id="@+id/new_devices"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="2"
+        android:stackFromBottom="false"
+        />
+    </LinearLayout>
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/button_scan"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/button_scan"
+        />
+</LinearLayout>
