@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/constraintLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#031926"
+    tools:context=".MainActivity">
+
+
+    <FrameLayout
+        android:id="@+id/sample_content_fragment"
+        android:layout_width="604dp"
+        android:layout_height="162dp"
+        android:layout_gravity="bottom"
+        android:layout_marginTop="556dp"
+        android:background="#f4e9cd"
+        android:radius="2dp"
+        android:textColor="@android:color/white"
+        android:windowSoftInputMode="adjustPan"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0"
+        tools:layout_editor_absoluteX="-3dp">
+
+    </FrameLayout>
+
+    <View
+        android:id="@+id/border"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/colorPrimaryDark"
+        app:layout_constraintBottom_toTopOf="@+id/sample_content_fragment"
+        tools:layout_editor_absoluteX="0dp" />
+
+
+    <GridLayout
+        android:id="@+id/base_layout"
+        android:layout_width="376dp"
+        android:layout_height="500dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_weight="5"
+        android:background="#468189"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+    </GridLayout>
+
+    <Button
+        android:id="@+id/explore"
+        android:layout_width="167dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/my_button_bg"
+        android:fontFamily="@font/share_tech_mono"
+        android:text="Exploration"
+        android:textColor="#F4E9CD"
+        android:textSize="22dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/base_layout" />
+
+    <Button
+        android:id="@+id/fastest_path"
+        android:layout_width="374dp"
+        android:layout_height="38dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/my_button_bg"
+        android:text="@string/fastest_path"
+        android:fontFamily="@font/share_tech_mono"
+        android:textColor="#F4E9CD"
+        android:textSize="22dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/explore" />
+
+    <Button
+        android:id="@+id/terminate_exploration"
+        android:layout_width="198dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="188dp"
+        android:layout_marginTop="524dp"
+        android:background="@drawable/my_button_bg"
+        android:text="@string/terminate_explore"
+        android:textColor="#F4E9CD"
+        android:fontFamily="@font/share_tech_mono"
+        android:textSize="15dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageButton
+        android:id="@+id/forwardJoystick"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        android:layout_marginStart="462dp"
+
+        android:layout_marginTop="8dp"
+        android:adjustViewBounds="true"
+        android:background="@null"
+        android:scaleType="fitCenter"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/base_layout"
+        app:srcCompat="@drawable/direction_up2" />
+
+    <ImageButton
+        android:id="@+id/rightJoystick"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        android:layout_marginStart="528dp"
+        android:layout_marginTop="48dp"
+        android:adjustViewBounds="true"
+        android:background="@null"
+        android:scaleType="fitCenter"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/base_layout"
+        app:srcCompat="@drawable/direction_right2" />
+
+    <ImageButton
+        android:id="@+id/leftJoystick"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        android:layout_marginStart="400dp"
+        android:layout_marginTop="48dp"
+        android:adjustViewBounds="true"
+        android:background="@null"
+        android:scaleType="fitCenter"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/base_layout"
+        app:srcCompat="@drawable/direction_left2" />
+
+    <Switch
+        android:id="@+id/set_waypoint"
+        android:layout_width="180dp"
+        android:layout_height="30dp"
+        android:layout_marginStart="408dp"
+        android:layout_marginTop="20dp"
+        android:background="#77aca2"
+        android:fontFamily="@font/share_tech_mono"
+        android:paddingLeft="10dp"
+        android:text="@string/set_waypoint"
+        android:textColor="#F4E9CD"
+        android:textSize="18dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Switch
+        android:id="@+id/set_robotPos"
+        android:layout_width="180dp"
+        android:layout_height="27dp"
+        android:layout_marginStart="408dp"
+        android:layout_marginTop="56dp"
+        android:background="#77aca2"
+        android:checked="false"
+        android:fontFamily="@font/share_tech_mono"
+        android:paddingLeft="10dp"
+        android:text="@string/set_robot_pos"
+        android:textColor="#F4E9CD"
+        android:textSize="18dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <RadioGroup
+        android:id="@+id/radioGroup"
+        android:layout_width="180dp"
+        android:layout_height="92dp"
+        android:layout_marginStart="408dp"
+        android:layout_marginTop="100dp"
+        android:background="#77ACA2"
+
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+
+        <TextView
+            android:id="@+id/header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#F4E9CD"
+            android:fontFamily="@font/share_tech_mono"
+            android:gravity="center"
+            android:text="MAP UPDATE"
+            android:textColor="#031926"
+            android:textSize="25dp" />
+
+        <RadioButton
+            android:id="@+id/radioAuto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:fontFamily="@font/share_tech_mono"
+            android:text="@string/auto_update"
+            android:textColor="#F4E9CD"
+            android:textSize="18dp" />
+
+        <RadioButton
+            android:id="@+id/radioManual"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/share_tech_mono"
+            android:text="@string/manual_update"
+            android:textColor="#F4E9CD"
+            android:textSize="18dp" />
+    </RadioGroup>
+
+    <Switch
+        android:id="@+id/gestureSwitch"
+        android:layout_width="180dp"
+        android:layout_height="30dp"
+        android:layout_marginStart="408dp"
+        android:layout_marginTop="248dp"
+        android:background="#77aca2"
+        android:fontFamily="@font/share_tech_mono"
+        android:paddingLeft="10dp"
+        android:text="@string/gesture"
+        android:textColor="#F4E9CD"
+        android:textSize="18dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Switch
+        android:id="@+id/tiltSwitch"
+        android:layout_width="180dp"
+        android:layout_height="30dp"
+        android:layout_marginStart="408dp"
+        android:layout_marginTop="212dp"
+        android:background="#77aca2"
+        android:fontFamily="@font/share_tech_mono"
+        android:paddingLeft="10dp"
+        android:text="@string/tilt"
+        android:textColor="#F4E9CD"
+        android:textSize="18dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    /*
+
+    */
+
+    <Button
+        android:id="@+id/config1"
+        android:layout_width="86dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="408dp"
+        android:layout_marginTop="348dp"
+        android:background="@drawable/my_button_bg2"
+        android:fontFamily="@font/share_tech_mono"
+        android:text="@string/config1_button"
+        android:textColor="#F4E9CD"
+        android:textSize="15dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/config2"
+        android:layout_width="86dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="348dp"
+        android:background="@drawable/my_button_bg2"
+        android:fontFamily="@font/share_tech_mono"
+        android:text="@string/config2_button"
+        android:textColor="#F4E9CD"
+        android:textSize="15dp"
+        app:layout_constraintStart_toEndOf="@+id/config1"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/remove_waypoint"
+        android:layout_width="180dp"
+        android:layout_height="43dp"
+        android:layout_marginStart="408dp"
+        android:layout_marginTop="216dp"
+        android:background="@drawable/my_button_bg2"
+        android:text="@string/remove_waypoint"
+        android:textColor="#F4E9CD"
+        android:fontFamily="@font/share_tech_mono"
+        android:textSize="20dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/set_robotPos" />
+
+    <Button
+        android:id="@+id/update"
+        android:layout_width="179dp"
+        android:layout_height="46dp"
+        android:layout_marginStart="408dp"
+        android:layout_marginTop="404dp"
+        android:background="@drawable/my_button_bg2"
+        android:fontFamily="@font/share_tech_mono"
+        android:text="@string/update"
+        android:textColor="#F4E9CD"
+        android:textSize="20dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/status_heading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="248dp"
+        android:fontFamily="@font/share_tech_mono"
+        android:text="@string/status"
+        android:textColor="#F4E9CD"
+        android:textSize="@dimen/font_size_medium"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/config2" />
+
+    <TextView
+        android:id="@+id/status"
+        android:layout_width="178dp"
+        android:layout_height="26dp"
+        android:layout_marginStart="104dp"
+        android:layout_marginTop="628dp"
+        android:fontFamily="@font/share_tech_mono"
+        android:maxWidth="150dp"
+        android:text="Idle"
+        android:textColor="#F4E9CD"
+        android:textSize="@dimen/font_size_medium"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_begin="20dp" />
+
+    <Button
+        android:id="@+id/reset"
+        android:layout_width="179dp"
+        android:layout_height="46dp"
+        android:layout_marginStart="408dp"
+        android:layout_marginTop="460dp"
+        android:background="@drawable/my_button_bg2"
+        android:fontFamily="@font/share_tech_mono"
+        android:text="Reset Map"
+        android:textColor="#F4E9CD"
+        android:textSize="20dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
