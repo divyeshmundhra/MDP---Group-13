@@ -23,10 +23,8 @@ import android.widget.TextView;
 import androidx.fragment.app.FragmentTransaction;
 import android.hardware.SensorEvent;
 import android.widget.Toast;
-
 import android.content.Intent;
 import android.speech.RecognizerIntent;
-
 import java.lang.Math;
 import java.util.ArrayList;
 
@@ -102,24 +100,22 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         tiltEnable = findViewById(R.id.tiltSwitch);
         tiltChecked=false;
 
-        //DECLARING SENSOR MANAGER AND SENSOR TYPE
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         sensorManager.registerListener(this, sensor,SensorManager.SENSOR_DELAY_NORMAL );
 
-        //initialize the bluetooth service component
         if (savedInstanceState == null) {
             chatUtil = new BluetoothChatModel();
-            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-            transaction.replace(R.id.sample_content_fragment, chatUtil);
-            transaction.commit();
+            FragmentTransaction bluetoothTransaction = getSupportFragmentManager().beginTransaction();
+            bluetoothTransaction.replace(R.id.fragment, chatUtil);
+            bluetoothTransaction.commit();
         }
 
         btn_update.setEnabled(false);
         updateStatus(status);
-        setBtnListener();
-        loadGrid();
+        buttonFunction();
         onClickTiltSwitch();
+        loadGrid();
     }
 
     public void onClickTiltSwitch() {
@@ -152,7 +148,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             ArrayList matches = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
 
             if (matches.contains("forward")) {
-                if(!RobotInstance.getInstance().isOutOfBounds()) {
+                if(!RobotInstance.getInstance().invalidCoordinate()) {
                     RobotInstance.getInstance().moveForward(10);
                     outgoingMessage(move_up, 1);
                     loadGrid();
@@ -208,7 +204,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     if (x>2) {
                         updateStatus("Left Tilt");
                         if(!RobotInstance.getInstance().rotateToWest()){
-                            if(!RobotInstance.getInstance().isOutOfBounds()) {
+                            if(!RobotInstance.getInstance().invalidCoordinate()) {
                                 outgoingMessage(move_left, 1);
                                 RobotInstance.getInstance().moveForward(10);
                             }
@@ -223,7 +219,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     if (x < -2) {
                         updateStatus("Right Tilt");
                         if(!RobotInstance.getInstance().rotateToEast()){
-                            if(!RobotInstance.getInstance().isOutOfBounds()) {
+                            if(!RobotInstance.getInstance().invalidCoordinate()) {
                                 outgoingMessage(move_right, 1);
                                 RobotInstance.getInstance().moveForward(10);
                             }
@@ -239,7 +235,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     if (y < -2) {
                         updateStatus("Up Tilt");
                         if(!RobotInstance.getInstance().rotateToNorth()){
-                            if(!RobotInstance.getInstance().isOutOfBounds()) {
+                            if(!RobotInstance.getInstance().invalidCoordinate()) {
                                 outgoingMessage(move_up, 1);
                                 RobotInstance.getInstance().moveForward(10);
                             }
@@ -254,7 +250,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     if (y >2) {
                         updateStatus("Down Tilt");
                         if(!RobotInstance.getInstance().rotateToSouth()){
-                            if(!RobotInstance.getInstance().isOutOfBounds()) {
+                            if(!RobotInstance.getInstance().invalidCoordinate()) {
                                 outgoingMessage(move_down, 1);
                                 RobotInstance.getInstance().moveForward(10);
                             }
@@ -275,26 +271,26 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public void onAccuracyChanged(Sensor sensor, int i) {
     }
 
-    public void incomingMessage(String readMsg) {
+    public void receivedMessage(String msg) {
         final RobotInstance r = RobotInstance.getInstance();
-        if (readMsg.length() > 0) {
+        if (msg.length() > 0) {
             chatUtil.showChat(true);
             String message[];
-            if (readMsg.contains(":")) {
-                message = readMsg.split(":");
+            if (msg.contains(":")) {
+                message = msg.split(":");
             } else {
-                message = readMsg.split("-");
+                message = msg.split("-");
             }
 
-            if (message[0].equals(incoming_grid_layout)) { //receive mapDescriptor from Algo
+            if (message[0].equals(incoming_grid_layout)) { //get just P2
                 GridMap.getInstance().setOnlyP2(message[1]);
                 if (autoUpdateRadio.isChecked()) {
                     loadGrid();
                 }
-            } else if (message[0].equals(incoming_map_data)) { //receive full data string (P1, P2, robot pos) from Algo
+            } else if (message[0].equals(incoming_map_data)) {//get (P1,P2,position)
                 String data[] = message[1].split(",");
 
-                GridMap.getInstance().setMap(data[0], "", data[1]);
+                GridMap.getInstance().setArena(data[0], "", data[1]);
 
                 r.setPosX(Float.parseFloat(data[2]));
                 r.setPosY(Float.parseFloat(data[3]));
@@ -302,14 +298,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 if (autoUpdateRadio.isChecked()) {
                     loadGrid();
                 }
-            } else if (message[0].equals(incoming_numbered_block)) { //receive numbered block
+            } else if (message[0].equals(incoming_numbered_block)) { //get image rec blocks
                 String data[] = message[1].split(","); //x, y, id
                 GridIDblock input = new GridIDblock(data[2], Integer.parseInt(data[0]), Integer.parseInt(data[1]));
-                GridMap.getInstance().addNumberedBlocks(input);
+                GridMap.getInstance().addIDBlocks(input);
                 if (autoUpdateRadio.isChecked()) {
                     loadGrid();
                 }
-            } else if (message[0].equals(incoming_robot_position)) { //receive robot position
+            } else if (message[0].equals(incoming_robot_position)) {
                 String posAndDirect[] = message[1].split(",");
                 r.setPosX(Float.parseFloat(posAndDirect[0]));
                 r.setPosY(Float.parseFloat(posAndDirect[1]));
@@ -340,9 +336,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 else {
                     updateStatus(message[1]);
                 }
-            } else if (message[0].trim().equals("Y")) { //harmonize with algo
+            } else if (message[0].trim().equals("Y")) {
                 updateStatus("Moving");
-            } else if (message[0].trim().equals("F")) { //harmonize with algo
+            } else if (message[0].trim().equals("F")) {
                 updateStatus("Done!");
             } else {
                 updateStatus("Invalid Message");
@@ -360,8 +356,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     public boolean outgoingMessage(String message, int destination) {
-        //add delimiters
-        // 0=algo/tcp, 1=ardu/serial
         if(destination == 0){
             message = message+"\n";
         }else if(destination == 1){
@@ -376,19 +370,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         return true;
     }
 
-    //initalize all the menu item button
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         super.onPrepareOptionsMenu(menu);
+        voice_option = menu.findItem(R.id.voice_btn);
         show_chat_menu = menu.findItem(R.id.action_show_bluetooth_chat);
         menu_set_config1 = menu.findItem(R.id.action_set_config_string1);
         menu_set_config2 = menu.findItem(R.id.action_set_config_string2);
         menu_display_string = menu.findItem(R.id.action_view_data_strings);
-        voice_option = menu.findItem(R.id.voice_btn);
         return true;
     }
 
-    //this is the event when menu item is clicked
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
@@ -401,11 +393,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             return true;
         }
         if (id == R.id.action_set_config_string1) {
-            setConfiguredString(1);
+            configStr(1);
             return true;
         }
         if (id == R.id.action_set_config_string2) {
-            setConfiguredString(2);
+            configStr(2);
             return true;
         }
         if (id == R.id.action_view_data_strings) {
@@ -418,10 +410,98 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         return super.onOptionsItemSelected(item);
     }
 
-    private void setConfiguredString(final int index){
+    public static String binaryStringToHexadecimalString(String s) {
+
+        String obstacles = "";
+        String binaryStr = s;
+        for(int i = 0; i < binaryStr.length(); i+=4){
+            int decimal = Integer.parseInt(binaryStr.substring(i,i+4),2);
+            String hexStr = Integer.toString(decimal,16);
+            obstacles += hexStr;
+        }
+        return obstacles;
+    }
+
+
+    public void topGesture() {
+        if(!RobotInstance.getInstance().rotateToNorth()){
+            if(!RobotInstance.getInstance().invalidCoordinate()) {
+                outgoingMessage(move_up, 1);
+                RobotInstance.getInstance().moveForward(10);
+            }
+        }
+        else{
+            Integer count = RobotInstance.getInstance().getCount();
+            sendMsgOnSwipe(count);
+            RobotInstance.getInstance().rotateRobotToNorth();
+        }
+        loadGrid();
+    }
+
+    public void leftGesture() {
+        if(!RobotInstance.getInstance().rotateToWest()){
+            if(!RobotInstance.getInstance().invalidCoordinate()) {
+                outgoingMessage(move_left, 1);
+                RobotInstance.getInstance().moveForward(10);
+            }
+        }
+        else{
+            Integer count = RobotInstance.getInstance().getCount();
+            sendMsgOnSwipe(count);
+            RobotInstance.getInstance().rotateRobotToWest();
+        }
+
+        loadGrid();
+    }
+
+    public void rightGesture() {
+        if(!RobotInstance.getInstance().rotateToEast()){
+            if(!RobotInstance.getInstance().invalidCoordinate()) {
+                outgoingMessage(move_right, 1);
+                RobotInstance.getInstance().moveForward(10);
+            }
+        }
+        else{
+            Integer count = RobotInstance.getInstance().getCount();
+            sendMsgOnSwipe(count);
+            RobotInstance.getInstance().rotateRobotToEast();
+        }
+        loadGrid();
+    }
+
+    public void bottomGesture() {
+        if(!RobotInstance.getInstance().rotateToSouth()){
+            if(!RobotInstance.getInstance().invalidCoordinate()) {
+                outgoingMessage(move_down, 1);
+                RobotInstance.getInstance().moveForward(10);
+            }
+        }
+        else{
+            Integer count = RobotInstance.getInstance().getCount();
+            sendMsgOnSwipe(count);
+            RobotInstance.getInstance().rotateRobotToSouth();
+        }
+        loadGrid();
+    }
+
+    public void sendMsgOnSwipe(Integer count){
+
+        if(count==1){
+            outgoingMessage("D", 1);
+        }
+        if(count==2){
+            outgoingMessage("D", 1);
+            outgoingMessage("D", 1);
+        }
+        if(count==-1){
+            outgoingMessage("A", 1);
+        }
+    }
+
+    private void configStr(final int index){
         final EditText txtField = new EditText(this);
-        SharedPreferences prefs = getSharedPreferences(String.valueOf(R.string.app_name), MODE_PRIVATE);
-        String retrievedText = prefs.getString("string"+index, null);
+        SharedPreferences preferences = getSharedPreferences(String.valueOf(R.string.app_name), MODE_PRIVATE);
+        String retrievedText = preferences.getString("string"+index, null);
         if (retrievedText != null) {
             txtField.setText(retrievedText);
         }
@@ -429,15 +509,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         new AlertDialog.Builder(this)
                 .setTitle("Configure String "+index)
                 .setView(txtField)
-                .setPositiveButton("Save", new DialogInterface.OnClickListener() {
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
                         String input = txtField.getText().toString();
-                        SharedPreferences.Editor editor = getSharedPreferences(String.valueOf(R.string.app_name), MODE_PRIVATE).edit();
+                        SharedPreferences.Editor editor = getSharedPreferences(("Group 13"), MODE_PRIVATE).edit();
                         editor.putString("string"+index, input);
                         editor.apply();
                     }
                 })
-                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                .setNegativeButton("Close", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
                     }
                 })
@@ -446,7 +526,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private void loadGrid(){
         Grid mCustomDrawableView = new Grid(this);
-        //set touch event and swipe event
         if(gestureEnable.isChecked()){
             mCustomDrawableView.setGesture(this);
         }else{
@@ -456,7 +535,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         base_layout.addView(mCustomDrawableView);
     }
 
-    public void onGridTapped(final int posX, final int posY) {
+    public void tapOnGrid(final int posX, final int posY) {
         if(set_robotPost.isChecked()){
             RobotInstance r = RobotInstance.getInstance();
             r.setPosX(posX);
@@ -474,7 +553,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         loadGrid();
     }
 
-    private void setBtnListener(){
+    private void buttonFunction(){
         btn_send_config1.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 SharedPreferences prefs = getSharedPreferences(String.valueOf(R.string.app_name), MODE_PRIVATE);
@@ -498,7 +577,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         joystick_forward.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 //check if robot is out of bounds
-                if(!RobotInstance.getInstance().isOutOfBounds()) {
+                if(!RobotInstance.getInstance().invalidCoordinate()) {
                     RobotInstance.getInstance().moveForward(10);
                     outgoingMessage(move_up, 1);
                     loadGrid();
@@ -555,7 +634,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             public void onClick(View v) {
                 updateStatus("Reset Map");
                 final RobotInstance r = RobotInstance.getInstance();
-                GridMap.getInstance().setMap(
+                GridMap.getInstance().setArena(
                         "0000000000000000000000000000000000000000000000000000000000000000000000000000",
                         "",
                         "0000000000000000000000000000000000000000000000000000000000000000000000000000");
@@ -594,17 +673,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         builder.setPositiveButton("CLOSE", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                // send data from the AlertDialog to the Activity
                 dialog.dismiss();
             }
         });
 
         EditText text_mdf1 = customLayout.findViewById(R.id.textbox_mdf1);
-        String explored = StringConverter.binaryStringToHexadecimalString(GridMap.getInstance().getBinaryExplored());
+        String explored = binaryStringToHexadecimalString(GridMap.getInstance().getExploredCells());
         text_mdf1.setText(explored);
 
         EditText text_mdf2 = customLayout.findViewById(R.id.textbox_mdf2);
-        String obstacles = StringConverter.binaryStringToHexadecimalString(GridMap.getInstance().getBinaryExploredObstacle());
+        String obstacles = binaryStringToHexadecimalString(GridMap.getInstance().getExploredObstacles());
         text_mdf2.setText(obstacles);
 
         EditText text_imgreg = customLayout.findViewById(R.id.textbox_imgreg);
@@ -617,88 +695,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if(imgreg.length()>2)imgreg = imgreg.substring(0, imgreg.length()-2);
         imgreg += "}";
         text_imgreg.setText(imgreg);
-
-        // create and show the alert dialog
         AlertDialog dialog = builder.create();
         dialog.show();
-    }
-
-
-
-    //swipe gesture input
-    public void onSwipeTop() {
-        if(!RobotInstance.getInstance().rotateToNorth()){
-            if(!RobotInstance.getInstance().isOutOfBounds()) {
-                outgoingMessage(move_up, 1);
-                RobotInstance.getInstance().moveForward(10);
-            }
-        }
-        else{
-            Integer count = RobotInstance.getInstance().getCount();
-            sendMsgOnSwipe(count);
-            RobotInstance.getInstance().rotateRobotToNorth();
-        }
-        loadGrid();
-    }
-
-    public void onSwipeLeft() {
-        if(!RobotInstance.getInstance().rotateToWest()){
-            if(!RobotInstance.getInstance().isOutOfBounds()) {
-                outgoingMessage(move_left, 1);
-                RobotInstance.getInstance().moveForward(10);
-            }
-        }
-        else{
-            Integer count = RobotInstance.getInstance().getCount();
-            sendMsgOnSwipe(count);
-            RobotInstance.getInstance().rotateRobotToWest();
-        }
-
-        loadGrid();
-    }
-
-    public void onSwipeRight() {
-        if(!RobotInstance.getInstance().rotateToEast()){
-            if(!RobotInstance.getInstance().isOutOfBounds()) {
-                outgoingMessage(move_right, 1);
-                RobotInstance.getInstance().moveForward(10);
-            }
-        }
-        else{
-            Integer count = RobotInstance.getInstance().getCount();
-            sendMsgOnSwipe(count);
-            RobotInstance.getInstance().rotateRobotToEast();
-        }
-        loadGrid();
-    }
-
-    public void onSwipeBottom() {
-        if(!RobotInstance.getInstance().rotateToSouth()){
-            if(!RobotInstance.getInstance().isOutOfBounds()) {
-                outgoingMessage(move_down, 1);
-                RobotInstance.getInstance().moveForward(10);
-            }
-        }
-        else{
-            Integer count = RobotInstance.getInstance().getCount();
-            sendMsgOnSwipe(count);
-            RobotInstance.getInstance().rotateRobotToSouth();
-        }
-        loadGrid();
-    }
-
-    public void sendMsgOnSwipe(Integer count){
-
-        if(count==1){
-            outgoingMessage("D", 1);
-        }
-        if(count==2){
-            outgoingMessage("D", 1);
-            outgoingMessage("D", 1);
-        }
-        if(count==-1){
-            outgoingMessage("A", 1);
-        }
     }
 
     @Override

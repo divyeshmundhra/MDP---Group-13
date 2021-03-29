@@ -10,7 +10,7 @@
 
 
     <FrameLayout
-        android:id="@+id/sample_content_fragment"
+        android:id="@+id/fragment"
         android:layout_width="604dp"
         android:layout_height="162dp"
         android:layout_gravity="bottom"
@@ -31,7 +31,7 @@
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:background="@color/colorPrimaryDark"
-        app:layout_constraintBottom_toTopOf="@+id/sample_content_fragment"
+        app:layout_constraintBottom_toTopOf="@+id/fragment"
         tools:layout_editor_absoluteX="0dp" />
 
 
