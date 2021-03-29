@@ -16,7 +16,7 @@
         android:orientation="vertical"
         android:layout_marginStart="5dp">
     <TextView
-        android:id="@+id/title_paired_devices"
+        android:id="@+id/paired_devices_heading"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="#666"
@@ -41,7 +41,7 @@
         android:layout_marginStart="5dp">
 
     <TextView
-        android:id="@+id/title_new_devices"
+        android:id="@+id/new_devices_heading"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="#666"

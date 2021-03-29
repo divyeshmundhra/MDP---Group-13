@@ -23,14 +23,14 @@ public class BluetoothService {
     private ConnectedThread mConnectedThread;
     private int mState;
     private int mNewState;
-    public static final int STATE_NONE = 0;
-    public static final int STATE_LISTEN = 1;
-    public static final int STATE_CONNECTING = 2;
-    public static final int STATE_CONNECTED = 3;
+    public static final int IDLE = 0;
+    public static final int BLUETOOTH_LISTEN = 1;
+    public static final int BLUETOOTH_CONNECTING = 2;
+    public static final int BLUETOOTH_CONNECTED = 3;
 
     public BluetoothService(Context context, Handler handler) {
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        mState = STATE_NONE;
+        mState = IDLE;
         mNewState = mState;
         mHandler = handler;
     }
@@ -79,7 +79,7 @@ public class BluetoothService {
             mInsecureAcceptThread.cancel();
             mInsecureAcceptThread = null;
         }
-        mState = STATE_NONE;
+        mState = IDLE;
         updateUserInterfaceTitle();
     }
 
@@ -91,7 +91,7 @@ public class BluetoothService {
 
         ConnectedThread r;
         synchronized (this) {
-            if (mState != STATE_CONNECTED) return;
+            if (mState != BLUETOOTH_CONNECTED) return;
             r = mConnectedThread;
         }
         r.write(out);
@@ -99,7 +99,7 @@ public class BluetoothService {
 
     public synchronized void connect(BluetoothDevice device, boolean secure) {
 
-        if (mState == STATE_CONNECTING) {
+        if (mState == BLUETOOTH_CONNECTING) {
             if (mConnectThread != null) {
                 mConnectThread.cancel();
                 mConnectThread = null;
@@ -170,14 +170,14 @@ public class BluetoothService {
             } catch (IOException e) {
             }
             mmServerSocket = tmp;
-            mState = STATE_LISTEN;
+            mState = BLUETOOTH_LISTEN;
         }
 
         public void run() {
             setName("AcceptThread" + mSocketType);
 
             BluetoothSocket socket = null;
-            while (mState != STATE_CONNECTED) {
+            while (mState != BLUETOOTH_CONNECTED) {
                 try {
                     socket = mmServerSocket.accept();
                 } catch (IOException e) {
@@ -187,13 +187,13 @@ public class BluetoothService {
                 if (socket != null) {
                     synchronized (BluetoothService.this) {
                         switch (mState) {
-                            case STATE_LISTEN:
-                            case STATE_CONNECTING:
+                            case BLUETOOTH_LISTEN:
+                            case BLUETOOTH_CONNECTING:
                                 connected(socket, socket.getRemoteDevice(),
                                         mSocketType);
                                 break;
-                            case STATE_NONE:
-                            case STATE_CONNECTED:
+                            case IDLE:
+                            case BLUETOOTH_CONNECTED:
                                 try {
                                     socket.close();
                                 } catch (IOException e) {
@@ -234,7 +234,7 @@ public class BluetoothService {
             } catch (IOException e) {
             }
             mmSocket = tmp;
-            mState = STATE_CONNECTING;
+            mState = BLUETOOTH_CONNECTING;
         }
 
         public void connectionFailed() {
@@ -244,7 +244,7 @@ public class BluetoothService {
             msg.setData(bundle);
             mHandler.sendMessage(msg);
 
-            mState = STATE_NONE;
+            mState = IDLE;
             updateUserInterfaceTitle();
             BluetoothService.this.start();
         }
@@ -296,13 +296,13 @@ public class BluetoothService {
 
             mmInStream = tmpIn;
             mmOutStream = tmpOut;
-            mState = STATE_CONNECTED;
+            mState = BLUETOOTH_CONNECTED;
         }
 
         public void run() {
             byte[] buffer = new byte[1024];
             int bytes;
-            while (mState == STATE_CONNECTED) {
+            while (mState == BLUETOOTH_CONNECTED) {
                 try {
                     bytes = mmInStream.read(buffer);
                     mHandler.obtainMessage(2, bytes, -1, buffer)
@@ -321,7 +321,7 @@ public class BluetoothService {
             msg.setData(bundle);
             mHandler.sendMessage(msg);
 
-            mState = STATE_NONE;
+            mState = IDLE;
             updateUserInterfaceTitle();
             BluetoothService.this.start();
         }

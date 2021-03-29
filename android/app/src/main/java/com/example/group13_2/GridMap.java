@@ -29,9 +29,9 @@ public class GridMap {
 		y = Math.max(0,y);
 		block = new GridIDblock(block.getID(),x,y);
 
-		for (GridIDblock nb:idBlocks) {
-			if(nb.getGridPosition().equals(block.getGridPosition()) || nb.getID().equals(block.getID())){
-				idBlocks.remove(nb);
+		for (GridIDblock ib:idBlocks) {
+			if(ib.getGridPosition().equals(block.getGridPosition()) || ib.getID().equals(block.getID())){
+				idBlocks.remove(ib);
 				break;
 			}
 		}

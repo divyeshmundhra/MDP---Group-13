@@ -82,15 +82,15 @@ public class BluetoothChatModel extends Fragment {
             switch (msg.what) {
                 case 1:
                     switch (msg.arg1) {
-                        case BluetoothService.STATE_CONNECTED:
+                        case BluetoothService.BLUETOOTH_CONNECTED:
                             setStatus(getString(R.string.title_connected_to, connectedDevice));
                             chatArrayAdapter.clear();
                             break;
-                        case BluetoothService.STATE_CONNECTING:
+                        case BluetoothService.BLUETOOTH_CONNECTING:
                             setStatus("Connecting...");
                             break;
-                        case BluetoothService.STATE_LISTEN:
-                        case BluetoothService.STATE_NONE:
+                        case BluetoothService.BLUETOOTH_LISTEN:
+                        case BluetoothService.IDLE:
                             setStatus("not connected");
                             break;
                     }
@@ -102,7 +102,6 @@ public class BluetoothChatModel extends Fragment {
                     break;
                 case 2:
                     byte[] readBuf = (byte[]) msg.obj;
-                    // construct a string from the valid bytes in the buffer
                     String readMessage = new String(readBuf, 0, msg.arg1);
                     String lines[] = readMessage.split("\\r?\\n");
                     for (String temp : lines) {
@@ -137,7 +136,7 @@ public class BluetoothChatModel extends Fragment {
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableIntent, 3);
         } else if (bluetoothService == null) {
-            setupChat();
+            startChat();
         }
     }
 
@@ -153,15 +152,14 @@ public class BluetoothChatModel extends Fragment {
     public void onResume() {
         super.onResume();
         if (bluetoothService != null) {
-            if (bluetoothService.getState() == BluetoothService.STATE_NONE) {
+            if (bluetoothService.getState() == BluetoothService.IDLE) {
                 bluetoothService.start();
             }
         }
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container,
-                             @Nullable Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.bluetooth_chat, container, false);
     }
 
@@ -216,7 +214,7 @@ public class BluetoothChatModel extends Fragment {
         }
     }
 
-    private void setupChat() {
+    private void startChat() {
         chatArrayAdapter = new ArrayAdapter<>(getActivity(), R.layout.chat);
         chatView.setAdapter(chatArrayAdapter);
         chatView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -268,7 +266,7 @@ public class BluetoothChatModel extends Fragment {
 
 
     protected boolean sendMessage(String message) {
-        if (bluetoothService.getState() != BluetoothService.STATE_CONNECTED) {
+        if (bluetoothService.getState() != BluetoothService.BLUETOOTH_CONNECTED) {
             Toast.makeText(getActivity(), "You are not connected to a device", Toast.LENGTH_SHORT).show();
             return false;
         }
@@ -294,19 +292,6 @@ public class BluetoothChatModel extends Fragment {
         }
     };
 
-    private void setStatus(int resId) {
-        FragmentActivity activity = getActivity();
-        if (null == activity) {
-            return;
-        }
-        final ActionBar actionBar = activity.getActionBar();
-        if (null == actionBar) {
-            return;
-        }
-        actionBar.setSubtitle(resId);
-    }
-
-
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
             case 1:
@@ -321,9 +306,9 @@ public class BluetoothChatModel extends Fragment {
                 break;
             case 3:
                 if (resultCode == Activity.RESULT_OK) {
-                    setupChat();
+                    startChat();
                 } else {
-                    Toast.makeText(getActivity(), "Bluetooth was not enabled. Leaving Bluetooth Chat.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getActivity(), "Bluetooth was not enabled. Exit Chat.", Toast.LENGTH_SHORT).show();
                     getActivity().finish();
                 }
         }

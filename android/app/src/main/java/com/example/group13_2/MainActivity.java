@@ -64,9 +64,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     String incoming_map_data = "MapData";
     String incoming_grid_layout = "Grid";
     String incoming_numbered_block = "NumberedBlock";
-    String incoming_move_forward = "Moving Forward";
-    String incoming_move_right = "Moving Right";
-    String incoming_move_left = "Moving Left";
     String move_up = "Robot|Up";
     String move_down = "Robot|Down";
     String move_left = "Robot|Left";
@@ -275,20 +272,20 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         final RobotInstance r = RobotInstance.getInstance();
         if (msg.length() > 0) {
             chatUtil.showChat(true);
-            String message[];
+            String partsOfMessage[];
             if (msg.contains(":")) {
-                message = msg.split(":");
+                partsOfMessage = msg.split(":");
             } else {
-                message = msg.split("-");
+                partsOfMessage = msg.split("-----");
             }
 
-            if (message[0].equals(incoming_grid_layout)) { //get just P2
-                GridMap.getInstance().setOnlyP2(message[1]);
+            if (partsOfMessage[0].equals(incoming_grid_layout)) { //get just P2
+                GridMap.getInstance().setOnlyP2(partsOfMessage[1]);
                 if (autoUpdateRadio.isChecked()) {
                     loadGrid();
                 }
-            } else if (message[0].equals(incoming_map_data)) {//get (P1,P2,position)
-                String data[] = message[1].split(",");
+            } else if (partsOfMessage[0].equals(incoming_map_data)) {//get (P1,P2,position)
+                String data[] = partsOfMessage[1].split(",");
 
                 GridMap.getInstance().setArena(data[0], "", data[1]);
 
@@ -298,49 +295,23 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 if (autoUpdateRadio.isChecked()) {
                     loadGrid();
                 }
-            } else if (message[0].equals(incoming_numbered_block)) { //get image rec blocks
-                String data[] = message[1].split(","); //x, y, id
+            } else if (partsOfMessage[0].equals(incoming_numbered_block)) { //get image rec blocks
+                String data[] = partsOfMessage[1].split(","); //x, y, id
                 GridIDblock input = new GridIDblock(data[2], Integer.parseInt(data[0]), Integer.parseInt(data[1]));
                 GridMap.getInstance().addIDBlocks(input);
                 if (autoUpdateRadio.isChecked()) {
                     loadGrid();
                 }
-            } else if (message[0].equals(incoming_robot_position)) {
-                String posAndDirect[] = message[1].split(",");
-                r.setPosX(Float.parseFloat(posAndDirect[0]));
-                r.setPosY(Float.parseFloat(posAndDirect[1]));
-                r.setDirection(posAndDirect[2]);
+            } else if (partsOfMessage[0].equals(incoming_robot_position)) {
+                String robotInfo[] = partsOfMessage[1].split(",");
+                r.setPosX(Float.parseFloat(robotInfo[0]));
+                r.setPosY(Float.parseFloat(robotInfo[1]));
+                r.setDirection(robotInfo[2]);
                 if (autoUpdateRadio.isChecked()) {
                     loadGrid();
                 }
             }
-            else if (message[0].equals("Msg")) {
-                if (message[1].equals("F")) {
-                    updateStatus(incoming_move_forward);
-                }
-                else if (message[1].equals("TR")) {
-                    updateStatus(incoming_move_right);
-                }
-                else if (message[1].equals("TL")) {
-                    updateStatus(incoming_move_left);
-                }
-                else if (message[1].equals("FP")) {
-                    updateStatus("Fastest Path");
-                }
-                else if (message[1].equals("EX")) {
-                    updateStatus("Exploring");
-                }
-                else if (message[1].equals("DONE")) {
-                    updateStatus("Done!");
-                }
-                else {
-                    updateStatus(message[1]);
-                }
-            } else if (message[0].trim().equals("Y")) {
-                updateStatus("Moving");
-            } else if (message[0].trim().equals("F")) {
-                updateStatus("Done!");
-            } else {
+            else {
                 updateStatus("Invalid Message");
             }
         }
@@ -355,12 +326,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         return chatUtil.sendMsg(message);
     }
 
-    public boolean outgoingMessage(String message, int destination) {
-        if(destination == 0){
-            message = message+"\n";
-        }else if(destination == 1){
-            message = message+"\n";
-        }
+    public boolean outgoingMessage(String message, int num) {
+        message = message+"\n";
         return chatUtil.sendMsg(message);
     }
 
@@ -497,6 +464,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             outgoingMessage("A", 1);
         }
     }
+
+
 
     private void configStr(final int index){
         final EditText txtField = new EditText(this);
@@ -667,7 +636,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private void displayDataStrings(){
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Map Descriptor and Image Recognition String");
-        final View customLayout = getLayoutInflater().inflate(R.layout.mdf_string, null);
+        final View customLayout = getLayoutInflater().inflate(R.layout.string_dialog_box, null);
 
         builder.setView(customLayout);
         builder.setPositiveButton("CLOSE", new DialogInterface.OnClickListener() {
@@ -677,15 +646,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
         });
 
-        EditText text_mdf1 = customLayout.findViewById(R.id.textbox_mdf1);
+        EditText text_mdf1 = customLayout.findViewById(R.id.p1_content);
         String explored = binaryStringToHexadecimalString(GridMap.getInstance().getExploredCells());
         text_mdf1.setText(explored);
 
-        EditText text_mdf2 = customLayout.findViewById(R.id.textbox_mdf2);
+        EditText text_mdf2 = customLayout.findViewById(R.id.p2_content);
         String obstacles = binaryStringToHexadecimalString(GridMap.getInstance().getExploredObstacles());
         text_mdf2.setText(obstacles);
 
-        EditText text_imgreg = customLayout.findViewById(R.id.textbox_imgreg);
+        EditText text_imgreg = customLayout.findViewById(R.id.idblock_list_content);
         String imgreg = "{";
         ArrayList<GridIDblock> numberedBlocks = GridMap.getInstance().getNumberedBlocks();
         for(GridIDblock blk : numberedBlocks){

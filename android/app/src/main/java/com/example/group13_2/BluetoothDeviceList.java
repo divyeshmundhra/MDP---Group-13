@@ -51,7 +51,7 @@ public class BluetoothDeviceList extends Activity {
         newDevicesView.setAdapter(unpairedDevicesArrayAdapter);
         newDevicesView.setOnItemClickListener(mDeviceClickListener);
         if (pairedDevices.size() > 0) {
-            findViewById(R.id.title_paired_devices).setVisibility(View.VISIBLE);
+            findViewById(R.id.paired_devices_heading).setVisibility(View.VISIBLE);
             for (BluetoothDevice device : pairedDevices) {
                 pairedDevicesArrayAdapter.add(device.getName() + "\n" + device.getAddress());
             }
@@ -73,7 +73,7 @@ public class BluetoothDeviceList extends Activity {
     private void doDiscovery() {
         setProgressBarIndeterminateVisibility(true);
         setTitle("Scanning for devices...");
-        findViewById(R.id.title_new_devices).setVisibility(View.VISIBLE);
+        findViewById(R.id.new_devices_heading).setVisibility(View.VISIBLE);
         if (bluetoothAdapter.isDiscovering()) {
             bluetoothAdapter.cancelDiscovery();
         }

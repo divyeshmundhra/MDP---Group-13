@@ -6,14 +6,14 @@
     android:padding="10px">
 
     <TextView
-        android:id="@+id/label_mdf1"
+        android:id="@+id/p1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:labelFor="@id/textbox_mdf1"
+        android:labelFor="@id/p1_content"
         android:text="@string/mdf_string_1_explored_squares" />
 
     <EditText
-        android:id="@+id/textbox_mdf1"
+        android:id="@+id/p1_content"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:ems="10"
@@ -22,14 +22,14 @@
         android:textIsSelectable="true" />
 
     <TextView
-        android:id="@+id/label_mdf2"
+        android:id="@+id/p2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:labelFor="@id/textbox_mdf2"
+        android:labelFor="@id/p2_content"
         android:text="@string/mdf_string_2_discovered_obstacles" />
 
     <EditText
-        android:id="@+id/textbox_mdf2"
+        android:id="@+id/p2_content"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:ems="10"
@@ -38,14 +38,14 @@
         android:textIsSelectable="true" />
 
     <TextView
-        android:id="@+id/label_imgreg"
+        android:id="@+id/idblock_list"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:labelFor="@id/textbox_imgreg"
+        android:labelFor="@id/idblock_list_content"
         android:text="@string/image_recognition_string" />
 
     <EditText
-        android:id="@+id/textbox_imgreg"
+        android:id="@+id/idblock_list_content"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:ems="10"
