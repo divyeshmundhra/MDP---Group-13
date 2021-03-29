@@ -500,7 +500,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private void configStr(final int index){
         final EditText txtField = new EditText(this);
-        SharedPreferences preferences = getSharedPreferences(String.valueOf(R.string.app_name), MODE_PRIVATE);
+        SharedPreferences preferences = getSharedPreferences(("Group 13"), MODE_PRIVATE);
         String retrievedText = preferences.getString("string"+index, null);
         if (retrievedText != null) {
             txtField.setText(retrievedText);
@@ -556,7 +556,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private void buttonFunction(){
         btn_send_config1.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                SharedPreferences prefs = getSharedPreferences(String.valueOf(R.string.app_name), MODE_PRIVATE);
+                SharedPreferences prefs = getSharedPreferences(("Group 13"), MODE_PRIVATE);
                 String retrievedText = prefs.getString("string1", null);
                 updateStatus("Sending Config 1");
                 if (retrievedText != null) {
@@ -566,7 +566,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         });
         btn_send_config2.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                SharedPreferences prefs = getSharedPreferences(String.valueOf(R.string.app_name), MODE_PRIVATE);
+                SharedPreferences prefs = getSharedPreferences(("Group 13"), MODE_PRIVATE);
                 String retrievedText = prefs.getString("string2", null);
                 updateStatus("Sending Config 2");
                 if (retrievedText != null) {

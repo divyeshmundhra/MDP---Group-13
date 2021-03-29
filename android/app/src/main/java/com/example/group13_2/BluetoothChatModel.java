@@ -87,11 +87,11 @@ public class BluetoothChatModel extends Fragment {
                             chatArrayAdapter.clear();
                             break;
                         case BluetoothService.STATE_CONNECTING:
-                            setStatus(R.string.title_connecting);
+                            setStatus("Connecting...");
                             break;
                         case BluetoothService.STATE_LISTEN:
                         case BluetoothService.STATE_NONE:
-                            setStatus(R.string.title_not_connected);
+                            setStatus("not connected");
                             break;
                     }
                     break;
@@ -269,7 +269,7 @@ public class BluetoothChatModel extends Fragment {
 
     protected boolean sendMessage(String message) {
         if (bluetoothService.getState() != BluetoothService.STATE_CONNECTED) {
-            Toast.makeText(getActivity(), R.string.not_connected, Toast.LENGTH_SHORT).show();
+            Toast.makeText(getActivity(), "You are not connected to a device", Toast.LENGTH_SHORT).show();
             return false;
         }
 
@@ -323,7 +323,7 @@ public class BluetoothChatModel extends Fragment {
                 if (resultCode == Activity.RESULT_OK) {
                     setupChat();
                 } else {
-                    Toast.makeText(getActivity(), R.string.bt_not_enabled_leaving, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getActivity(), "Bluetooth was not enabled. Leaving Bluetooth Chat.", Toast.LENGTH_SHORT).show();
                     getActivity().finish();
                 }
         }

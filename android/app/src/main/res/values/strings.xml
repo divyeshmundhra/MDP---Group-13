@@ -2,8 +2,8 @@
     <string name="app_name">group 13-2</string>
     <string name="scanning">Scanning for devices...</string>
     <string name="select_device">Select a device to connect</string>
-    <string name="none_paired">No devices have been paired</string>
-    <string name="none_found">No devices found</string>
+    <string name="no_paired_devices">No devices have been paired</string>
+<!--    <string name="none_found">No devices found</string>-->
     <string name="connect">Connect</string>
     <string name="title_paired_devices">Paired Devices</string>
     <string name="title_other_devices">Other Available Devices</string>
@@ -22,11 +22,11 @@
     <string name="send">Send Msg</string>
     <string name="message">Bluetooth</string>
     <string name="connect_bluetooth">Connect Bluetooth</string>
-    <string name="not_connected">You are not connected to a device</string>
-    <string name="title_connecting">Connecting...</string>
+<!--    <string name="not_connected">You are not connected to a device</string>-->
+<!--    <string name="title_connecting">Connecting...</string>-->
     <string name="title_connected_to">connected to <xliff:g id="device_name">%1$s</xliff:g></string>
-    <string name="title_not_connected">not connected</string>
-    <string name="bt_not_enabled_leaving">Bluetooth was not enabled. Leaving Bluetooth Chat.</string>
+<!--    <string name="title_not_connected">not connected</string>-->
+<!--    <string name="bt_not_enabled_leaving">Bluetooth was not enabled. Leaving Bluetooth Chat.</string>-->
     <string name="secure_connect">Connect to Device</string>
     <string name="insecure_connect">Connect a device - Insecure</string>
     <string name="discoverable">Make Discoverable</string>

@@ -56,7 +56,7 @@ public class BluetoothDeviceList extends Activity {
                 pairedDevicesArrayAdapter.add(device.getName() + "\n" + device.getAddress());
             }
         } else {
-            String noDevices = getResources().getText(R.string.none_paired).toString();
+            String noDevices = "No devices have been paired" ;
             pairedDevicesArrayAdapter.add(noDevices);
         }
     }
@@ -72,7 +72,7 @@ public class BluetoothDeviceList extends Activity {
 
     private void doDiscovery() {
         setProgressBarIndeterminateVisibility(true);
-        setTitle(R.string.scanning);
+        setTitle("Scanning for devices...");
         findViewById(R.id.title_new_devices).setVisibility(View.VISIBLE);
         if (bluetoothAdapter.isDiscovering()) {
             bluetoothAdapter.cancelDiscovery();
@@ -104,9 +104,9 @@ public class BluetoothDeviceList extends Activity {
                 }
             } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
                 setProgressBarIndeterminateVisibility(false);
-                setTitle(R.string.select_device);
+                setTitle("Select a device to connect");
                 if (unpairedDevicesArrayAdapter.getCount() == 0) {
-                    String noDevices = getResources().getText(R.string.none_found).toString();
+                    String noDevices = "No devices found";
                     unpairedDevicesArrayAdapter.add(noDevices);
                 }
             }
