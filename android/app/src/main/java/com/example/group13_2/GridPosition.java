@@ -9,17 +9,17 @@ public class GridPosition {
 		this.posY=posY;
 	}
 
-	public boolean equals(GridPosition arg0) {
-		if(posX==arg0.getPosX() && posY==arg0.getPosY()){
+	public boolean equals(GridPosition pos) {
+		if(posX==pos.getCoordinateX() && posY==pos.getCoordinateY()){
 			return true;
 		}
 		return false;
 	}
 
-	public int getPosX() {
+	public int getCoordinateX() {
 		return posX;
 	}
-	public int getPosY() {
+	public int getCoordinateY() {
 		return posY;
 	}
 

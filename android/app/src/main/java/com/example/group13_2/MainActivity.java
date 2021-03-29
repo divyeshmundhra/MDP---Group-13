@@ -146,7 +146,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
             if (matches.contains("forward")) {
                 if(!RobotInstance.getInstance().invalidCoordinate()) {
-                    RobotInstance.getInstance().moveForward(10);
+                    RobotInstance.getInstance().robotMove(10);
                     outgoingMessage(move_up, 1);
                     loadGrid();
                 }
@@ -203,7 +203,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         if(!RobotInstance.getInstance().rotateToWest()){
                             if(!RobotInstance.getInstance().invalidCoordinate()) {
                                 outgoingMessage(move_left, 1);
-                                RobotInstance.getInstance().moveForward(10);
+                                RobotInstance.getInstance().robotMove(10);
                             }
                         }
                         else{
@@ -218,7 +218,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         if(!RobotInstance.getInstance().rotateToEast()){
                             if(!RobotInstance.getInstance().invalidCoordinate()) {
                                 outgoingMessage(move_right, 1);
-                                RobotInstance.getInstance().moveForward(10);
+                                RobotInstance.getInstance().robotMove(10);
                             }
                         }
                         else{
@@ -234,7 +234,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         if(!RobotInstance.getInstance().rotateToNorth()){
                             if(!RobotInstance.getInstance().invalidCoordinate()) {
                                 outgoingMessage(move_up, 1);
-                                RobotInstance.getInstance().moveForward(10);
+                                RobotInstance.getInstance().robotMove(10);
                             }
                         }
                         else{
@@ -249,7 +249,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         if(!RobotInstance.getInstance().rotateToSouth()){
                             if(!RobotInstance.getInstance().invalidCoordinate()) {
                                 outgoingMessage(move_down, 1);
-                                RobotInstance.getInstance().moveForward(10);
+                                RobotInstance.getInstance().robotMove(10);
                             }
                         }
                         else{
@@ -289,9 +289,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
                 GridMap.getInstance().setArena(data[0], "", data[1]);
 
-                r.setPosX(Float.parseFloat(data[2]));
-                r.setPosY(Float.parseFloat(data[3]));
-                r.setDirection(data[4]);
+                r.setCoordinateX(Float.parseFloat(data[2]));
+                r.setCoordinateY(Float.parseFloat(data[3]));
+                r.setRobotDirection(data[4]);
                 if (autoUpdateRadio.isChecked()) {
                     loadGrid();
                 }
@@ -304,9 +304,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 }
             } else if (partsOfMessage[0].equals(incoming_robot_position)) {
                 String robotInfo[] = partsOfMessage[1].split(",");
-                r.setPosX(Float.parseFloat(robotInfo[0]));
-                r.setPosY(Float.parseFloat(robotInfo[1]));
-                r.setDirection(robotInfo[2]);
+                r.setCoordinateX(Float.parseFloat(robotInfo[0]));
+                r.setCoordinateY(Float.parseFloat(robotInfo[1]));
+                r.setRobotDirection(robotInfo[2]);
                 if (autoUpdateRadio.isChecked()) {
                     loadGrid();
                 }
@@ -394,7 +394,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if(!RobotInstance.getInstance().rotateToNorth()){
             if(!RobotInstance.getInstance().invalidCoordinate()) {
                 outgoingMessage(move_up, 1);
-                RobotInstance.getInstance().moveForward(10);
+                RobotInstance.getInstance().robotMove(10);
             }
         }
         else{
@@ -409,7 +409,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if(!RobotInstance.getInstance().rotateToWest()){
             if(!RobotInstance.getInstance().invalidCoordinate()) {
                 outgoingMessage(move_left, 1);
-                RobotInstance.getInstance().moveForward(10);
+                RobotInstance.getInstance().robotMove(10);
             }
         }
         else{
@@ -425,7 +425,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if(!RobotInstance.getInstance().rotateToEast()){
             if(!RobotInstance.getInstance().invalidCoordinate()) {
                 outgoingMessage(move_right, 1);
-                RobotInstance.getInstance().moveForward(10);
+                RobotInstance.getInstance().robotMove(10);
             }
         }
         else{
@@ -440,7 +440,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if(!RobotInstance.getInstance().rotateToSouth()){
             if(!RobotInstance.getInstance().invalidCoordinate()) {
                 outgoingMessage(move_down, 1);
-                RobotInstance.getInstance().moveForward(10);
+                RobotInstance.getInstance().robotMove(10);
             }
         }
         else{
@@ -507,9 +507,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public void tapOnGrid(final int posX, final int posY) {
         if(set_robotPost.isChecked()){
             RobotInstance r = RobotInstance.getInstance();
-            r.setPosX(posX);
-            r.setPosY(posY);
-            r.setDirection("NORTH");
+            r.setCoordinateX(posX);
+            r.setCoordinateY(posY);
+            r.setRobotDirection("NORTH");
             outgoingMessage("START:"+posX+","+posY, 0);
             set_robotPost.setChecked(false);
         }
@@ -547,7 +547,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             public void onClick(View v) {
                 //check if robot is out of bounds
                 if(!RobotInstance.getInstance().invalidCoordinate()) {
-                    RobotInstance.getInstance().moveForward(10);
+                    RobotInstance.getInstance().robotMove(10);
                     outgoingMessage(move_up, 1);
                     loadGrid();
                 }
@@ -607,9 +607,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         "0000000000000000000000000000000000000000000000000000000000000000000000000000",
                         "",
                         "0000000000000000000000000000000000000000000000000000000000000000000000000000");
-                r.setPosX(Float.parseFloat("1"));
-                r.setPosY(Float.parseFloat("1"));
-                r.setDirection("NORTH");
+                r.setCoordinateX(Float.parseFloat("1"));
+                r.setCoordinateY(Float.parseFloat("1"));
+                r.setRobotDirection("NORTH");
                 GridMap.getInstance().clearNumberedBlocks();
                 loadGrid();
 
@@ -658,7 +658,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         String imgreg = "{";
         ArrayList<GridIDblock> numberedBlocks = GridMap.getInstance().getNumberedBlocks();
         for(GridIDblock blk : numberedBlocks){
-            imgreg += String.format("(%s, %d, %d)", blk.getID(), blk.getGridPosition().getPosX(), blk.getGridPosition().getPosY());
+            imgreg += String.format("(%s, %d, %d)", blk.getID(), blk.getGridPosition().getCoordinateX(), blk.getGridPosition().getCoordinateY());
             imgreg += ", ";
         }
         if(imgreg.length()>2)imgreg = imgreg.substring(0, imgreg.length()-2);

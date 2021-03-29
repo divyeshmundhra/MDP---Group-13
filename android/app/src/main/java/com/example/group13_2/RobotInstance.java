@@ -20,19 +20,19 @@ public class RobotInstance {
 
     public int count;
 
-    public float getPosX() {
+    public float getCoordinateX() {
         return posX;
     }
 
-    public void setPosX(float posX) {
+    public void setCoordinateX(float posX) {
         this.posX = posX;
     }
 
-    public float getPosY() {
+    public float getCoordinateY() {
         return posY;
     }
 
-    public void setPosY(float posY) {
+    public void setCoordinateY(float posY) {
         this.posY = posY;
     }
 
@@ -81,11 +81,10 @@ public class RobotInstance {
     }
 
 
-
     public boolean invalidCoordinate() {
-        int posX = (int) getPosX();
-        int posY = (int) getPosY();
-        int direction = (int) getDirection();
+        int posX = (int) getCoordinateX();
+        int posY = (int) getCoordinateY();
+        int direction = (int) getRobotDirection();
 
         if ((posX >= 13 && posY <= 1 && (direction == 180 || direction == 90 || direction == -180 || direction == -270)))
             return true;
@@ -107,36 +106,36 @@ public class RobotInstance {
             return false;
     }
 
-    public void moveForward(int distance) {
+    public void robotMove(int distance) {
         double radians = Math.toRadians(direction);
         float moveX = ((distance / 10f) * (float) Math.sin(radians));
         float moveY = ((distance / 10f) * (float) Math.cos(radians));
-        if (getPosX() + moveX > 13) {
-            setPosX(13);
+        if (getCoordinateX() + moveX > 13) {
+            setCoordinateX(13);
         } else {
-            if (getPosX() + moveX < 1) {
-                setPosX(1);
+            if (getCoordinateX() + moveX < 1) {
+                setCoordinateX(1);
             } else {
-                setPosX(getPosX() + moveX);
+                setCoordinateX(getCoordinateX() + moveX);
             }
         }
 
-        if (getPosY() + moveY > 18) {
-            setPosY(18);
+        if (getCoordinateY() + moveY > 18) {
+            setCoordinateY(18);
         } else {
-            if (getPosY() + moveY < 1) {
-                setPosY(1);
+            if (getCoordinateY() + moveY < 1) {
+                setCoordinateY(1);
             } else {
-                setPosY(getPosY() + moveY);
+                setCoordinateY(getCoordinateY() + moveY);
             }
         }
     }
 
-    public float getDirection() {
+    public float getRobotDirection() {
         return direction;
     }
 
-    public void setDirection(String direction) {
+    public void setRobotDirection(String direction) {
         switch (direction) {
             case "NORTH":
                 this.direction = 0;

@@ -23,8 +23,8 @@ public class GridMap {
 	public ArrayList<GridIDblock> getNumberedBlocks() { return idBlocks; }
 
 	public void addIDBlocks(GridIDblock block) {
-		int x = Math.min(block.getGridPosition().getPosX(),14);
-		int y = Math.min(block.getGridPosition().getPosY(),19);
+		int x = Math.min(block.getGridPosition().getCoordinateX(),14);
+		int y = Math.min(block.getGridPosition().getCoordinateY(),19);
 		x = Math.max(0,x);
 		y = Math.max(0,y);
 		block = new GridIDblock(block.getID(),x,y);
@@ -53,34 +53,34 @@ public class GridMap {
 	}
 
 	public String getExploredCells(){
-		String str="11";
+		String pad="11";
 		int array[][]= GridMap.getInstance().getExploredTiles();
 		for(int y =0;y<20;y++){
 			for(int x =0;x<15;x++){
-				str=str+array[y][x];
+				pad=pad+array[y][x];
 			}
 		}
-		str=str+"11";
-		return str;
+		pad=pad+"11";
+		return pad;
 	}
 
 	public String getExploredObstacles(){
-		String str="";
+		String string="";
 		int arrayExplored[][]= GridMap.getInstance().getExploredTiles();
 		int arrayObstacle[][]= GridMap.getInstance().getObstacles();
 		for(int y =0;y<20;y++){
 			for(int x =0;x<15;x++){
 				if(arrayExplored[y][x]==1){
-					str=str+arrayObstacle[y][x];
+					string=string+arrayObstacle[y][x];
 				}
 			}
 		}
-		if(str.length()%8!=0){
-			for(int i =0;i<str.length()%8;i++){
-				str=str+"0";
+		if(string.length()%8!=0){
+			for(int i =0;i<string.length()%8;i++){
+				string=string+"0";
 			}
 		}
-		return str;
+		return string;
 	}
 
 	public void setArena(String exploredCells, String obstacleCells, String exploredObstacleCells) {

@@ -29,11 +29,11 @@ public class Grid extends View implements View.OnTouchListener {
     float paddingX = 2;
     float width = this.getWidth()-2*50;
     float height = this.getHeight()-50;
-    float cellWidth = width/15f;
-    float cellHeight = height/20f;
     int end_x;
     int end_y;
     String toastText;
+    float cellWidth = width/15f;
+    float cellHeight = height/20f;
     private static Toast mCurrentToast;
     private GestureDetector mDetector;
 
@@ -109,10 +109,8 @@ public class Grid extends View implements View.OnTouchListener {
 
     private void paintWP(Canvas canvas) {
         GridPosition wp = GridWayPoint.getInstance().getGridPosition();
-        if(wp!=null&&wp.getPosX()>=0&&wp.getPosX()<15&&wp.getPosY()<20&&wp.getPosY()>=0){
-            float posX = (paddingX+wp.getPosX()*cellWidth);
-            float posY = ((19-wp.getPosY())*cellHeight);
-            canvas.drawRect(posX, posY, posX+cellWidth, posY+cellHeight, waypoint);
+        if(wp!=null&&wp.getCoordinateX()>=0&&wp.getCoordinateX()<15&&wp.getCoordinateY()<20&&wp.getCoordinateY()>=0){
+            canvas.drawRect((paddingX+wp.getCoordinateX()*cellWidth), ((19-wp.getCoordinateY())*cellHeight), (paddingX+wp.getCoordinateX()*cellWidth)+cellWidth, ((19-wp.getCoordinateY())*cellHeight)+cellHeight, waypoint);
         }
     }
 
@@ -121,9 +119,7 @@ public class Grid extends View implements View.OnTouchListener {
     private void paintCoordinates(Canvas canvas) {
         for(int x =0;x<15;x++){
             for(int y =0;y<20;y++){
-                float posX = (paddingX+x*cellWidth);
-                float posY = ((19-y)*cellHeight);
-                canvas.drawText(x + "," + y, posX+(0.5f)*cellWidth, posY+cellHeight-10, coordinates);
+                canvas.drawText(x + "," + y, (paddingX+x*cellWidth)+(0.5f)*cellWidth, ((19-y)*cellHeight)+cellHeight-10, coordinates);
             }
         }
     }
@@ -131,30 +127,24 @@ public class Grid extends View implements View.OnTouchListener {
     private void paintIdBlocks(Canvas canvas) {
         ArrayList<GridIDblock> numberedBlocks = GridMap.getInstance().getNumberedBlocks();
         for(GridIDblock block:numberedBlocks) {
-            float posX =  (block.getGridPosition().getPosX()) * cellWidth;
-            float posY =  (19-block.getGridPosition().getPosY()) * cellHeight;
-            float textposX =  (block.getGridPosition().getPosX()+0.5f) * cellWidth;
-            float textposY =  (20-0.1f-block.getGridPosition().getPosY()) * cellHeight;
-            canvas.drawRect(posX, posY, posX + cellWidth, posY + cellHeight, obstacle);
-            canvas.drawText(block.getID(), textposX, textposY, idBlock);
+            float positionX =  (block.getGridPosition().getCoordinateX()) * cellWidth;
+            float positionY =  (19-block.getGridPosition().getCoordinateY()) * cellHeight;
+            canvas.drawRect(positionX, positionY, positionX + cellWidth, positionY + cellHeight, obstacle);
+            canvas.drawText(block.getID(), (block.getGridPosition().getCoordinateX()+0.5f) * cellWidth, (20-0.1f-block.getGridPosition().getCoordinateY()) * cellHeight, idBlock);
         }
     }
 
     private void paintRobot(Canvas canvas) {
         RobotInstance r = RobotInstance.getInstance();
-        if(r.getPosX()<1||r.getPosY()<1||r.getPosX()>13||r.getPosY()>18){
+        if(r.getCoordinateX()<1||r.getCoordinateY()<1||r.getCoordinateX()>13||r.getCoordinateY()>18){
             return;
         }
         float cellWidth = width/15f;
         float cellHeight = height/20f;
-        float xCenterPosition = r.getPosX()*cellWidth+ paddingX  +(cellWidth/2f);
-        float yCenterPosition = (19f-r.getPosY())*cellWidth  +(cellHeight/2f);
-        canvas.drawRect((paddingX+r.getPosX()*cellWidth)-cellWidth, ((19-r.getPosY())*cellHeight)-cellWidth, (paddingX+r.getPosX()*cellWidth)+(2*cellWidth), ((19-r.getPosY())*cellHeight)+(2*cellWidth), robot);
-        float direction = r.getDirection();
-        double radians = Math.toRadians(direction);
-        float sensorCenterX = (float) (xCenterPosition+(cellWidth/1.5f*Math.sin(radians)));
-        float sensorCenterY = (float) (yCenterPosition-(cellWidth/1.5f*Math.cos(radians)));
-        canvas.drawCircle(sensorCenterX, sensorCenterY,cellWidth/3f, head);
+        float xCenterPosition = r.getCoordinateX()*cellWidth+ paddingX  +(cellWidth/2f);
+        float yCenterPosition = (19f-r.getCoordinateY())*cellWidth  +(cellHeight/2f);
+        canvas.drawRect((paddingX+r.getCoordinateX()*cellWidth)-cellWidth, ((19-r.getCoordinateY())*cellHeight)-cellWidth, (paddingX+r.getCoordinateX()*cellWidth)+(2*cellWidth), ((19-r.getCoordinateY())*cellHeight)+(2*cellWidth), robot);
+        canvas.drawCircle((float) (xCenterPosition+(cellWidth/1.5f*Math.sin(Math.toRadians(r.getRobotDirection())))), (float) (yCenterPosition-(cellWidth/1.5f*Math.cos(Math.toRadians(r.getRobotDirection())))),cellWidth/3f, head);
     }
 
     @Override
@@ -208,17 +198,17 @@ public class Grid extends View implements View.OnTouchListener {
         for(int x =0;x<15;x++){
             for(int y =0;y<20;y++){
                 if( explored[y][x] == 1){
-                    float posX = (paddingX+x*cellWidth);
-                    float posY = ((19-y)*cellHeight);
+                    float positionX = (paddingX+x*cellWidth);
+                    float positionY = ((19-y)*cellHeight);
                     if(obstacles[y][x]==1){
-                        canvas.drawRect(posX, posY, posX+cellWidth, posY+cellHeight, obstacle);
+                        canvas.drawRect(positionX, positionY, positionX+cellWidth, positionY+cellHeight, obstacle);
                     }else{
                         if((y==0&&x==0)||(y==0&&x==1)||(y==0&&x==2)||   (y==1&&x==0)||  (y==1&&x==1)||   (y==1&&x==2)|| (y==2&&x==0)||(y==2&&x==1)|| (y==2&&x==2)||
                                 (y==19&&x==14)||   (y==19&&x==13)||   (y==19&&x==12)||    (y==18&&x==14)||   (y==18&&x==13)||     (y==18&&x==12)|| (y==17&&x==14)||    (y==17&&x==13)||  (y==17&&x==12)){
-                            canvas.drawRect(posX, posY, posX+cellWidth, posY+cellHeight, initialZone);
+                            canvas.drawRect(positionX, positionY, positionX+cellWidth, positionY+cellHeight, initialZone);
                         }else{
-                            canvas.drawText(x + "," + y, posX+(0.5f)*cellWidth, posY+cellHeight, coordinates);
-                            canvas.drawRect(posX, posY, posX+cellWidth, posY+cellHeight, cellsExplored);
+                            canvas.drawText(x + "," + y, positionX+(0.5f)*cellWidth, positionY+cellHeight, coordinates);
+                            canvas.drawRect(positionX, positionY, positionX+cellWidth, positionY+cellHeight, cellsExplored);
                         }
                     }
                 }
