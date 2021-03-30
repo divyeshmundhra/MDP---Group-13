@@ -108,7 +108,7 @@ public class Grid extends View implements View.OnTouchListener {
 
 
     private void paintWP(Canvas canvas) {
-        GridPosition wp = GridWayPoint.getInstance().getGridPosition();
+        GridPosition wp = GridWayPoint.getWayPoint().getGridPosition();
         if(wp!=null&&wp.getCoordinateX()>=0&&wp.getCoordinateX()<15&&wp.getCoordinateY()<20&&wp.getCoordinateY()>=0){
             canvas.drawRect((paddingX+wp.getCoordinateX()*cellWidth), ((19-wp.getCoordinateY())*cellHeight), (paddingX+wp.getCoordinateX()*cellWidth)+cellWidth, ((19-wp.getCoordinateY())*cellHeight)+cellHeight, waypoint);
         }

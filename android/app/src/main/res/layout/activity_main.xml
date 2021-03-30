@@ -36,7 +36,7 @@
 
 
     <GridLayout
-        android:id="@+id/base_layout"
+        android:id="@+id/grid_view"
         android:layout_width="376dp"
         android:layout_height="500dp"
         android:layout_marginStart="16dp"
@@ -60,7 +60,7 @@
         android:textColor="#F4E9CD"
         android:textSize="22dp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/base_layout" />
+        app:layout_constraintTop_toBottomOf="@+id/grid_view" />
 
     <Button
         android:id="@+id/fastest_path"
@@ -101,7 +101,7 @@
         android:background="@null"
         android:scaleType="fitCenter"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/base_layout"
+        app:layout_constraintTop_toBottomOf="@+id/grid_view"
         app:srcCompat="@drawable/direction_up2" />
 
     <ImageButton
@@ -114,7 +114,7 @@
         android:background="@null"
         android:scaleType="fitCenter"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/base_layout"
+        app:layout_constraintTop_toBottomOf="@+id/grid_view"
         app:srcCompat="@drawable/direction_right2" />
 
     <ImageButton
@@ -127,7 +127,7 @@
         android:background="@null"
         android:scaleType="fitCenter"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/base_layout"
+        app:layout_constraintTop_toBottomOf="@+id/grid_view"
         app:srcCompat="@drawable/direction_left2" />
 
     <Switch

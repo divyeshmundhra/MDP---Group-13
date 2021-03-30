@@ -16,7 +16,7 @@
         app:showAsAction="never" />
 
     <item
-        android:id="@+id/action_show_bluetooth_chat"
+        android:id="@+id/menu_bluetooth_chat"
         android:checkable="true"
         android:checked="false"
         android:icon="@drawable/bluetooth_icon"
@@ -34,17 +34,17 @@
         app:showAsAction="ifRoom" />
 
     <item
-        android:id="@+id/action_set_config_string1"
+        android:id="@+id/menu_config1"
         android:orderInCategory="100"
         android:title="@string/set_config1"
         app:showAsAction="never" />
     <item
-        android:id="@+id/action_set_config_string2"
+        android:id="@+id/menu_config2"
         android:orderInCategory="100"
         android:title="@string/set_config2"
         app:showAsAction="never" />
     <item
-        android:id="@+id/action_view_data_strings"
+        android:id="@+id/menu_show_dialog_box"
         android:orderInCategory="100"
         android:title="Show Strings"
         app:showAsAction="never" />

@@ -112,7 +112,7 @@ public class BluetoothChatModel extends Fragment {
                     }
                     break;
                 case 4:
-                    connectedDevice = msg.getData().getString("device_name");
+                    connectedDevice = msg.getData().getString("bluetooth_device_name");
                     if (null != activity) {
                         Toast.makeText(activity, "Connected to "
                                 + connectedDevice, Toast.LENGTH_SHORT).show();

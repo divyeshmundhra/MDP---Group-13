@@ -38,12 +38,11 @@ public class GridMap {
 		idBlocks.add(block);
 	}
 
-	public static String hexadecimalStringToBinaryString(String s) {
-		if(s!=null){
-			s="F"+s;
-			s = new BigInteger(s, 16).toString(2);
-			s = s.substring(4);
-			return s ;
+	public static String hexadecimalStringToBinaryString(String string) {
+		if(string!=null){
+			string = new BigInteger("F"+string, 16).toString(2);
+			String requiredString = string.substring(4);
+			return requiredString ;
 		}
 		return "";
 	}

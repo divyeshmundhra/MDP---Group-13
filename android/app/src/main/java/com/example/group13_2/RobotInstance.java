@@ -1,13 +1,13 @@
 package com.example.group13_2;
 
 public class RobotInstance {
-    public static RobotInstance robot = null;
+    public static RobotInstance mazeRobot = null;
 
     public static RobotInstance getInstance() {
-        if (robot == null) {
-            robot = new RobotInstance();
+        if (mazeRobot == null) {
+            mazeRobot = new RobotInstance();
         }
-        return robot;
+        return mazeRobot;
     }
 
 
@@ -36,13 +36,7 @@ public class RobotInstance {
         this.posY = posY;
     }
 
-
-
-
-    public void rotate(float degree) {
-
-        direction = (direction + degree) % 360;
-    }
+    public void rotate(float degree) { direction = (direction + degree) % 360; }
 
     public void rotateRobotToNorth() {
         if (direction != 0) {

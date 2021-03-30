@@ -36,8 +36,8 @@ public class BluetoothDeviceList extends Activity {
             }
         });
         ArrayAdapter<String> pairedDevicesArrayAdapter =
-                new ArrayAdapter<>(this, R.layout.device_name);
-        unpairedDevicesArrayAdapter = new ArrayAdapter<>(this, R.layout.device_name);
+                new ArrayAdapter<>(this, R.layout.bluetooth_device_name);
+        unpairedDevicesArrayAdapter = new ArrayAdapter<>(this, R.layout.bluetooth_device_name);
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
