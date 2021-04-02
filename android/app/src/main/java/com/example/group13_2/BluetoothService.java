@@ -142,7 +142,7 @@ public class BluetoothService {
         mConnectedThread.start();
         Message msg = mHandler.obtainMessage(4);
         Bundle bundle = new Bundle();
-        bundle.putString("device_name", device.getName());
+        bundle.putString("bluetooth_device_name", device.getName());
         msg.setData(bundle);
         mHandler.sendMessage(msg);
         updateUserInterfaceTitle();

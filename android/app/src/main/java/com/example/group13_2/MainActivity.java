@@ -33,32 +33,25 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private Sensor sensor;
     boolean tiltChecked;
     long lastUpdate = System.currentTimeMillis();
-
+    Switch set_wp;
+    Switch set_robotPost;
+    Switch gestureEnable;
+    Switch tiltEnable;
     BluetoothChatModel chatUtil;
-    GridLayout base_layout;
+    GridLayout grid_view;
     MenuItem show_chat_menu;
     MenuItem menu_set_config1;
     MenuItem menu_set_config2;
     MenuItem menu_display_string;
     MenuItem voice_option;
-    Button btn_send_config1;
-    Button btn_send_config2;
-    Button btn_removeWp;
-    Button btn_explore;
-    Button btn_fastest_path;
-    Button btn_terminate_exploration;
-    Button btn_update;
-    Button reset_button;
     ImageButton joystick_left;
     ImageButton joystick_right;
     ImageButton joystick_forward;
     RadioButton autoUpdateRadio;
     RadioButton manualUpdateRadio;
-    TextView statusView;
-    Switch set_wp;
-    Switch set_robotPost;
-    Switch gestureEnable;
-    Switch tiltEnable;
+    Button button_send_config1;
+    Button button_send_config2;
+    Button button_removeWp;
     String status = "Idle";
     String incoming_robot_position="RobotPosition";
     String incoming_map_data = "MapData";
@@ -68,7 +61,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     String move_down = "Robot|Down";
     String move_left = "Robot|Left";
     String move_right = "Robot|Right";
-
+    Button button_explore;
+    Button button_fastest_path;
+    Button button_terminate_exploration;
+    Button button_update;
+    Button reset_button;
+    TextView statusView;
     public static final int VOICE_RECOGNITION_REQUEST_CODE = 1234;
 
     @Override
@@ -76,22 +74,22 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        btn_send_config1= findViewById(R.id.config1);
-        btn_send_config2= findViewById(R.id.config2);
+        button_send_config1= findViewById(R.id.config1);
+        button_send_config2= findViewById(R.id.config2);
         joystick_left = findViewById(R.id.leftJoystick);
         joystick_right = findViewById(R.id.rightJoystick);
         joystick_forward = findViewById(R.id.forwardJoystick);
-        base_layout = findViewById(R.id.base_layout);
+        grid_view = findViewById(R.id.grid_view);
         set_robotPost = findViewById(R.id.set_robotPos);
         set_wp = findViewById(R.id.set_waypoint);
-        btn_removeWp = findViewById(R.id.remove_waypoint);
-        btn_explore = findViewById(R.id.explore);
-        btn_fastest_path = findViewById(R.id.fastest_path);
-        btn_terminate_exploration = findViewById(R.id.terminate_exploration);
+        button_removeWp = findViewById(R.id.remove_waypoint);
+        button_explore = findViewById(R.id.explore);
+        button_fastest_path = findViewById(R.id.fastest_path);
+        button_terminate_exploration = findViewById(R.id.terminate_exploration);
         reset_button = findViewById(R.id.reset);
         autoUpdateRadio = findViewById(R.id.radioAuto);
         manualUpdateRadio = findViewById(R.id.radioManual);
-        btn_update = findViewById(R.id.update);
+        button_update = findViewById(R.id.update);
         statusView = findViewById(R.id.status);
         gestureEnable = findViewById(R.id.gestureSwitch);
         tiltEnable = findViewById(R.id.tiltSwitch);
@@ -108,11 +106,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             bluetoothTransaction.commit();
         }
 
-        btn_update.setEnabled(false);
-        updateStatus(status);
+        button_update.setEnabled(false);
+        setApplicationStatus(status);
         buttonFunction();
         onClickTiltSwitch();
-        loadGrid();
+        updateArena();
     }
 
     public void onClickTiltSwitch() {
@@ -146,44 +144,41 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
             if (matches.contains("forward")) {
                 if(!RobotInstance.getInstance().invalidCoordinate()) {
-                    RobotInstance.getInstance().moveForward(10);
-                    outgoingMessage(move_up, 1);
-                    loadGrid();
+                    RobotInstance.getInstance().robotMove(10);
+                    updateArena();
                 }
             }
             else if (matches.contains("right")){
                 RobotInstance.getInstance().rotateRight();
-                outgoingMessage(move_right, 1);
-                loadGrid();
+                updateArena();
             }
             else if (matches.contains("left")){
                 RobotInstance.getInstance().rotateLeft();
-                outgoingMessage(move_left, 1);
-                loadGrid();
+                updateArena();
             }
             else if (matches.contains("start")){
                 if (GridWayPoint.waypoint.getGridPosition() == null) {
-                    updateStatus("Setting WayPoint");
+                    setApplicationStatus("Setting WayPoint");
                     set_robotPost.setChecked(false);
                     set_wp.setChecked(true);
                     Toast toast=Toast.makeText(getApplicationContext(),"Tap the Grid to set WayPoint",Toast.LENGTH_LONG);
                     toast.show();
                 }else{
                     outgoingMessage("FP", 0);
-                    updateStatus("Fastest Path");
+                    setApplicationStatus("Fastest Path");
                 }
             }
             else if (matches.contains("explore")){
                 outgoingMessage("EX", 0);
-                updateStatus("Exploring");
+                setApplicationStatus("Exploring");
             }
             else if (matches.contains("image")){
                 outgoingMessage("IR", 0);
-                updateStatus("Image Recognition");
+                setApplicationStatus("Image Recognition");
             }
             else if (matches.contains("terminate")){
                 outgoingMessage("TX", 0);
-                updateStatus("Terminated Exploration");
+                setApplicationStatus("Terminated Exploration");
             }
         }
     }
@@ -199,65 +194,57 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             if (tiltChecked) {
                 if (Math.abs(x) > Math.abs(y)) {
                     if (x>2) {
-                        updateStatus("Left Tilt");
+                        setApplicationStatus("Left Tilt");
                         if(!RobotInstance.getInstance().rotateToWest()){
                             if(!RobotInstance.getInstance().invalidCoordinate()) {
                                 outgoingMessage(move_left, 1);
-                                RobotInstance.getInstance().moveForward(10);
+                                RobotInstance.getInstance().robotMove(10);
                             }
                         }
                         else{
-                            Integer count = RobotInstance.getInstance().getCount();
-                            sendMsgOnSwipe(count);
                             RobotInstance.getInstance().rotateRobotToWest();
                         }
-                        loadGrid();
+                        updateArena();
                     }
                     if (x < -2) {
-                        updateStatus("Right Tilt");
+                        setApplicationStatus("Right Tilt");
                         if(!RobotInstance.getInstance().rotateToEast()){
                             if(!RobotInstance.getInstance().invalidCoordinate()) {
                                 outgoingMessage(move_right, 1);
-                                RobotInstance.getInstance().moveForward(10);
+                                RobotInstance.getInstance().robotMove(10);
                             }
                         }
                         else{
-                            Integer count = RobotInstance.getInstance().getCount();
-                            sendMsgOnSwipe(count);
                             RobotInstance.getInstance().rotateRobotToEast();
                         }
-                        loadGrid();
+                        updateArena();
                     }
                 } else {
                     if (y < -2) {
-                        updateStatus("Up Tilt");
+                        setApplicationStatus("Up Tilt");
                         if(!RobotInstance.getInstance().rotateToNorth()){
                             if(!RobotInstance.getInstance().invalidCoordinate()) {
                                 outgoingMessage(move_up, 1);
-                                RobotInstance.getInstance().moveForward(10);
+                                RobotInstance.getInstance().robotMove(10);
                             }
                         }
                         else{
-                            Integer count = RobotInstance.getInstance().getCount();
-                            sendMsgOnSwipe(count);
                             RobotInstance.getInstance().rotateRobotToNorth();
                         }
-                        loadGrid();
+                        updateArena();
                     }
                     if (y >2) {
-                        updateStatus("Down Tilt");
+                        setApplicationStatus("Down Tilt");
                         if(!RobotInstance.getInstance().rotateToSouth()){
                             if(!RobotInstance.getInstance().invalidCoordinate()) {
                                 outgoingMessage(move_down, 1);
-                                RobotInstance.getInstance().moveForward(10);
+                                RobotInstance.getInstance().robotMove(10);
                             }
                         }
                         else{
-                            Integer count = RobotInstance.getInstance().getCount();
-                            sendMsgOnSwipe(count);
                             RobotInstance.getInstance().rotateRobotToSouth();
                         }
-                        loadGrid();
+                        updateArena();
                     }
                 }
             }
@@ -282,42 +269,42 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             if (partsOfMessage[0].equals(incoming_grid_layout)) { //get just P2
                 GridMap.getInstance().setOnlyP2(partsOfMessage[1]);
                 if (autoUpdateRadio.isChecked()) {
-                    loadGrid();
+                    updateArena();
                 }
             } else if (partsOfMessage[0].equals(incoming_map_data)) {//get (P1,P2,position)
                 String data[] = partsOfMessage[1].split(",");
 
                 GridMap.getInstance().setArena(data[0], "", data[1]);
 
-                r.setPosX(Float.parseFloat(data[2]));
-                r.setPosY(Float.parseFloat(data[3]));
-                r.setDirection(data[4]);
+                r.setCoordinateX(Float.parseFloat(data[2]));
+                r.setCoordinateY(Float.parseFloat(data[3]));
+                r.setRobotDirection(data[4]);
                 if (autoUpdateRadio.isChecked()) {
-                    loadGrid();
+                    updateArena();
                 }
             } else if (partsOfMessage[0].equals(incoming_numbered_block)) { //get image rec blocks
                 String data[] = partsOfMessage[1].split(","); //x, y, id
                 GridIDblock input = new GridIDblock(data[2], Integer.parseInt(data[0]), Integer.parseInt(data[1]));
                 GridMap.getInstance().addIDBlocks(input);
                 if (autoUpdateRadio.isChecked()) {
-                    loadGrid();
+                    updateArena();
                 }
             } else if (partsOfMessage[0].equals(incoming_robot_position)) {
                 String robotInfo[] = partsOfMessage[1].split(",");
-                r.setPosX(Float.parseFloat(robotInfo[0]));
-                r.setPosY(Float.parseFloat(robotInfo[1]));
-                r.setDirection(robotInfo[2]);
+                r.setCoordinateX(Float.parseFloat(robotInfo[0]));
+                r.setCoordinateY(Float.parseFloat(robotInfo[1]));
+                r.setRobotDirection(robotInfo[2]);
                 if (autoUpdateRadio.isChecked()) {
-                    loadGrid();
+                    updateArena();
                 }
             }
             else {
-                updateStatus("Invalid Message");
+                setApplicationStatus("Invalid Message");
             }
         }
     }
 
-    public void updateStatus(String status){
+    public void setApplicationStatus(String status){
         this.status = status;
         statusView.setText(status);
     }
@@ -341,17 +328,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public boolean onPrepareOptionsMenu(Menu menu) {
         super.onPrepareOptionsMenu(menu);
         voice_option = menu.findItem(R.id.voice_btn);
-        show_chat_menu = menu.findItem(R.id.action_show_bluetooth_chat);
-        menu_set_config1 = menu.findItem(R.id.action_set_config_string1);
-        menu_set_config2 = menu.findItem(R.id.action_set_config_string2);
-        menu_display_string = menu.findItem(R.id.action_view_data_strings);
+        show_chat_menu = menu.findItem(R.id.menu_bluetooth_chat);
+        menu_set_config1 = menu.findItem(R.id.menu_config1);
+        menu_set_config2 = menu.findItem(R.id.menu_config2);
+        menu_display_string = menu.findItem(R.id.menu_show_dialog_box);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-        if (id == R.id.action_show_bluetooth_chat) {
+        if (id == R.id.menu_bluetooth_chat) {
             boolean checked = item.isChecked();
             item.setChecked(!checked);
             if(chatUtil!=null){
@@ -359,113 +346,67 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
             return true;
         }
-        if (id == R.id.action_set_config_string1) {
-            configStr(1);
-            return true;
-        }
-        if (id == R.id.action_set_config_string2) {
-            configStr(2);
-            return true;
-        }
-        if (id == R.id.action_view_data_strings) {
-            displayDataStrings();
+        if (id == R.id.menu_show_dialog_box) {
+            showStringDialogBox();
             return true;
         }
         if (id == R.id.voice_btn) {
             startVoiceRecognitionActivity();
         }
+        if (id == R.id.menu_config1) {
+            configStr(1);
+            return true;
+        }
+        if (id == R.id.menu_config2) {
+            configStr(2);
+            return true;
+        }
         return super.onOptionsItemSelected(item);
     }
 
-    public static String binaryStringToHexadecimalString(String s) {
+    public static String binaryStringToHexadecimalString(String string) {
 
-        String obstacles = "";
-        String binaryStr = s;
-        for(int i = 0; i < binaryStr.length(); i+=4){
-            int decimal = Integer.parseInt(binaryStr.substring(i,i+4),2);
-            String hexStr = Integer.toString(decimal,16);
-            obstacles += hexStr;
+        String stringObstacle = "";
+        for(int i = 0; i < string.length(); i+=4){
+            int baseTen = Integer.parseInt(string.substring(i,i+4),2);
+            String requiredString = Integer.toString(baseTen,16);
+            stringObstacle += requiredString;
         }
-        return obstacles;
+        return stringObstacle;
     }
 
 
     public void topGesture() {
         if(!RobotInstance.getInstance().rotateToNorth()){
-            if(!RobotInstance.getInstance().invalidCoordinate()) {
-                outgoingMessage(move_up, 1);
-                RobotInstance.getInstance().moveForward(10);
-            }
+            if(!RobotInstance.getInstance().invalidCoordinate()) { RobotInstance.getInstance().robotMove(10); }
         }
-        else{
-            Integer count = RobotInstance.getInstance().getCount();
-            sendMsgOnSwipe(count);
-            RobotInstance.getInstance().rotateRobotToNorth();
-        }
-        loadGrid();
+        else{ RobotInstance.getInstance().rotateRobotToNorth(); }
+        updateArena();
     }
 
     public void leftGesture() {
         if(!RobotInstance.getInstance().rotateToWest()){
-            if(!RobotInstance.getInstance().invalidCoordinate()) {
-                outgoingMessage(move_left, 1);
-                RobotInstance.getInstance().moveForward(10);
-            }
+            if(!RobotInstance.getInstance().invalidCoordinate()) { RobotInstance.getInstance().robotMove(10); }
         }
-        else{
-            Integer count = RobotInstance.getInstance().getCount();
-            sendMsgOnSwipe(count);
-            RobotInstance.getInstance().rotateRobotToWest();
-        }
-
-        loadGrid();
+        else{ RobotInstance.getInstance().rotateRobotToWest(); }
+        updateArena();
     }
 
     public void rightGesture() {
         if(!RobotInstance.getInstance().rotateToEast()){
-            if(!RobotInstance.getInstance().invalidCoordinate()) {
-                outgoingMessage(move_right, 1);
-                RobotInstance.getInstance().moveForward(10);
-            }
+            if(!RobotInstance.getInstance().invalidCoordinate()) { RobotInstance.getInstance().robotMove(10); }
         }
-        else{
-            Integer count = RobotInstance.getInstance().getCount();
-            sendMsgOnSwipe(count);
-            RobotInstance.getInstance().rotateRobotToEast();
-        }
-        loadGrid();
+        else{ RobotInstance.getInstance().rotateRobotToEast(); }
+        updateArena();
     }
 
     public void bottomGesture() {
         if(!RobotInstance.getInstance().rotateToSouth()){
-            if(!RobotInstance.getInstance().invalidCoordinate()) {
-                outgoingMessage(move_down, 1);
-                RobotInstance.getInstance().moveForward(10);
-            }
+            if(!RobotInstance.getInstance().invalidCoordinate()) { RobotInstance.getInstance().robotMove(10); }
         }
-        else{
-            Integer count = RobotInstance.getInstance().getCount();
-            sendMsgOnSwipe(count);
-            RobotInstance.getInstance().rotateRobotToSouth();
-        }
-        loadGrid();
+        else{ RobotInstance.getInstance().rotateRobotToSouth(); }
+        updateArena();
     }
-
-    public void sendMsgOnSwipe(Integer count){
-
-        if(count==1){
-            outgoingMessage("D", 1);
-        }
-        if(count==2){
-            outgoingMessage("D", 1);
-            outgoingMessage("D", 1);
-        }
-        if(count==-1){
-            outgoingMessage("A", 1);
-        }
-    }
-
-
 
     private void configStr(final int index){
         final EditText txtField = new EditText(this);
@@ -493,51 +434,51 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 .show();
     }
 
-    private void loadGrid(){
+    private void updateArena(){
         Grid mCustomDrawableView = new Grid(this);
         if(gestureEnable.isChecked()){
             mCustomDrawableView.setGesture(this);
         }else{
             mCustomDrawableView.setOnTouchListener(mCustomDrawableView);
         }
-        base_layout.removeAllViews();
-        base_layout.addView(mCustomDrawableView);
+        grid_view.removeAllViews();
+        grid_view.addView(mCustomDrawableView);
     }
 
     public void tapOnGrid(final int posX, final int posY) {
         if(set_robotPost.isChecked()){
             RobotInstance r = RobotInstance.getInstance();
-            r.setPosX(posX);
-            r.setPosY(posY);
-            r.setDirection("NORTH");
+            r.setCoordinateX(posX);
+            r.setCoordinateY(posY);
+            r.setRobotDirection("NORTH");
             outgoingMessage("START:"+posX+","+posY, 0);
             set_robotPost.setChecked(false);
         }
         if(set_wp.isChecked()){
             GridPosition p = new GridPosition(posX,posY);
-            GridWayPoint.getInstance().setGridPosition(p);
+            GridWayPoint.getWayPoint().setGridPosition(p);
             outgoingMessage("WP:"+posX+","+posY, 0);
             set_wp.setChecked(false);
         }
-        loadGrid();
+        updateArena();
     }
 
     private void buttonFunction(){
-        btn_send_config1.setOnClickListener(new View.OnClickListener() {
+        button_send_config1.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 SharedPreferences prefs = getSharedPreferences(("Group 13"), MODE_PRIVATE);
                 String retrievedText = prefs.getString("string1", null);
-                updateStatus("Sending Config 1");
+                setApplicationStatus("Sending Config 1");
                 if (retrievedText != null) {
                     outgoingMessage(retrievedText);
                 }
             }
         });
-        btn_send_config2.setOnClickListener(new View.OnClickListener() {
+        button_send_config2.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 SharedPreferences prefs = getSharedPreferences(("Group 13"), MODE_PRIVATE);
                 String retrievedText = prefs.getString("string2", null);
-                updateStatus("Sending Config 2");
+                setApplicationStatus("Sending Config 2");
                 if (retrievedText != null) {
                     outgoingMessage(retrievedText);
                 }
@@ -545,11 +486,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         });
         joystick_forward.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                //check if robot is out of bounds
                 if(!RobotInstance.getInstance().invalidCoordinate()) {
-                    RobotInstance.getInstance().moveForward(10);
+                    RobotInstance.getInstance().robotMove(10);
                     outgoingMessage(move_up, 1);
-                    loadGrid();
+                    updateArena();
                 }
             }
         });
@@ -557,83 +497,83 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             public void onClick(View v) {
                 RobotInstance.getInstance().rotateLeft();
                 outgoingMessage(move_left, 1);
-                loadGrid();
+                updateArena();
             }
         });
         joystick_right.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 RobotInstance.getInstance().rotateRight();
                 outgoingMessage(move_right, 1);
-                loadGrid();
+                updateArena();
             }
         });
-        btn_removeWp.setOnClickListener(new View.OnClickListener() {
+        button_removeWp.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                GridWayPoint.getInstance().setGridPosition(null);
-                loadGrid();
+                GridWayPoint.getWayPoint().setGridPosition(null);
+                updateArena();
             }
         });
-        btn_fastest_path.setOnClickListener(new View.OnClickListener() {
+        button_fastest_path.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 if (GridWayPoint.waypoint.getGridPosition() == null) {
-                    updateStatus("Setting WayPoint");
+                    setApplicationStatus("Setting WayPoint");
                     set_robotPost.setChecked(false);
                     set_wp.setChecked(true);
                     Toast toast=Toast.makeText(getApplicationContext(),"Tap the Grid to set WayPoint",Toast.LENGTH_LONG);
                     toast.show();
                 }else{
                     outgoingMessage("FP", 0);
-                    updateStatus("Fastest Path");
+                    setApplicationStatus("Fastest Path");
                 }
             }
         });
-        btn_terminate_exploration.setOnClickListener(new View.OnClickListener() {
+        button_terminate_exploration.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 outgoingMessage("TX", 0);
-                updateStatus("Terminated Exploration");
+                setApplicationStatus("Terminated Exploration");
             }
         });
-        btn_explore.setOnClickListener(new View.OnClickListener() {
+        button_explore.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 outgoingMessage("EX", 0);
-                updateStatus("Exploring");
+                setApplicationStatus("Exploring");
             }
         });
         reset_button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                updateStatus("Reset Map");
+                setApplicationStatus("Reset Map");
                 final RobotInstance r = RobotInstance.getInstance();
                 GridMap.getInstance().setArena(
                         "0000000000000000000000000000000000000000000000000000000000000000000000000000",
                         "",
                         "0000000000000000000000000000000000000000000000000000000000000000000000000000");
-                r.setPosX(Float.parseFloat("1"));
-                r.setPosY(Float.parseFloat("1"));
-                r.setDirection("NORTH");
+                r.setCoordinateX(Float.parseFloat("1"));
+                r.setCoordinateY(Float.parseFloat("1"));
+                r.setRobotDirection("NORTH");
                 GridMap.getInstance().clearNumberedBlocks();
-                loadGrid();
+                updateArena();
 
             }
         });
         manualUpdateRadio.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                btn_update.setEnabled(true);
+                button_update.setEnabled(true);
             }
         });
         autoUpdateRadio.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                btn_update.setEnabled(false);
+                button_update.setEnabled(false);
             }
         });
-        btn_update.setOnClickListener(new View.OnClickListener() {
+        button_update.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                loadGrid();
+                updateArena();
             }
         });
 
     }
 
-    private void displayDataStrings(){
+    private void showStringDialogBox(){
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Map Descriptor and Image Recognition String");
         final View customLayout = getLayoutInflater().inflate(R.layout.string_dialog_box, null);
@@ -646,10 +586,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
         });
 
-        EditText text_mdf1 = customLayout.findViewById(R.id.p1_content);
-        String explored = binaryStringToHexadecimalString(GridMap.getInstance().getExploredCells());
-        text_mdf1.setText(explored);
-
         EditText text_mdf2 = customLayout.findViewById(R.id.p2_content);
         String obstacles = binaryStringToHexadecimalString(GridMap.getInstance().getExploredObstacles());
         text_mdf2.setText(obstacles);
@@ -658,7 +594,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         String imgreg = "{";
         ArrayList<GridIDblock> numberedBlocks = GridMap.getInstance().getNumberedBlocks();
         for(GridIDblock blk : numberedBlocks){
-            imgreg += String.format("(%s, %d, %d)", blk.getID(), blk.getGridPosition().getPosX(), blk.getGridPosition().getPosY());
+            imgreg += String.format("(%s, %d, %d)", blk.getID(), blk.getGridPosition().getCoordinateX(), blk.getGridPosition().getCoordinateY());
             imgreg += ", ";
         }
         if(imgreg.length()>2)imgreg = imgreg.substring(0, imgreg.length()-2);

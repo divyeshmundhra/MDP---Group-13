@@ -1,26 +1,24 @@
 package com.example.group13_2;
 
 public class GridPosition {
-	int posX;
-	int posY;
+	int coordinateX;
+	int coordinateY;
 	
-	public GridPosition(int posX, int posY){
-		this.posX=posX;
-		this.posY=posY;
+	public GridPosition(int coordinateX, int coordinateY){
+		this.coordinateX=coordinateX;
+		this.coordinateY=coordinateY;
 	}
 
-	public boolean equals(GridPosition arg0) {
-		if(posX==arg0.getPosX() && posY==arg0.getPosY()){
+	public boolean equals(GridPosition pos) {
+		if(coordinateX==pos.getCoordinateX() && coordinateY==pos.getCoordinateY()){
 			return true;
 		}
 		return false;
 	}
 
-	public int getPosX() {
-		return posX;
-	}
-	public int getPosY() {
-		return posY;
+	public int getCoordinateX() { return coordinateX; }
+	public int getCoordinateY() {
+		return coordinateY;
 	}
 
 }

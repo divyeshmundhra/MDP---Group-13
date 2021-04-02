@@ -68,9 +68,7 @@ public class BluetoothChatModel extends Fragment {
                         }
                     });
             alertDialog.show();
-            ActivityCompat.requestPermissions(activity,
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                    1234);
+            ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1234);
         }
 
     }
@@ -112,7 +110,7 @@ public class BluetoothChatModel extends Fragment {
                     }
                     break;
                 case 4:
-                    connectedDevice = msg.getData().getString("device_name");
+                    connectedDevice = msg.getData().getString("bluetooth_device_name");
                     if (null != activity) {
                         Toast.makeText(activity, "Connected to "
                                 + connectedDevice, Toast.LENGTH_SHORT).show();

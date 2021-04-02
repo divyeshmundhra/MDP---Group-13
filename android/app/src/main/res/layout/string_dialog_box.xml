@@ -6,22 +6,6 @@
     android:padding="10px">
 
     <TextView
-        android:id="@+id/p1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:labelFor="@id/p1_content"
-        android:text="@string/mdf_string_1_explored_squares" />
-
-    <EditText
-        android:id="@+id/p1_content"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:ems="10"
-        android:gravity="start|top"
-        android:inputType="none"
-        android:textIsSelectable="true" />
-
-    <TextView
         android:id="@+id/p2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

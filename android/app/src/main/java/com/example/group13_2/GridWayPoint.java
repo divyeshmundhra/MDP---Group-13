@@ -12,7 +12,7 @@ public class GridWayPoint {
 		this.gridPosition = gridPosition;
 	}
 
-	public static GridWayPoint getInstance(){
+	public static GridWayPoint getWayPoint(){
 		if(waypoint==null){
 			waypoint= new GridWayPoint();
 		}
