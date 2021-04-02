@@ -68,9 +68,7 @@ public class BluetoothChatModel extends Fragment {
                         }
                     });
             alertDialog.show();
-            ActivityCompat.requestPermissions(activity,
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                    1234);
+            ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1234);
         }
 
     }
