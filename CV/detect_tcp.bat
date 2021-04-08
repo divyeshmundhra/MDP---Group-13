@@ -1,0 +1,1 @@
+python detect.py --weights Best5Mar.pt --img 416 --source tcp://192.168.13.1:5555 --save-txt --exist-ok --conf-thres 0.7 --augment --agnostic-nms
